@@ -401,10 +401,22 @@ function resetStats() {
     return;
   }
 
-  history = historyDefault;
-
+  history = {
+    1: {},
+    2: {},
+    3: {},
+    4: {},
+    5: {},
+    6: {},
+    7: {},
+    8: {},
+    9: {}
+  };
+  
+  saveHistory();
+  
   location.reload();
-};
+}
 
 function resetOptions() {
   const confirmed = confirm("Are you sure you want to reset all settings?\nThis operation is irreversible.");
