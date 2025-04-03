@@ -9,7 +9,7 @@
 	<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
 	<link rel="stylesheet" href="styles.css">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-	<!-- Add Chart.js library -->
+	<!-- Add Chart.js library - CRITICAL for the application to work -->
 	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -129,7 +129,7 @@
 			<div style="text-align: center; font-size: 1.25rem; margin-top: 0.5rem; margin-bottom: 1rem;">
 				Accuracy: <span id="sc-accuracy">-%</span>
 			</div>
-
+			
 			<div class="bar-chart-wrap">
 				<div class="bar-chart">
 					<div class="bar-chart-axis">
@@ -150,11 +150,11 @@
 				<div class="bar-chart-title">N over time (1 bar = 1 day)</div>
 			</div>
 			
-			<!-- Stimuli accuracy section with chart -->
+			<!-- Moved stimuli accuracy section to the bottom -->
 			<div class="stimuli-accuracy-section">
 				<h3>Stimuli Accuracy</h3>
 				
-				<!-- Chart container for stimuli accuracy over time -->
+				<!-- Add chart container for stimuli accuracy over time -->
 				<div class="stimuli-chart-container">
 					<canvas id="stimuli-chart"></canvas>
 				</div>
@@ -310,7 +310,7 @@
 				</div>
 			</div>
 
-			<!-- Randomize stimuli toggle switch -->
+			<!-- Added randomize stimuli toggle switch -->
 			<div class="setting">
 				<label>Randomize Stimuli</label>
 				<div class="toggle-switch-container">
@@ -322,17 +322,16 @@
 			</div>
 
 			<div class="setting">
-				<label>Number of Random Stimuli</label>
-				<input id="numStimuliSelect" type="text" oninput="numStimuliSelectInputHandler()">
-			</div>
-
-			<div class="setting">
 				<button class="setting-btn" onclick="openBindings()">Change Bindings</button>
 			</div>
 
 			<div class="setting">
 				<label>N Back Level</label>
 				<input id="n-level" type="text" oninput="nLevelInputHandler()">
+			</div>
+			<div class="setting">
+				<label>Number of Stimuli</label>
+				<input id="numStimuliSelect" type="text" oninput="numStimuliSelectInputHandler()">
 			</div>
 			<div class="setting">
 				<label>Scene Dimmer</label>
