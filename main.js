@@ -801,8 +801,104 @@ function loadHistory() {
 function addDemoHistoryData() {
   const today = new Date().toLocaleDateString("sv");
   const yesterday = new Date(Date.now() - 86400000).toLocaleDateString("sv");
+  const threeDaysAgo = new Date(Date.now() - 3 * 86400000).toLocaleDateString("sv");
+  const weekAgo = new Date(Date.now() - 7 * 86400000).toLocaleDateString("sv");
   
-  // Add demo data for 3D
+  // Add demo data for 3D over multiple days
+  history[3][weekAgo] = [{
+    nLevel: 2,
+    right: 15,
+    missed: 7,
+    wrong: 2,
+    accuracy: 0.63,
+    outcome: 1,
+    stimuliData: {
+      walls: {
+        enabled: true,
+        right: 4,
+        wrong: 1,
+        matching: 8
+      },
+      camera: {
+        enabled: true,
+        right: 5,
+        wrong: 0,
+        matching: 8
+      },
+      face: {
+        enabled: true,
+        right: 6,
+        wrong: 1,
+        matching: 9
+      },
+      position: {
+        enabled: false
+      },
+      word: {
+        enabled: false
+      },
+      shape: {
+        enabled: false
+      },
+      corner: {
+        enabled: false
+      },
+      sound: {
+        enabled: false
+      },
+      color: {
+        enabled: false
+      }
+    }
+  }];
+  
+  history[3][threeDaysAgo] = [{
+    nLevel: 2,
+    right: 16,
+    missed: 6,
+    wrong: 2,
+    accuracy: 0.67,
+    outcome: 1,
+    stimuliData: {
+      walls: {
+        enabled: true,
+        right: 5,
+        wrong: 1,
+        matching: 8
+      },
+      camera: {
+        enabled: true,
+        right: 6,
+        wrong: 0,
+        matching: 8
+      },
+      face: {
+        enabled: true,
+        right: 5,
+        wrong: 1,
+        matching: 9
+      },
+      position: {
+        enabled: false
+      },
+      word: {
+        enabled: false
+      },
+      shape: {
+        enabled: false
+      },
+      corner: {
+        enabled: false
+      },
+      sound: {
+        enabled: false
+      },
+      color: {
+        enabled: false
+      }
+    }
+  }];
+  
   history[3][yesterday] = [{
     nLevel: 3,
     right: 18,
@@ -820,6 +916,774 @@ function addDemoHistoryData() {
       camera: {
         enabled: true,
         right: 7,
+        wrong: 1,
+        matching: 9
+      },
+      face: {
+        enabled: true,
+        right: 5,
+        wrong: 1,
+        matching: 9
+      },
+      position: {
+        enabled: false
+      },
+      word: {
+        enabled: false
+      },
+      shape: {
+        enabled: false
+      },
+      corner: {
+        enabled: false
+      },
+      sound: {
+        enabled: false
+      },
+      color: {
+        enabled: false
+      }
+    }
+  }];
+  
+  history[3][today] = [{
+    nLevel: 3,
+    right: 20,
+    missed: 4,
+    wrong: 2,
+    accuracy: 0.77,
+    outcome: 1,
+    stimuliData: {
+      walls: {
+        enabled: true,
+        right: 7,
+        wrong: 0,
+        matching: 8
+      },
+      camera: {
+        enabled: true,
+        right: 7,
+        wrong: 1,
+        matching: 9
+      },
+      face: {
+        enabled: true,
+        right: 6,
+        wrong: 1,
+        matching: 9
+      },
+      position: {
+        enabled: false
+      },
+      word: {
+        enabled: false
+      },
+      shape: {
+        enabled: false
+      },
+      corner: {
+        enabled: false
+      },
+      sound: {
+        enabled: false
+      },
+      color: {
+        enabled: false
+      }
+    }
+  }];
+  
+  // Add demo data for 4D
+  history[4][threeDaysAgo] = [{
+    nLevel: 1,
+    right: 22,
+    missed: 8,
+    wrong: 3,
+    accuracy: 0.67,
+    outcome: 1,
+    stimuliData: {
+      walls: {
+        enabled: true,
+        right: 6,
+        wrong: 1,
+        matching: 8
+      },
+      camera: {
+        enabled: true,
+        right: 5,
+        wrong: 1,
+        matching: 8
+      },
+      face: {
+        enabled: true,
+        right: 5,
+        wrong: 0,
+        matching: 8
+      },
+      position: {
+        enabled: true,
+        right: 6,
+        wrong: 1,
+        matching: 8
+      },
+      word: {
+        enabled: false
+      },
+      shape: {
+        enabled: false
+      },
+      corner: {
+        enabled: false
+      },
+      sound: {
+        enabled: false
+      },
+      color: {
+        enabled: false
+      }
+    }
+  }];
+  
+  history[4][yesterday] = [{
+    nLevel: 2,
+    right: 24,
+    missed: 6,
+    wrong: 2,
+    accuracy: 0.75,
+    outcome: 0,
+    stimuliData: {
+      walls: {
+        enabled: true,
+        right: 7,
+        wrong: 0,
+        matching: 8
+      },
+      camera: {
+        enabled: true,
+        right: 6,
+        wrong: 1,
+        matching: 8
+      },
+      face: {
+        enabled: true,
+        right: 5,
+        wrong: 1,
+        matching: 8
+      },
+      position: {
+        enabled: true,
+        right: 6,
+        wrong: 0,
+        matching: 8
+      },
+      word: {
+        enabled: false
+      },
+      shape: {
+        enabled: false
+      },
+      corner: {
+        enabled: false
+      },
+      sound: {
+        enabled: false
+      },
+      color: {
+        enabled: false
+      }
+    }
+  }];
+  
+  history[4][today] = [{
+    nLevel: 2,
+    right: 26,
+    missed: 4,
+    wrong: 2,
+    accuracy: 0.81,
+    outcome: 1,
+    stimuliData: {
+      walls: {
+        enabled: true,
+        right: 7,
+        wrong: 0,
+        matching: 8
+      },
+      camera: {
+        enabled: true,
+        right: 7,
+        wrong: 1,
+        matching: 8
+      },
+      face: {
+        enabled: true,
+        right: 6,
+        wrong: 0,
+        matching: 8
+      },
+      position: {
+        enabled: true,
+        right: 6,
+        wrong: 1,
+        matching: 8
+      },
+      word: {
+        enabled: false
+      },
+      shape: {
+        enabled: false
+      },
+      corner: {
+        enabled: false
+      },
+      sound: {
+        enabled: false
+      },
+      color: {
+        enabled: false
+      }
+    }
+  }];
+  
+  // Add demo data for 5D
+  history[5][yesterday] = [{
+    nLevel: 1,
+    right: 20,
+    missed: 12,
+    wrong: 8,
+    accuracy: 0.5,
+    outcome: 0,
+    stimuliData: {
+      walls: {
+        enabled: true,
+        right: 4,
+        wrong: 2,
+        matching: 8
+      },
+      camera: {
+        enabled: true,
+        right: 4,
+        wrong: 1,
+        matching: 8
+      },
+      face: {
+        enabled: true,
+        right: 4,
+        wrong: 2,
+        matching: 8
+      },
+      position: {
+        enabled: true,
+        right: 4,
+        wrong: 1,
+        matching: 8
+      },
+      word: {
+        enabled: true,
+        right: 4,
+        wrong: 2,
+        matching: 8
+      },
+      shape: {
+        enabled: false
+      },
+      corner: {
+        enabled: false
+      },
+      sound: {
+        enabled: false
+      },
+      color: {
+        enabled: false
+      }
+    }
+  }];
+  
+  history[5][today] = [{
+    nLevel: 1,
+    right: 25,
+    missed: 10,
+    wrong: 5,
+    accuracy: 0.625,
+    outcome: 1,
+    stimuliData: {
+      walls: {
+        enabled: true,
+        right: 5,
+        wrong: 1,
+        matching: 8
+      },
+      camera: {
+        enabled: true,
+        right: 6,
+        wrong: 1,
+        matching: 8
+      },
+      face: {
+        enabled: true,
+        right: 4,
+        wrong: 1,
+        matching: 8
+      },
+      position: {
+        enabled: true,
+        right: 5,
+        wrong: 1,
+        matching: 8
+      },
+      word: {
+        enabled: true,
+        right: 5,
+        wrong: 1,
+        matching: 8
+      },
+      shape: {
+        enabled: false
+      },
+      corner: {
+        enabled: false
+      },
+      sound: {
+        enabled: false
+      },
+      color: {
+        enabled: false
+      }
+    }
+  }];
+  
+  saveHistory(); // Save the demo data
+}5,
+        wrong: 0,
+        matching: 8
+      },
+      face: {
+        enabled: true,
+        right: 6,
+        wrong: 1,
+        matching: 9
+      },
+      position: {
+        enabled: false
+      },
+      word: {
+        enabled: false
+      },
+      shape: {
+        enabled: false
+      },
+      corner: {
+        enabled: false
+      },
+      sound: {
+        enabled: false
+      },
+      color: {
+        enabled: false
+      }
+    }
+  }];
+  
+  history[3][threeDaysAgo] = [{
+    nLevel: 2,
+    right: 16,
+    missed: 6,
+    wrong: 2,
+    accuracy: 0.67,
+    outcome: 1,
+    stimuliData: {
+      walls: {
+        enabled: true,
+        right: 5,
+        wrong: 1,
+        matching: 8
+      },
+      camera: {
+        enabled: true,
+        right: 6,
+        wrong: 0,
+        matching: 8
+      },
+      face: {
+        enabled: true,
+        right: 5,
+        wrong: 1,
+        matching: 9
+      },
+      position: {
+        enabled: false
+      },
+      word: {
+        enabled: false
+      },
+      shape: {
+        enabled: false
+      },
+      corner: {
+        enabled: false
+      },
+      sound: {
+        enabled: false
+      },
+      color: {
+        enabled: false
+      }
+    }
+  }];
+  
+  history[3][yesterday] = [{
+    nLevel: 3,
+    right: 18,
+    missed: 5,
+    wrong: 3,
+    accuracy: 0.69,
+    outcome: 0,
+    stimuliData: {
+      walls: {
+        enabled: true,
+        right: 6,
+        wrong: 1,
+        matching: 8
+      },
+      camera: {
+        enabled: true,
+        right: 7,
+        wrong: 1,
+        matching: 9
+      },
+      face: {
+        enabled: true,
+        right: 5,
+        wrong: 1,
+        matching: 9
+      },
+      position: {
+        enabled: false
+      },
+      word: {
+        enabled: false
+      },
+      shape: {
+        enabled: false
+      },
+      corner: {
+        enabled: false
+      },
+      sound: {
+        enabled: false
+      },
+      color: {
+        enabled: false
+      }
+    }
+  }];
+  
+  history[3][today] = [{
+    nLevel: 3,
+    right: 20,
+    missed: 4,
+    wrong: 2,
+    accuracy: 0.77,
+    outcome: 1,
+    stimuliData: {
+      walls: {
+        enabled: true,
+        right: 7,
+        wrong: 0,
+        matching: 8
+      },
+      camera: {
+        enabled: true,
+        right: 7,
+        wrong: 1,
+        matching: 9
+      },
+      face: {
+        enabled: true,
+        right: 6,
+        wrong: 1,
+        matching: 9
+      },
+      position: {
+        enabled: false
+      },
+      word: {
+        enabled: false
+      },
+      shape: {
+        enabled: false
+      },
+      corner: {
+        enabled: false
+      },
+      sound: {
+        enabled: false
+      },
+      color: {
+        enabled: false
+      }
+    }
+  }];
+  
+  // Add demo data for 4D
+  history[4][threeDaysAgo] = [{
+    nLevel: 1,
+    right: 22,
+    missed: 8,
+    wrong: 3,
+    accuracy: 0.67,
+    outcome: 1,
+    stimuliData: {
+      walls: {
+        enabled: true,
+        right: 6,
+        wrong: 1,
+        matching: 8
+      },
+      camera: {
+        enabled: true,
+        right: 5,
+        wrong: 1,
+        matching: 8
+      },
+      face: {
+        enabled: true,
+        right: 5,
+        wrong: 0,
+        matching: 8
+      },
+      position: {
+        enabled: true,
+        right: 6,
+        wrong: 1,
+        matching: 8
+      },
+      word: {
+        enabled: false
+      },
+      shape: {
+        enabled: false
+      },
+      corner: {
+        enabled: false
+      },
+      sound: {
+        enabled: false
+      },
+      color: {
+        enabled: false
+      }
+    }
+  }];
+  
+  history[4][yesterday] = [{
+    nLevel: 2,
+    right: 24,
+    missed: 6,
+    wrong: 2,
+    accuracy: 0.75,
+    outcome: 0,
+    stimuliData: {
+      walls: {
+        enabled: true,
+        right: 7,
+        wrong: 0,
+        matching: 8
+      },
+      camera: {
+        enabled: true,
+        right: 6,
+        wrong: 1,
+        matching: 8
+      },
+      face: {
+        enabled: true,
+        right: 5,
+        wrong: 1,
+        matching: 8
+      },
+      position: {
+        enabled: true,
+        right: 6,
+        wrong: 0,
+        matching: 8
+      },
+      word: {
+        enabled: false
+      },
+      shape: {
+        enabled: false
+      },
+      corner: {
+        enabled: false
+      },
+      sound: {
+        enabled: false
+      },
+      color: {
+        enabled: false
+      }
+    }
+  }];
+  
+  history[4][today] = [{
+    nLevel: 2,
+    right: 26,
+    missed: 4,
+    wrong: 2,
+    accuracy: 0.81,
+    outcome: 1,
+    stimuliData: {
+      walls: {
+        enabled: true,
+        right: 7,
+        wrong: 0,
+        matching: 8
+      },
+      camera: {
+        enabled: true,
+        right: 7,
+        wrong: 1,
+        matching: 8
+      },
+      face: {
+        enabled: true,
+        right: 6,
+        wrong: 0,
+        matching: 8
+      },
+      position: {
+        enabled: true,
+        right: 6,
+        wrong: 1,
+        matching: 8
+      },
+      word: {
+        enabled: false
+      },
+      shape: {
+        enabled: false
+      },
+      corner: {
+        enabled: false
+      },
+      sound: {
+        enabled: false
+      },
+      color: {
+        enabled: false
+      }
+    }
+  }];
+  
+  // Add demo data for 5D
+  history[5][yesterday] = [{
+    nLevel: 1,
+    right: 20,
+    missed: 12,
+    wrong: 8,
+    accuracy: 0.5,
+    outcome: 0,
+    stimuliData: {
+      walls: {
+        enabled: true,
+        right: 4,
+        wrong: 2,
+        matching: 8
+      },
+      camera: {
+        enabled: true,
+        right: 4,
+        wrong: 1,
+        matching: 8
+      },
+      face: {
+        enabled: true,
+        right: 4,
+        wrong: 2,
+        matching: 8
+      },
+      position: {
+        enabled: true,
+        right: 4,
+        wrong: 1,
+        matching: 8
+      },
+      word: {
+        enabled: true,
+        right: 4,
+        wrong: 2,
+        matching: 8
+      },
+      shape: {
+        enabled: false
+      },
+      corner: {
+        enabled: false
+      },
+      sound: {
+        enabled: false
+      },
+      color: {
+        enabled: false
+      }
+    }
+  }];
+  
+  history[5][today] = [{
+    nLevel: 1,
+    right: 25,
+    missed: 10,
+    wrong: 5,
+    accuracy: 0.625,
+    outcome: 1,
+    stimuliData: {
+      walls: {
+        enabled: true,
+        right: 5,
+        wrong: 1,
+        matching: 8
+      },
+      camera: {
+        enabled: true,
+        right: 6,
+        wrong: 1,
+        matching: 8
+      },
+      face: {
+        enabled: true,
+        right: 4,
+        wrong: 1,
+        matching: 8
+      },
+      position: {
+        enabled: true,
+        right: 5,
+        wrong: 1,
+        matching: 8
+      },
+      word: {
+        enabled: true,
+        right: 5,
+        wrong: 1,
+        matching: 8
+      },
+      shape: {
+        enabled: false
+      },
+      corner: {
+        enabled: false
+      },
+      sound: {
+        enabled: false
+      },
+      color: {
+        enabled: false
+      }
+    }
+  }];
+  
+  saveHistory(); // Save the demo data
+}7,
         wrong: 1,
         matching: 9
       },
@@ -1063,22 +1927,67 @@ function toggleStats(_dim) {
   
   // Initialize stimuli totals
   let stimuliTotals = {
-    walls: { right: 0, wrong: 0, matching: 0, present: false },
-    camera: { right: 0, wrong: 0, matching: 0, present: false },
-    face: { right: 0, wrong: 0, matching: 0, present: false },
-    position: { right: 0, wrong: 0, matching: 0, present: false },
-    word: { right: 0, wrong: 0, matching: 0, present: false },
-    shape: { right: 0, wrong: 0, matching: 0, present: false },
-    corner: { right: 0, wrong: 0, matching: 0, present: false },
-    sound: { right: 0, wrong: 0, matching: 0, present: false },
-    color: { right: 0, wrong: 0, matching: 0, present: false }
+    walls: { right: 0, wrong: 0, matching: 0, missed: 0, present: false },
+    camera: { right: 0, wrong: 0, matching: 0, missed: 0, present: false },
+    face: { right: 0, wrong: 0, matching: 0, missed: 0, present: false },
+    position: { right: 0, wrong: 0, matching: 0, missed: 0, present: false },
+    word: { right: 0, wrong: 0, matching: 0, missed: 0, present: false },
+    shape: { right: 0, wrong: 0, matching: 0, missed: 0, present: false },
+    corner: { right: 0, wrong: 0, matching: 0, missed: 0, present: false },
+    sound: { right: 0, wrong: 0, matching: 0, missed: 0, present: false },
+    color: { right: 0, wrong: 0, matching: 0, missed: 0, present: false }
   };
   
+  // For tracking historical data for the chart
+  let chartData = {
+    labels: [],
+    datasets: []
+  };
+  
+  // Initialize datasets for each stimulus type with color-blind safe colors
+  const stimuliColors = {
+    walls: '#4363d8',    // blue
+    camera: '#3cb44b',   // green
+    face: '#e6194B',     // red
+    position: '#ffe119', // yellow
+    word: '#f58231',     // orange
+    shape: '#911eb4',    // purple
+    corner: '#42d4f4',   // cyan
+    sound: '#f032e6',    // magenta
+    color: '#bfef45'     // lime
+  };
+  
+  // Create empty datasets for the chart (we'll populate them if the stimulus was used)
+  Object.keys(stimuliTotals).forEach(key => {
+    chartData.datasets.push({
+      label: key.charAt(0).toUpperCase() + key.slice(1),
+      data: [],
+      borderColor: stimuliColors[key],
+      backgroundColor: stimuliColors[key] + '33', // Add alpha for fill
+      fill: false,
+      tension: 0.3
+    });
+  });
+  
   const entries = Object.entries(_history);
-  for (const [ date, points ] of entries) {
+  
+  // Sort entries by date
+  entries.sort((a, b) => new Date(a[0]) - new Date(b[0]));
+  
+  // Process entries for stats and chart data
+  for (const [date, points] of entries) {
     let _avgNLevel = 0;
     let _minNLevel = 10;
     let _maxNLevel = 0;
+    
+    // For the chart, we need a formatted date label
+    const dateObj = new Date(date);
+    const dateLabel = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    chartData.labels.push(dateLabel);
+    
+    // Create temporary storage for accuracy values on this date
+    const dateAccuracies = {};
+    
     for (const point of points) {
       _avgNLevel += point.nLevel;
       _minNLevel = Math.min(_minNLevel, point.nLevel);
@@ -1105,10 +2014,40 @@ function toggleStats(_dim) {
             stimuliTotals[key].right += data.right || 0;
             stimuliTotals[key].wrong += data.wrong || 0;
             stimuliTotals[key].matching += data.matching || 0;
+            // Calculate missed for this stimulus
+            const missed = (data.matching || 0) - (data.right || 0);
+            stimuliTotals[key].missed += missed;
+            
+            // Calculate accuracy for the chart
+            const accuracy = data.matching > 0 ? data.right / data.matching : 0;
+            if (!dateAccuracies[key]) dateAccuracies[key] = [];
+            dateAccuracies[key].push(accuracy);
           }
         });
       }
     }
+    
+    // Calculate average accuracy for each stimulus on this date
+    Object.entries(dateAccuracies).forEach(([key, accuracies]) => {
+      if (accuracies.length > 0) {
+        const avgAccuracy = accuracies.reduce((sum, val) => sum + val, 0) / accuracies.length;
+        // Find the dataset for this stimulus type
+        const datasetIndex = chartData.datasets.findIndex(dataset => 
+          dataset.label.toLowerCase() === key.toLowerCase());
+        if (datasetIndex !== -1) {
+          chartData.datasets[datasetIndex].data.push(avgAccuracy * 100); // Convert to percentage
+        }
+      }
+    });
+    
+    // Add null values for any stimulus not present on this date (for chart continuity)
+    chartData.datasets.forEach(dataset => {
+      const key = dataset.label.toLowerCase();
+      if (!dateAccuracies[key]) {
+        dataset.data.push(null);
+      }
+    });
+    
     _avgNLevel = _avgNLevel / points.length;
     avgNLevel += _avgNLevel;
     bars.appendChild(getBar(toOneDecimal(_avgNLevel)));
@@ -1131,11 +2070,84 @@ function toggleStats(_dim) {
   // Update individual stimuli accuracy display
   updateStimuliAccuracyDisplay(stimuliTotals);
   
+  // Create the chart if there's data to display
+  createStimuliChart(chartData);
+  
   // Store the last displayed dimension
   localStorage.setItem("last-dim", dim);
 }
 
-// Function to update the stimuli accuracy display
+// Function to create the stimuli accuracy chart
+let stimuliChart = null; // Variable to track chart instance
+
+function createStimuliChart(chartData) {
+  // Get the canvas context
+  const canvas = document.getElementById('stimuli-chart');
+  const ctx = canvas.getContext('2d');
+  
+  // Destroy previous chart if it exists
+  if (stimuliChart) {
+    stimuliChart.destroy();
+  }
+  
+  // Filter out datasets with no data
+  const filteredDatasets = chartData.datasets.filter(dataset => 
+    dataset.data.some(value => value !== null)
+  );
+  
+  // Create the new chart
+  stimuliChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: chartData.labels,
+      datasets: filteredDatasets
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          min: 0,
+          max: 100,
+          title: {
+            display: true,
+            text: 'Accuracy (%)'
+          },
+          grid: {
+            color: 'rgba(255, 255, 255, 0.1)'
+          },
+          ticks: {
+            color: 'rgba(255, 255, 255, 0.7)'
+          }
+        },
+        x: {
+          grid: {
+            color: 'rgba(255, 255, 255, 0.1)'
+          },
+          ticks: {
+            color: 'rgba(255, 255, 255, 0.7)'
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: {
+            color: 'rgba(255, 255, 255, 0.7)',
+            boxWidth: 15,
+            usePointStyle: true
+          }
+        },
+        tooltip: {
+          mode: 'index',
+          intersect: false
+        }
+      }
+    }
+  });
+}
+
+// Function to update the stimuli accuracy display with detailed stats
 function updateStimuliAccuracyDisplay(totals) {
   // Hide all items first
   document.querySelectorAll('.stimuli-accuracy-item').forEach(item => {
@@ -1146,14 +2158,24 @@ function updateStimuliAccuracyDisplay(totals) {
   Object.entries(totals).forEach(([key, data]) => {
     const itemElement = document.getElementById(`${key}-accuracy-item`);
     const valueElement = document.getElementById(`${key}-accuracy`);
+    const rightCountElement = document.getElementById(`${key}-right-count`);
+    const missedCountElement = document.getElementById(`${key}-missed-count`);
+    const wrongCountElement = document.getElementById(`${key}-wrong-count`);
     
     if (data.present && itemElement && valueElement) {
       // Calculate accuracy
       const total = data.matching;
       const accuracy = total > 0 ? (data.right / total) * 100 : 0;
       
-      // Update display
+      // Update accuracy display
       valueElement.textContent = accuracy.toFixed(0) + "%";
+      
+      // Update detailed counts
+      if (rightCountElement) rightCountElement.textContent = data.right;
+      if (missedCountElement) missedCountElement.textContent = data.missed;
+      if (wrongCountElement) wrongCountElement.textContent = data.wrong;
+      
+      // Show this item
       itemElement.classList.add('active');
     }
   });
