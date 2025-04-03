@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Hyper 3D N-back - Detailed Statistics</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no">
+	<meta name="mobile-web-app-capable" content="yes">
+	<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+	<link rel="stylesheet" href="styles.css">
+	<link rel="stylesheet" href="stats-page.css">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+
+<body>
+	<div class="stats-page-container">
+		<header class="stats-header">
+			<h1>Hyper 3D N-back - Detailed Statistics</h1>
+			<a href="index.html" class="back-button"><i class="bi bi-arrow-left"></i> Back to Game</a>
+		</header>
+
+		<div class="stats-controls">
+			<div class="dimension-filter">
+				<h2>Dimension Filter</h2>
+				<div class="radio-dimensions">
+					<label class="radio-dimension">
+						<input type="radio" name="dimension" value="1" hidden>
+						<div>1D</div>
+					</label>
+					<label class="radio-dimension">
+						<input type="radio" name="dimension" value="2" hidden>
+						<div>2D</div>
+					</label>
+					<label class="radio-dimension">
+						<input type="radio" name="dimension" value="3" hidden>
+						<div>3D</div>
+					</label>
+					<label class="radio-dimension">
+						<input type="radio" name="dimension" value="4" hidden>
+						<div>4D</div>
+					</label>
+					<label class="radio-dimension">
+						<input type="radio" name="dimension" value="5" hidden>
+						<div>5D</div>
+					</label>
+					<label class="radio-dimension">
+						<input type="radio" name="dimension" value="6" hidden>
+						<div>6D</div>
+					</label>
+					<label class="radio-dimension">
+						<input type="radio" name="dimension" value="7" hidden>
+						<div>7D</div>
+					</label>
+					<label class="radio-dimension">
+						<input type="radio" name="dimension" value="8" hidden>
+						<div>8D</div>
+					</label>
+					<label class="radio-dimension">
+						<input type="radio" name="dimension" value="9" hidden>
+						<div>9D</div>
+					</label>
+				</div>
+			</div>
+		</div>
+
+		<div class="stats-overview">
+			<h2>Overall Performance</h2>
+			<div class="stats-cards">
+				<div class="stats-card">
+					<div class="stats-card-title">Min N</div>
+					<div id="sc-min" class="stats-card-value">-</div>
+				</div>
+				<div class="stats-card">
+					<div class="stats-card-title">Avg N</div>
+					<div id="sc-avg" class="stats-card-value">-</div>
+				</div>
+				<div class="stats-card">
+					<div class="stats-card-title">Max N</div>
+					<div id="sc-max" class="stats-card-value">-</div>
+				</div>
+			</div>
+
+			<div class="stats-cards">
+				<div class="stats-card">
+					<div class="stats-card-title">Right</div>
+					<div id="sc-right" class="stats-card-value">-</div>
+				</div>
+				<div class="stats-card">
+					<div class="stats-card-title">Missed</div>
+					<div id="sc-missed" class="stats-card-value">-</div>
+				</div>
+				<div class="stats-card">
+					<div class="stats-card-title">Wrong</div>
+					<div id="sc-wrong" class="stats-card-value">-</div>
+				</div>
+			</div>
+			
+			<div style="text-align: center; font-size: 1.25rem; margin-top: 0.5rem; margin-bottom: 1rem;">
+				Accuracy: <span id="sc-accuracy">-%</span>
+			</div>
+		</div>
+
+		<div class="detailed-stats">
+			<h2>Performance by Stimulus Type</h2>
+			<div class="stimulus-stats-container">
+				<!-- This will be populated by JavaScript -->
+			</div>
+			
+			<div class="chart-container">
+				<h3>Accuracy Comparison</h3>
+				<div class="accuracy-chart">
+					<!-- This will be populated by JavaScript -->
+				</div>
+			</div>
+		</div>
+
+		<div class="progress-chart">
+			<h2>N-Level Progress Over Time</h2>
+			<div class="bar-chart-wrap">
+				<div class="bar-chart">
+					<div class="bar-chart-axis">
+						<div>9</div>
+						<div>8</div>
+						<div>7</div>
+						<div>6</div>
+						<div>5</div>
+						<div>4</div>
+						<div>3</div>
+						<div>2</div>
+						<div>1</div>
+					</div>
+					<div class="bar-chart-bars">
+						<!--Bars will appear here-->
+					</div>
+				</div>
+				<div class="bar-chart-title">N over time (1 bar = 1 day)</div>
+			</div>
+		</div>
+	</div>
+
+	<script src="stats-page.js"></script>
+</body>
+
+</html>
