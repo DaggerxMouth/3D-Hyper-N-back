@@ -92,7 +92,8 @@ const [
   shapeEnableTrig,
   cornerEnableTrig,
   soundEnableTrig,
-  colorEnableTrig
+  colorEnableTrig,
+  randomizeEnableTrig
 ] = [...document.querySelectorAll(".toggle-trigger")];
 
 // Game settings
@@ -166,6 +167,7 @@ const defVal_shapeEnabled = true;
 const defVal_cornerEnabled = true;
 const defVal_soundEnabled = true;
 const defVal_colorEnabled = true;
+const defVal_randomizeEnabled = false; // Default value for randomize stimuli toggle
 const defVal_tileAHexColor = "#111";
 const defVal_tileBHexColor = "#888";
 const defVal_nLevel = 1;
@@ -189,6 +191,7 @@ let shapeEnabled = defVal_shapeEnabled;
 let cornerEnabled = defVal_cornerEnabled;
 let soundEnabled = defVal_soundEnabled;
 let colorEnabled = defVal_colorEnabled;
+let randomizeEnabled = defVal_randomizeEnabled; // Added randomize stimuli setting
 let tileAHexColor = defVal_tileAHexColor;
 let tileBHexColor = defVal_tileBHexColor;
 let nLevel = defVal_nLevel;
@@ -252,6 +255,28 @@ let wrongShape = 0;
 let wrongCorner = 0;
 let wrongSound = 0;
 let wrongColor = 0;
+
+// Matching stimuli counts (for tracking each type separately)
+let matchingWalls = 0;
+let matchingCamera = 0;
+let matchingFace = 0;
+let matchingPosition = 0;
+let matchingWord = 0;
+let matchingShape = 0;
+let matchingCorner = 0;
+let matchingSound = 0;
+let matchingColor = 0;
+
+// Handler function for randomize stimuli toggle
+function randomizeEnableTrigHandler(evt, defVal) {
+  if (defVal != null) {
+    randomizeEnableTrig.checked = defVal;
+    randomizeEnabled = defVal;
+  } else {
+    randomizeEnabled = !randomizeEnabled;
+    saveSettings();
+  }
+}
 
 // Handler functions for enabling/disabling stimuli
 function wallsEnableTrigHandler(evt, defVal) {
@@ -691,6 +716,7 @@ function resetOptions() {
   cornerEnabled = defVal_cornerEnabled;
   soundEnabled = defVal_soundEnabled;
   colorEnabled = defVal_colorEnabled;
+  randomizeEnabled = defVal_randomizeEnabled; // Added randomize stimuli default
   tileAHexColor = defVal_tileAHexColor;
   tileBHexColor = defVal_tileBHexColor;
   nLevel = defVal_nLevel;
@@ -779,6 +805,7 @@ function saveSettings() {
     cornerEnabled,
     soundEnabled,
     colorEnabled,
+    randomizeEnabled, // Added randomize stimuli setting
     //
     nLevel,
     sceneDimmer,
@@ -810,6 +837,7 @@ function loadSettings() {
   cornerEnableTrigHandler(null, settings.cornerEnabled);
   soundEnableTrigHandler(null, settings.soundEnabled);
   colorEnableTrigHandler(null, settings.colorEnabled);
+  randomizeEnableTrigHandler(null, settings.randomizeEnabled || defVal_randomizeEnabled); // Added randomize stimuli setting
   //
   nLevelInputHandler(null, settings.nLevel);
   sceneDimmerInputHandler(null, settings.sceneDimmer);
@@ -846,6 +874,7 @@ function getBar(n) {
   return wrap.firstChild;
 }
 
+// Updated function to display individual stimuli accuracy
 function toggleStats(_dim) {
   if (!_dim && statsDialogContent.parentElement.hasAttribute("open")) {
     statsDialogContent.parentElement.close();
@@ -867,6 +896,19 @@ function toggleStats(_dim) {
   let wrong = 0;
   let totalAccuracy = 0;
   let pointsCount = 0;
+  
+  // Initialize stimuli totals
+  let stimuliTotals = {
+    walls: { right: 0, wrong: 0, matching: 0, present: false },
+    camera: { right: 0, wrong: 0, matching: 0, present: false },
+    face: { right: 0, wrong: 0, matching: 0, present: false },
+    position: { right: 0, wrong: 0, matching: 0, present: false },
+    word: { right: 0, wrong: 0, matching: 0, present: false },
+    shape: { right: 0, wrong: 0, matching: 0, present: false },
+    corner: { right: 0, wrong: 0, matching: 0, present: false },
+    sound: { right: 0, wrong: 0, matching: 0, present: false },
+    color: { right: 0, wrong: 0, matching: 0, present: false }
+  };
   
   const entries = Object.entries(_history);
   for (const [ date, points ] of entries) {
@@ -890,6 +932,18 @@ function toggleStats(_dim) {
       } else {
         totalAccuracy += calculateAccuracy(point.right, point.missed, point.wrong);
       }
+      
+      // Aggregate individual stimuli accuracy data if it exists
+      if (point.stimuliData) {
+        Object.entries(point.stimuliData).forEach(([key, data]) => {
+          if (data.enabled) {
+            stimuliTotals[key].present = true;
+            stimuliTotals[key].right += data.right || 0;
+            stimuliTotals[key].wrong += data.wrong || 0;
+            stimuliTotals[key].matching += data.matching || 0;
+          }
+        });
+      }
     }
     _avgNLevel = _avgNLevel / points.length;
     avgNLevel += _avgNLevel;
@@ -903,12 +957,42 @@ function toggleStats(_dim) {
   document.querySelector("#sc-missed").innerHTML = missed || "-";
   document.querySelector("#sc-wrong").innerHTML = wrong || "-";
   
-  // Update accuracy in the stats dialog if the element exists
+  // Update accuracy in the stats dialog
   const accuracyElement = document.querySelector("#sc-accuracy");
   if (accuracyElement && pointsCount > 0) {
     const avgAccuracy = totalAccuracy / pointsCount;
     accuracyElement.innerHTML = (avgAccuracy * 100).toFixed(0) + "%";
   }
+  
+  // Update individual stimuli accuracy display
+  updateStimuliAccuracyDisplay(stimuliTotals);
+  
+  // Store the last displayed dimension
+  localStorage.setItem("last-dim", dim);
+}
+
+// Function to update the stimuli accuracy display
+function updateStimuliAccuracyDisplay(totals) {
+  // Hide all items first
+  document.querySelectorAll('.stimuli-accuracy-item').forEach(item => {
+    item.classList.remove('active');
+  });
+  
+  // For each stimulus type, calculate and display accuracy if present
+  Object.entries(totals).forEach(([key, data]) => {
+    const itemElement = document.getElementById(`${key}-accuracy-item`);
+    const valueElement = document.getElementById(`${key}-accuracy`);
+    
+    if (data.present && itemElement && valueElement) {
+      // Calculate accuracy
+      const total = data.matching;
+      const accuracy = total > 0 ? (data.right / total) * 100 : 0;
+      
+      // Update display
+      valueElement.textContent = accuracy.toFixed(0) + "%";
+      itemElement.classList.add('active');
+    }
+  });
 }
 
 function toOneDecimal(n) {
@@ -992,6 +1076,17 @@ function createBlocks(symbols, n) {
 
 function resetPoints() {
   matchingStimuli = 0;
+  
+  // Reset counters for individual stimuli
+  matchingWalls = 0;
+  matchingCamera = 0;
+  matchingFace = 0;
+  matchingPosition = 0;
+  matchingWord = 0;
+  matchingShape = 0;
+  matchingCorner = 0;
+  matchingSound = 0;
+  matchingColor = 0;
   
   rightWalls = 0;
   rightCamera = 0;
@@ -1191,39 +1286,57 @@ function getGameCycle(n) {
   let walls;
   if (wallsEnabled) {
     walls = createBlocks(wallColorsList, n);
+    // Count matching walls for individual stimulus accuracy
+    matchingWalls = walls.filter(block => block && block.isMatching).length;
   }
   let cameras;
   if (cameraEnabled) {
     cameras = createBlocks(points, n);
+    // Count matching cameras for individual stimulus accuracy
+    matchingCamera = cameras.filter(block => block && block.isMatching).length;
   }
   let faces;
   if (faceEnabled) {
     faces = createBlocks(numbers, n);
+    // Count matching faces for individual stimulus accuracy
+    matchingFace = faces.filter(block => block && block.isMatching).length;
   }
   let positions;
   if (positionEnabled) {
     positions = createBlocks(moves, n);
+    // Count matching positions for individual stimulus accuracy
+    matchingPosition = positions.filter(block => block && block.isMatching).length;
   }
   
   let words;
   if (wordEnabled) {
     words = createBlocks(wordsList, n);
+    // Count matching words for individual stimulus accuracy
+    matchingWord = words.filter(block => block && block.isMatching).length;
   }
   let shapes;
   if (shapeEnabled) {
     shapes = createBlocks(shapeClasses, n);
+    // Count matching shapes for individual stimulus accuracy
+    matchingShape = shapes.filter(block => block && block.isMatching).length;
   }
   let corners;
   if (cornerEnabled) {
     corners = createBlocks(cornersList, n);
+    // Count matching corners for individual stimulus accuracy
+    matchingCorner = corners.filter(block => block && block.isMatching).length;
   }
   let sounds;
   if (soundEnabled) {
     sounds = createBlocks(letters, n);
+    // Count matching sounds for individual stimulus accuracy
+    matchingSound = sounds.filter(block => block && block.isMatching).length;
   }
   let colors;
   if (colorEnabled) {
     colors = createBlocks(colorClasses, n);
+    // Count matching colors for individual stimulus accuracy
+    matchingColor = colors.filter(block => block && block.isMatching).length;
   }
   
   console.log(
@@ -1325,6 +1438,64 @@ function getGameCycle(n) {
       const accuracy = calculateAccuracy(correctStimuli, missed, mistakes);
       console.log("Accuracy:", (accuracy * 100).toFixed(2) + "%");
       
+      // Create stimuli data object to store individual stimuli performance
+      const stimuliData = {
+        walls: {
+          enabled: wallsEnabled,
+          right: rightWalls,
+          wrong: wrongWalls,
+          matching: matchingWalls
+        },
+        camera: {
+          enabled: cameraEnabled,
+          right: rightCamera,
+          wrong: wrongCamera,
+          matching: matchingCamera
+        },
+        face: {
+          enabled: faceEnabled,
+          right: rightFace,
+          wrong: wrongFace,
+          matching: matchingFace
+        },
+        position: {
+          enabled: positionEnabled,
+          right: rightPosition,
+          wrong: wrongPosition,
+          matching: matchingPosition
+        },
+        word: {
+          enabled: wordEnabled,
+          right: rightWord,
+          wrong: wrongWord,
+          matching: matchingWord
+        },
+        shape: {
+          enabled: shapeEnabled,
+          right: rightShape,
+          wrong: wrongShape,
+          matching: matchingShape
+        },
+        corner: {
+          enabled: cornerEnabled,
+          right: rightCorner,
+          wrong: wrongCorner,
+          matching: matchingCorner
+        },
+        sound: {
+          enabled: soundEnabled,
+          right: rightSound,
+          wrong: wrongSound,
+          matching: matchingSound
+        },
+        color: {
+          enabled: colorEnabled,
+          right: rightColor,
+          wrong: wrongColor,
+          matching: matchingColor
+        }
+      };
+      
       stop(); // This resets stuff (matchingStimuli etc...)
 
       const resDim = document.querySelector("#res-dim");
@@ -1355,7 +1526,8 @@ function getGameCycle(n) {
         missed,
         wrong: mistakes,
         accuracy: accuracy,
-        outcome: 0
+        outcome: 0,
+        stimuliData: stimuliData // Add the stimuli data to history
       };
 
       if (levelUpCond) {
@@ -1454,8 +1626,10 @@ function play() {
   document.querySelectorAll("dialog").forEach(d => d.close());
   closeOptions();
   
-  // Use the selected number of stimuli from settings
-  selectRandomStimuli(numStimuliSelect);
+  // Check if randomize is enabled, if so select random stimuli
+  if (randomizeEnabled) {
+    selectRandomStimuli(numStimuliSelect);
+  }
   
   isRunning = true;
   
