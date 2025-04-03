@@ -1,7 +1,87 @@
+// Function to calculate accuracy based on correct, missed, and wrong responses
+function calculateAccuracy(correct, missed, wrong) {
+  const total = correct + missed + wrong;
+  if (total === 0) return 0;
+  return correct / total;
+}
+
+// Function to track stimulus-specific performance
+function trackStimulusPerformance() {
+  // Create an object to hold the stimulus data
+  const stimulusData = {};
+  
+  // Track each enabled stimulus
+  if (wallsEnabled) {
+    stimulusData.walls = {
+      right: rightWalls,
+      missed: 0, // We'll calculate this later
+      wrong: wrongWalls
+    };
+  }
+  
+  if (cameraEnabled) {
+    stimulusData.camera = {
+      right: rightCamera,
+      missed: 0,
+      wrong: wrongCamera
+    };
+  }
+  
+  if (faceEnabled) {
+    stimulusData.face = {
+      right: rightFace,
+      missed: 0,
+      wrong: wrongFace
+    };
+  }
+  
+  if (positionEnabled) {
+    stimulusData.position = {
+      right: rightPosition,
+      missed: 0,
+      wrong: wrongPosition
+    };
+  }
+  
+  if (wordEnabled) {
+    stimulusData.word = {
+      right: rightWord,
+      missed: 0,
+      wrong: wrongWord
+    };
+  }
+  
+  if (shapeEnabled) {
+    stimulusData.shape = {
+      right: rightShape,
+      missed: 0,
+      wrong: wrongShape
+    };
+  }
+  
+  if (cornerEnabled) {
+    stimulusData.corner = {
+      right: rightCorner,
+      missed: 0,
+      wrong: wrongCorner
+    };
+  }
+  
+  if (soundEnabled) {
+    stimulusData.sound = {
+      right: rightSound,
+      missed: 0,
+      wrong: wrongSound
+    };
+  }
+  
+  if (colorEnabled) {// Fixed main.js file for the 3D Hyper N-Back application
+
 function deepCopy(anything) {
   return JSON.parse(JSON.stringify(anything));
 }
 
+// Key bindings for different stimuli and actions
 let keyBindings = {
   "Walls": "a",
   "Camera": "s",
@@ -19,6 +99,7 @@ let keyBindings = {
 };
 const keyBindingsDefault = deepCopy(keyBindings);
 
+// History storage for different dimension counts
 let history = {
   1: {},
   2: {},
@@ -32,7 +113,224 @@ let history = {
 };
 const historyDefault = deepCopy(history);
 
-// Functions
+// LocalStorage keys
+const LS_SETTINGS_KEY = "hyper-n-back";
+const LS_HISTORY_KEY = "hyper-history";
+const LS_BINDINGS_KEY = "hyper-bindings";
+
+// DOM elements
+const sceneWrapper = document.querySelector(".scene-wrapper");
+const scene = document.querySelector(".scene");
+
+const floors = [...document.querySelectorAll(".floor")];
+const wallColors = [...document.querySelectorAll('[class^="wall"][class$="color"]')];
+const wallWords = [...document.querySelectorAll('[class^="wall"][class$="word"]')];
+
+const cube = document.querySelector(".cube");
+const faceEls = [...document.querySelectorAll(".cube > .face")];
+
+const innerCube = document.querySelector(".inner-cube");
+const innerFaceEls = [...document.querySelectorAll(".inner-cube > .face")];
+const shape = document.querySelector(".shape");
+
+const checkWallsBtn = document.querySelector(".check-walls");
+const checkCameraBtn = document.querySelector(".check-camera");
+const checkFaceBtn = document.querySelector(".check-face");
+const checkPositionBtn = document.querySelector(".check-position");
+
+const checkWordBtn = document.querySelector(".check-word");
+const checkShapeBtn = document.querySelector(".check-shape");
+const checkCornerBtn = document.querySelector(".check-corner");
+const checkSoundBtn = document.querySelector(".check-sound");
+const checkColorBtn = document.querySelector(".check-color");
+
+const nBackDisplay = document.querySelector("#n-back-display");
+const recapDialogContent = document.querySelector("#recap-dialog .dialog-content");
+const statsDialogContent = document.querySelector("#stats-dialog .dialog-content");
+const bindDialogContent = document.querySelector("#bind-dialog .dialog-content");
+
+const nLevelInput = document.querySelector("#n-level");
+const sceneDimmerInput = document.querySelector("#scene-dimmer");
+const zoomInput = document.querySelector("#zoom");
+const perspectiveInput = document.querySelector("#perspective");
+const targetStimuliInput = document.querySelector("#targetStimuli");
+const baseDelayInput = document.querySelector("#baseDelay");
+const maxAllowedMistakesInput = document.querySelector("#maxAllowedMistakes");
+const previousLevelThresholdInput = document.querySelector("#previousLevelThreshold");
+const nextLevelThresholdInput = document.querySelector("#nextLevelThreshold");
+const numStimuliSelectInput = document.querySelector("#numStimuliSelect");
+
+const [
+  wallsEnableTrig,
+  cameraEnableTrig,
+  faceEnableTrig,
+  positionEnableTrig,
+  wordEnableTrig,
+  shapeEnableTrig,
+  cornerEnableTrig,
+  soundEnableTrig,
+  colorEnableTrig
+] = [...document.querySelectorAll(".toggle-trigger")];
+
+// Game settings
+const wallColorsList = [
+  "#00b894",
+  "#0984e3",
+  "#6c5ce7",
+  "#fecb22",
+  "#d63031",
+  "#a92276"
+];
+const points = [
+  "-60&0", "-60&-45", "-60&-90",
+  "-20&0", "-20&-45", "-20&-90"
+];
+const numbers = "123456";
+const initialCubePosition = "-.5em, -3em, .5em";
+const moves = [
+  "-3.5em, 0, -2.5em", "-.5em, 0, -2.5em", "2.5em, 0, -2.5em",
+  "-3.5em, 0, .5em", "-.5em, 0, .5em", "2.5em, 0, .5em",
+  "-3.5em, 0, 3.5em", "-.5em, 0, 3.5em", "2.5em, 0, 3.5em",
+  
+  "-3.5em, -3em, -2.5em", "-.5em, -3em, -2.5em", "2.5em, -3em, -2.5em",
+  "-3.5em, -3em, .5em", "2.5em, -3em, .5em",
+  "-3.5em, -3em, 3.5em", "-.5em, -3em, 3.5em", "2.5em, -3em, 3.5em",
+  
+  "-3.5em, -6em, -2.5em", "-.5em, -6em, -2.5em", "2.5em, -6em, -2.5em",
+  "-3.5em, -6em, .5em", "-.5em, -6em, .5em", "2.5em, -6em, .5em",
+  "-3.5em, -6em, 3.5em", "-.5em, -6em, 3.5em", "2.5em, -6em, 3.5em"
+];
+
+const wordsList = [
+  "forest",
+  "desert",
+  "island",
+  "jungle",
+  "road",
+  "city",
+  "river",
+  "park",
+  "sea",
+  "fog",
+  "rain",
+  "snow"
+];
+const shapeClasses = ["triangle", "square", "circle"];
+const initialInnerCubePosition = ".5em, .5em, 0";
+const cornersList = [
+  "2px, 2px, calc(.5em - 2px)",
+  "2px, 2px, calc(-.5em + 2px)",
+  "calc(1em - 2px), 2px, calc(-.5em + 2px)",
+  "calc(1em - 2px), 2px, calc(.5em - 2px)",
+  
+  "0, calc(1em - 2px), calc(.5em - 2px)",
+  "0, calc(1em - 2px), calc(-.5em + 2px)",
+  "calc(1em - 2px), calc(1em - 2px), calc(-.5em + 2px)",
+  "calc(1em - 2px), calc(1em - 2px), calc(.5em - 2px)"
+];
+const letters = "abflqy";
+const colorClasses = [
+  "col-a", "col-b", "col-c", "col-d", "col-e", "col-f"
+];
+
+// Default settings
+const defVal_wallsEnabled = true;
+const defVal_cameraEnabled = true;
+const defVal_faceEnabled = true;
+const defVal_positionEnabled = true;
+const defVal_wordEnabled = true;
+const defVal_shapeEnabled = true;
+const defVal_cornerEnabled = true;
+const defVal_soundEnabled = true;
+const defVal_colorEnabled = true;
+const defVal_tileAHexColor = "#111";
+const defVal_tileBHexColor = "#888";
+const defVal_nLevel = 1;
+const defVal_sceneDimmer = 0.5;
+const defVal_zoom = 0.7;
+const defVal_perspective = 15;
+const defVal_targetNumOfStimuli = 5;
+const defVal_baseDelay = 5000;
+const defVal_maxAllowedMistakes = 3;
+const defVal_prevLevelThreshold = 0.5;
+const defVal_nextLevelThreshold = 0.8;
+const defVal_numStimuliSelect = 2;
+
+// Editable settings
+let wallsEnabled = defVal_wallsEnabled;
+let cameraEnabled = defVal_cameraEnabled;
+let faceEnabled = defVal_faceEnabled;
+let positionEnabled = defVal_positionEnabled;
+let wordEnabled = defVal_wordEnabled;
+let shapeEnabled = defVal_shapeEnabled;
+let cornerEnabled = defVal_cornerEnabled;
+let soundEnabled = defVal_soundEnabled;
+let colorEnabled = defVal_colorEnabled;
+let tileAHexColor = defVal_tileAHexColor;
+let tileBHexColor = defVal_tileBHexColor;
+let nLevel = defVal_nLevel;
+let sceneDimmer = defVal_sceneDimmer;
+let zoom = defVal_zoom;
+let perspective = defVal_perspective;
+let targetNumOfStimuli = defVal_targetNumOfStimuli;
+let baseDelay = defVal_baseDelay;
+let maxAllowedMistakes = defVal_maxAllowedMistakes;
+let prevLevelThreshold = defVal_prevLevelThreshold;
+let nextLevelThreshold = defVal_nextLevelThreshold;
+let numStimuliSelect = defVal_numStimuliSelect;
+
+// Game states
+let matchingStimuli = 0;
+let stimuliCount = 0;
+let intervals = [];
+
+let isRunning = false;
+
+let enableWallsCheck = true;
+let enableCameraCheck = true;
+let enableFaceCheck = true;
+let enablePositionCheck = true;
+
+let enableWordCheck = true;
+let enableShapeCheck = true;
+let enableCornerCheck = true;
+let enableSoundCheck = true;
+let enableColorCheck = true;
+
+let currWalls;
+let currCamera;
+let currFace;
+let currPosition;
+
+let currWord;
+let currShape;
+let currCorner;
+let currSound;
+let currColor;
+
+let rightWalls = 0;
+let rightCamera = 0;
+let rightFace = 0;
+let rightPosition = 0;
+
+let rightWord = 0;
+let rightShape = 0;
+let rightCorner = 0;
+let rightSound = 0;
+let rightColor = 0;
+
+let wrongWalls = 0;
+let wrongCamera = 0;
+let wrongFace = 0;
+let wrongPosition = 0;
+
+let wrongWord = 0;
+let wrongShape = 0;
+let wrongCorner = 0;
+let wrongSound = 0;
+let wrongColor = 0;
+
+// Handler functions for enabling/disabling stimuli
 function wallsEnableTrigHandler(evt, defVal) {
   if (defVal != null) {
     wallsEnableTrig.checked = defVal;
@@ -204,6 +502,7 @@ function colorEnableTrigHandler(evt, defVal) {
   checkColorBtn.style.animationDelay = "0s"
 }
 
+// Handler functions for input fields
 function nLevelInputHandler(evt, defVal) {
   if (defVal != null) {
     nLevelInput.value = defVal;
@@ -310,6 +609,22 @@ function maxAllowedMistakesInputHandler(evt, defVal) {
   }
 }
 
+function numStimuliSelectInputHandler(evt, defVal) {
+  if (defVal != null) {
+    numStimuliSelectInput.value = defVal;
+    numStimuliSelect = defVal;
+  } else {
+    numStimuliSelect = Math.min(Math.max(+numStimuliSelectInput.value, 1), 9);
+    saveSettings();
+  }
+
+  if (+numStimuliSelectInput.value < 1 || +numStimuliSelectInput.value > 9) {
+    numStimuliSelectInput.classList.add("input-incorrect");
+  } else {
+    numStimuliSelectInput.classList.remove("input-incorrect");
+  }
+}
+
 function previousLevelThresholdInputHandler(evt, defVal) {
   if (defVal != null) {
     previousLevelThresholdInput.value = defVal * 100;
@@ -330,6 +645,23 @@ function nextLevelThresholdInputHandler(evt, defVal) {
   }
 }
 
+function numStimuliSelectInputHandler(evt, defVal) {
+  if (defVal != null) {
+    numStimuliSelectInput.value = defVal;
+    numStimuliSelect = defVal;
+  } else {
+    numStimuliSelect = Math.min(Math.max(+numStimuliSelectInput.value, 1), 9);
+    saveSettings();
+  }
+
+  if (+numStimuliSelectInput.value < 1 || +numStimuliSelectInput.value > 9) {
+    numStimuliSelectInput.classList.add("input-incorrect");
+  } else {
+    numStimuliSelectInput.classList.remove("input-incorrect");
+  }
+}
+
+// Utility functions
 function setFloorBackground(floor, dimPercent, tileAHexColor, tileBHexColor) {
   if (dimPercent > 1) {
     dimPercent = 1;
@@ -401,6 +733,7 @@ function resetStats() {
     return;
   }
 
+  // Reset history to a fresh empty state
   history = {
     1: {},
     2: {},
@@ -413,8 +746,10 @@ function resetStats() {
     9: {}
   };
   
+  // Save the reset history to localStorage before reloading
   saveHistory();
   
+  // Reload the page to apply changes
   location.reload();
 }
 
@@ -444,10 +779,11 @@ function resetOptions() {
   maxAllowedMistakes = defVal_maxAllowedMistakes;
   prevLevelThreshold = defVal_prevLevelThreshold;
   nextLevelThreshold = defVal_nextLevelThreshold;
+  numStimuliSelect = defVal_numStimuliSelect;
 
   saveSettings();
   location.reload();
-};
+}
 
 function resetBindings() {
   const confirmed = confirm("Are you sure you want to reset all bindings?\nThis operation is irreversible.");
@@ -529,7 +865,8 @@ function saveSettings() {
     baseDelay,
     maxAllowedMistakes,
     prevLevelThreshold,
-    nextLevelThreshold
+    nextLevelThreshold,
+    numStimuliSelect
   };
   localStorage.setItem(LS_SETTINGS_KEY, JSON.stringify(settings));
   return settings;
@@ -560,6 +897,7 @@ function loadSettings() {
   maxAllowedMistakesInputHandler(null, settings.maxAllowedMistakes);
   previousLevelThresholdInputHandler(null, settings.prevLevelThreshold);
   nextLevelThresholdInputHandler(null, settings.nextLevelThreshold);
+  numStimuliSelectInputHandler(null, settings.numStimuliSelect);
 }
 
 function openBindings() {
@@ -604,6 +942,9 @@ function toggleStats(_dim) {
   let right = 0;
   let missed = 0;
   let wrong = 0;
+  let totalAccuracy = 0;
+  let pointsCount = 0;
+  
   const entries = Object.entries(_history);
   for (const [ date, points ] of entries) {
     let _avgNLevel = 0;
@@ -618,6 +959,14 @@ function toggleStats(_dim) {
       right += point.right;
       missed += point.missed;
       wrong += point.wrong;
+      pointsCount++;
+      
+      // If point has accuracy, use it, otherwise calculate it
+      if (point.accuracy !== undefined) {
+        totalAccuracy += point.accuracy;
+      } else {
+        totalAccuracy += calculateAccuracy(point.right, point.missed, point.wrong);
+      }
     }
     _avgNLevel = _avgNLevel / points.length;
     avgNLevel += _avgNLevel;
@@ -630,6 +979,13 @@ function toggleStats(_dim) {
   document.querySelector("#sc-right").innerHTML = right || "-";
   document.querySelector("#sc-missed").innerHTML = missed || "-";
   document.querySelector("#sc-wrong").innerHTML = wrong || "-";
+  
+  // Update accuracy in the stats dialog if the element exists
+  const accuracyElement = document.querySelector("#sc-accuracy");
+  if (accuracyElement && pointsCount > 0) {
+    const avgAccuracy = totalAccuracy / pointsCount;
+    accuracyElement.innerHTML = (avgAccuracy * 100).toFixed(0) + "%";
+  }
 }
 
 function toOneDecimal(n) {
@@ -646,7 +1002,6 @@ function random(iterable) {
 
 // Create the blocks
 function createBlocks(symbols, n) {
-  
   // I don't know how many matching stimuli will be generated in the end
   // But I'm sure they are more than stimuli
   let blocks = Array(
@@ -822,8 +1177,94 @@ function writeWord(word) {
   });
 }
 
-function getGameCycle(n) {
+// Function to randomly select a variable number of stimuli
+function selectRandomStimuli(numStimuli = 2) {
+  // Define all available stimuli types
+  const stimuliTypes = [
+    { name: "walls", handler: wallsEnableTrigHandler },
+    { name: "camera", handler: cameraEnableTrigHandler },
+    { name: "face", handler: faceEnableTrigHandler },
+    { name: "position", handler: positionEnableTrigHandler },
+    { name: "word", handler: wordEnableTrigHandler },
+    { name: "shape", handler: shapeEnableTrigHandler },
+    { name: "corner", handler: cornerEnableTrigHandler },
+    { name: "sound", handler: soundEnableTrigHandler },
+    { name: "color", handler: colorEnableTrigHandler }
+  ];
   
+  // Validate numStimuli - ensure it's between 1 and the maximum available
+  numStimuli = Math.min(Math.max(numStimuli, 1), stimuliTypes.length);
+  
+  // First, disable all stimuli
+  stimuliTypes.forEach(stimulus => {
+    stimulus.handler(null, false);
+  });
+  
+  // Handle the special case for shape and corner dependency
+  let cornerSelected = false;
+  let shapeSelected = false;
+  
+  // Randomly select numStimuli different stimuli
+  const selectedIndices = [];
+  while (selectedIndices.length < numStimuli) {
+    const randomIndex = Math.floor(Math.random() * stimuliTypes.length);
+    
+    // Skip if already selected
+    if (selectedIndices.includes(randomIndex)) {
+      continue;
+    }
+    
+    const selectedStimulus = stimuliTypes[randomIndex];
+    
+    // Special case for shape - it depends on corner being enabled
+    if (selectedStimulus.name === "shape") {
+      if (!cornerSelected) {
+        // If corner is not yet selected, we need to make sure it gets selected
+        if (selectedIndices.length >= numStimuli - 1) {
+          // If we only have one spot left, skip shape for now
+          continue;
+        }
+        shapeSelected = true;
+      }
+    }
+    
+    // Track if corner is selected
+    if (selectedStimulus.name === "corner") {
+      cornerSelected = true;
+    }
+    
+    // Add this stimulus to our selection
+    selectedIndices.push(randomIndex);
+  }
+  
+  // If we selected shape but not corner, we need to ensure corner is selected
+  if (shapeSelected && !cornerSelected) {
+    // Find corner index
+    const cornerIndex = stimuliTypes.findIndex(stimulus => stimulus.name === "corner");
+    
+    // Replace the last selected stimulus with corner
+    if (cornerIndex !== -1) {
+      const lastIndex = selectedIndices.pop();
+      selectedIndices.push(cornerIndex);
+    }
+  }
+  
+  // Enable all selected stimuli
+  selectedIndices.forEach(index => {
+    const selectedStimulus = stimuliTypes[index];
+    selectedStimulus.handler(null, true);
+    
+    // Special case for corner - enable the shape dependency
+    if (selectedStimulus.name === "corner") {
+      shapeEnableTrig.disabled = false;
+    }
+  });
+  
+  console.log("Randomly selected stimuli:", 
+    selectedIndices.map(index => stimuliTypes[index].name));
+}
+
+function getGameCycle(n) {
   let walls;
   if (wallsEnabled) {
     walls = createBlocks(wallColorsList, n);
@@ -868,7 +1309,6 @@ function getGameCycle(n) {
   
   let i = 0;
   return function() {
-    
     resetBlock();
     
     if (!isRunning) {
@@ -880,7 +1320,6 @@ function getGameCycle(n) {
     
     // End game
     if (i > length - 1) {
-      
       let correctStimuli = 0;
       if (wallsEnabled) {
         dimensions++;
@@ -959,6 +1398,10 @@ function getGameCycle(n) {
       console.log("mistakes", mistakes);
       console.log("dimensions", dimensions);
       
+      // Calculate accuracy
+      const accuracy = calculateAccuracy(correctStimuli, missed, mistakes);
+      console.log("Accuracy:", (accuracy * 100).toFixed(2) + "%");
+      
       stop(); // This resets stuff (matchingStimuli etc...)
 
       const resDim = document.querySelector("#res-dim");
@@ -972,6 +1415,12 @@ function getGameCycle(n) {
       resRight.innerHTML = correctStimuli;
       resMissed.innerHTML = missed;
       resWrong.innerHTML = mistakes;
+      
+      // Update accuracy in the recap dialog if the element exists
+      const accuracyElement = document.querySelector("#sc-res-accuracy");
+      if (accuracyElement) {
+        accuracyElement.innerHTML = (accuracy * 100).toFixed(0) + "%";
+      }
 
       const levelUpCond = (percentage >= nextLevelThreshold) && (mistakes <= maxAllowedMistakes) && nLevel < 9;
       const levelDownCond = ((percentage < prevLevelThreshold) || (mistakes > maxAllowedMistakes)) && nLevel > 1;
@@ -981,7 +1430,9 @@ function getGameCycle(n) {
         nLevel,
         right: correctStimuli,
         missed,
-        wrong: mistakes, 
+        wrong: mistakes,
+        accuracy: accuracy,
+        stimulusData: trackStimulusPerformance(),
         outcome: 0
       };
 
@@ -1070,8 +1521,7 @@ function getGameCycle(n) {
     
     // Increase block index
     i++;
-    
-  }
+  };
 }
 
 function play() {
@@ -1081,6 +1531,9 @@ function play() {
 
   document.querySelectorAll("dialog").forEach(d => d.close());
   closeOptions();
+  
+  // Use the selected number of stimuli from settings
+  selectRandomStimuli(numStimuliSelect);
   
   isRunning = true;
   
@@ -1114,7 +1567,6 @@ function checkHandler(stimulus) {
   let button;
   let enable;
   
-  // This part is garbage but hey I've used single vars xD
   switch (stimulus) {
     case "play": {
       play();
@@ -1297,223 +1749,100 @@ function checkHandler(stimulus) {
   }
 }
 
-const LS_SETTINGS_KEY = "hyper-n-back";
-const LS_HISTORY_KEY = "hyper-history";
-const LS_BINDINGS_KEY = "hyper-bindings";
-
-// DOM elements
-const sceneWrapper = document.querySelector(".scene-wrapper");
-const scene = document.querySelector(".scene");
-
-const floors = [...document.querySelectorAll(".floor")];
-const wallColors = [...document.querySelectorAll('[class^="wall"][class$="color"]')];
-const wallWords = [...document.querySelectorAll('[class^="wall"][class$="word"]')];
-
-const cube = document.querySelector(".cube");
-const faceEls = [...document.querySelectorAll(".cube > .face")];
-
-const innerCube = document.querySelector(".inner-cube");
-const innerFaceEls = [...document.querySelectorAll(".inner-cube > .face")];
-const shape = document.querySelector(".shape");
-
-const checkWallsBtn = document.querySelector(".check-walls");
-const checkCameraBtn = document.querySelector(".check-camera");
-const checkFaceBtn = document.querySelector(".check-face");
-const checkPositionBtn = document.querySelector(".check-position");
-
-const checkWordBtn = document.querySelector(".check-word");
-const checkShapeBtn = document.querySelector(".check-shape");
-const checkCornerBtn = document.querySelector(".check-corner");
-const checkSoundBtn = document.querySelector(".check-sound");
-const checkColorBtn = document.querySelector(".check-color");
-
-const nBackDisplay = document.querySelector("#n-back-display");
-const recapDialogContent = document.querySelector("#recap-dialog .dialog-content");
-const statsDialogContent = document.querySelector("#stats-dialog .dialog-content");
-const bindDialogContent = document.querySelector("#bind-dialog .dialog-content");
-
-const nLevelInput = document.querySelector("#n-level");
-const sceneDimmerInput = document.querySelector("#scene-dimmer");
-const zoomInput = document.querySelector("#zoom");
-const perspectiveInput = document.querySelector("#perspective");
-
-const targetStimuliInput = document.querySelector("#targetStimuli");
-
-const baseDelayInput = document.querySelector("#baseDelay");
-
-const maxAllowedMistakesInput = document.querySelector("#maxAllowedMistakes");
-const previousLevelThresholdInput = document.querySelector("#previousLevelThreshold");
-const nextLevelThresholdInput = document.querySelector("#nextLevelThreshold");
-
-const [
-  wallsEnableTrig,
-  cameraEnableTrig,
-  faceEnableTrig,
-  positionEnableTrig,
-  wordEnableTrig,
-  shapeEnableTrig,
-  cornerEnableTrig,
-  soundEnableTrig,
-  colorEnableTrig
-] = [...document.querySelectorAll(".toggle-trigger")];
-
-// Game settings
-const wallColorsList = [
-  "#00b894",
-  "#0984e3",
-  "#6c5ce7",
-  "#fecb22",
-  "#d63031",
-  "#a92276"
-];
-const points = [
-  "-60&0", "-60&-45", "-60&-90",
-  "-20&0", "-20&-45", "-20&-90"
-];
-const numbers = "123456";
-const initialCubePosition = "-.5em, -3em, .5em";
-const moves = [
-  "-3.5em, 0, -2.5em", "-.5em, 0, -2.5em", "2.5em, 0, -2.5em",
-  "-3.5em, 0, .5em", "-.5em, 0, .5em", "2.5em, 0, .5em",
-  "-3.5em, 0, 3.5em", "-.5em, 0, 3.5em", "2.5em, 0, 3.5em",
+// Function to track stimulus-specific performance
+function trackStimulusPerformance() {
+  // Create an object to hold the stimulus data
+  const stimulusData = {};
   
-  "-3.5em, -3em, -2.5em", "-.5em, -3em, -2.5em", "2.5em, -3em, -2.5em",
-  "-3.5em, -3em, .5em", "2.5em, -3em, .5em",
-  "-3.5em, -3em, 3.5em", "-.5em, -3em, 3.5em", "2.5em, -3em, 3.5em",
+  // Track each enabled stimulus
+  if (wallsEnabled) {
+    stimulusData.walls = {
+      right: rightWalls,
+      missed: 0, // We'll calculate this later
+      wrong: wrongWalls
+    };
+  }
   
-  "-3.5em, -6em, -2.5em", "-.5em, -6em, -2.5em", "2.5em, -6em, -2.5em",
-  "-3.5em, -6em, .5em", "-.5em, -6em, .5em", "2.5em, -6em, .5em",
-  "-3.5em, -6em, 3.5em", "-.5em, -6em, 3.5em", "2.5em, -6em, 3.5em"
-];
-
-const wordsList = [
-  "forest",
-  "desert",
-  "island",
-  "jungle",
-  "road",
-  "city",
-  "river",
-  "park",
-  "sea",
-  "fog",
-  "rain",
-  "snow"
-];
-const shapeClasses = ["triangle", "square", "circle"];
-const initialInnerCubePosition = ".5em, .5em, 0";
-const cornersList = [
-  "2px, 2px, calc(.5em - 2px)",
-  "2px, 2px, calc(-.5em + 2px)",
-  "calc(1em - 2px), 2px, calc(-.5em + 2px)",
-  "calc(1em - 2px), 2px, calc(.5em - 2px)",
+  if (cameraEnabled) {
+    stimulusData.camera = {
+      right: rightCamera,
+      missed: 0,
+      wrong: wrongCamera
+    };
+  }
   
-  "0, calc(1em - 2px), calc(.5em - 2px)",
-  "0, calc(1em - 2px), calc(-.5em + 2px)",
-  "calc(1em - 2px), calc(1em - 2px), calc(-.5em + 2px)",
-  "calc(1em - 2px), calc(1em - 2px), calc(.5em - 2px)"
-];
-const letters = "abflqy";
-const colorClasses = [
-  "col-a", "col-b", "col-c", "col-d", "col-e", "col-f"
-];
+  if (faceEnabled) {
+    stimulusData.face = {
+      right: rightFace,
+      missed: 0,
+      wrong: wrongFace
+    };
+  }
+  
+  if (positionEnabled) {
+    stimulusData.position = {
+      right: rightPosition,
+      missed: 0,
+      wrong: wrongPosition
+    };
+  }
+  
+  if (wordEnabled) {
+    stimulusData.word = {
+      right: rightWord,
+      missed: 0,
+      wrong: wrongWord
+    };
+  }
+  
+  if (shapeEnabled) {
+    stimulusData.shape = {
+      right: rightShape,
+      missed: 0,
+      wrong: wrongShape
+    };
+  }
+  
+  if (cornerEnabled) {
+    stimulusData.corner = {
+      right: rightCorner,
+      missed: 0,
+      wrong: wrongCorner
+    };
+  }
+  
+  if (soundEnabled) {
+    stimulusData.sound = {
+      right: rightSound,
+      missed: 0,
+      wrong: wrongSound
+    };
+  }
+  
+  if (colorEnabled) {
+    stimulusData.color = {
+      right: rightColor,
+      missed: 0,
+      wrong: wrongColor
+    };
+  }
+  
+  // Calculate missed opportunities for each stimulus
+  // We need to distribute the total missed count proportionally 
+  // across active stimuli
+  const activeStimuli = Object.keys(stimulusData).length;
+  if (activeStimuli > 0) {
+    const missedPerStimulus = missed / activeStimuli;
+    
+    for (const stimId in stimulusData) {
+      stimulusData[stimId].missed = missedPerStimulus;
+    }
+  }
+  
+  return stimulusData;
+}
 
-// Default settings
-const defVal_wallsEnabled = true;
-const defVal_cameraEnabled = true;
-const defVal_faceEnabled = true;
-const defVal_positionEnabled = true;
-const defVal_wordEnabled = true;
-const defVal_shapeEnabled = true;
-const defVal_cornerEnabled = true;
-const defVal_soundEnabled = true;
-const defVal_colorEnabled = true;
-const defVal_tileAHexColor = "#111";
-const defVal_tileBHexColor = "#888";
-const defVal_nLevel = 1;
-const defVal_sceneDimmer = 0.5;
-const defVal_zoom = 0.7;
-const defVal_perspective = 15;
-const defVal_targetNumOfStimuli = 5;
-const defVal_baseDelay = 5000;
-const defVal_maxAllowedMistakes = 3;
-const defVal_prevLevelThreshold = 0.5;
-const defVal_nextLevelThreshold = 0.8;
-
-// Editable settings
-let wallsEnabled = defVal_wallsEnabled;
-let cameraEnabled = defVal_cameraEnabled;
-let faceEnabled = defVal_faceEnabled;
-let positionEnabled = defVal_positionEnabled;
-let wordEnabled = defVal_wordEnabled;
-let shapeEnabled = defVal_shapeEnabled;
-let cornerEnabled = defVal_cornerEnabled;
-let soundEnabled = defVal_soundEnabled;
-let colorEnabled = defVal_colorEnabled;
-let tileAHexColor = defVal_tileAHexColor;
-let tileBHexColor = defVal_tileBHexColor;
-let nLevel = defVal_nLevel;
-let sceneDimmer = defVal_sceneDimmer;
-let zoom = defVal_zoom;
-let perspective = defVal_perspective;
-let targetNumOfStimuli = defVal_targetNumOfStimuli;
-let baseDelay = defVal_baseDelay;
-let maxAllowedMistakes = defVal_maxAllowedMistakes;
-let prevLevelThreshold = defVal_prevLevelThreshold;
-let nextLevelThreshold = defVal_nextLevelThreshold;
-
-// Game states
-let matchingStimuli = 0;
-let stimuliCount = 0;
-let intervals = [];
-
-let isRunning = false;
-
-let enableWallsCheck = true;
-let enableCameraCheck = true;
-let enableFaceCheck = true;
-let enablePositionCheck = true;
-
-let enableWordCheck = true;
-let enableShapeCheck = true;
-let enableCornerCheck = true;
-let enableSoundCheck = true;
-let enableColorCheck = true;
-
-let currWalls;
-let currCamera;
-let currFace;
-let currPosition;
-
-let currWord;
-let currShape;
-let currCorner;
-let currSound;
-let currColor;
-
-let rightWalls = 0;
-let rightCamera = 0;
-let rightFace = 0;
-let rightPosition = 0;
-
-let rightWord = 0;
-let rightShape = 0;
-let rightCorner = 0;
-let rightSound = 0;
-let rightColor = 0;
-
-let wrongWalls = 0;
-let wrongCamera = 0;
-let wrongFace = 0;
-let wrongPosition = 0;
-
-let wrongWord = 0;
-let wrongShape = 0;
-let wrongCorner = 0;
-let wrongSound = 0;
-let wrongColor = 0;
-
-// Events
+// Set up event listeners
 [ ...document.querySelectorAll("input[name='dimension'") ].forEach(el => {
   el.addEventListener("click", function(evt) {
       const dim = evt.target.value;
@@ -1550,6 +1879,10 @@ document.addEventListener("keydown", evt  => {
   }
 });
 
+// Add event listener for numStimuliSelectInput
+numStimuliSelectInput.addEventListener("change", numStimuliSelectInputHandler);
+
+// Initialize the application
 loadBindings();
 loadSettings();
 loadHistory();
