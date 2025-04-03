@@ -844,3 +844,240 @@ dialog .dialog-content {
     display: none;
   }
 }
+
+/* Link to detailed stats page */
+.detailed-stats-link {
+  position: absolute;
+  bottom: 18px;
+  right: 20px;
+  font-size: 18px;
+  color: #fff;
+  text-decoration: none;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 8px 16px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.detailed-stats-link:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 768px) {
+  .detailed-stats-link {
+    bottom: 50px;
+    right: 10px;
+    font-size: 16px;
+    padding: 6px 12px;
+  }
+}
+
+/* Styles for detailed statistics page */
+.stats-page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.stats-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #333;
+  padding-bottom: 1rem;
+}
+
+.stats-header h1 {
+  font-size: 2rem;
+  margin: 0;
+}
+
+.back-button {
+  background-color: transparent;
+  color: #fff;
+  border: 2px solid #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.back-button:hover {
+  background-color: #fff;
+  color: #000;
+}
+
+.back-button i {
+  margin-right: 0.5rem;
+}
+
+.stats-controls {
+  margin-bottom: 2rem;
+}
+
+.stats-controls h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.dimension-filter {
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.stats-overview, .detailed-stats, .progress-chart {
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.stats-overview h2, .detailed-stats h2, .progress-chart h2 {
+  font-size: 1.5rem;
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.stimulus-stats-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stimulus-card {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  transition: transform 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 150px;
+}
+
+.stimulus-card:hover {
+  transform: translateY(-5px);
+}
+
+.stimulus-card h3 {
+  font-size: 1.25rem;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding-bottom: 0.5rem;
+}
+
+.stimulus-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.stat-item {
+  margin-bottom: 0.25rem;
+}
+
+.stat-label {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.stat-value {
+  font-size: 0.9rem;
+}
+
+.accuracy-value {
+  font-size: 2.5rem;
+  font-weight: bold;
+  text-align: center;
+  margin-top: auto;
+  color: #fff;
+}
+
+.chart-container {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  margin-top: 2rem;
+}
+
+.chart-container h3 {
+  font-size: 1.5rem;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.accuracy-chart {
+  height: 300px;
+  display: flex;
+  align-items: flex-end;
+  margin-top: 1rem;
+}
+
+.accuracy-bar {
+  flex: 1;
+  background: linear-gradient(to top, #0984e3, #6c5ce7);
+  margin: 0 0.25rem;
+  position: relative;
+  min-width: 40px;
+  border-radius: 0.5rem 0.5rem 0 0;
+  max-width: 100px;
+  transition: height 0.5s ease;
+}
+
+.accuracy-bar::before {
+  content: attr(data-value);
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+.accuracy-bar::after {
+  content: attr(data-label);
+  position: absolute;
+  bottom: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .stats-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .stats-header h1 {
+    margin-bottom: 1rem;
+  }
+  
+  .stimulus-stats-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Statistics page overflow handling */
+.stats-page-container body {
+  overflow-y: auto;
+  height: 100vh;
+}
+
+.no-data {
+  text-align: center;
+  font-size: 1.25rem;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 2rem;
+}
