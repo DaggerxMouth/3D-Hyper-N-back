@@ -35,6 +35,11 @@
 					<div id="sc-res-wrong" class="stats-card-value">0</div>
 				</div>
 			</div>
+			
+			<!-- Added accuracy display -->
+			<div style="text-align: center; font-size: 1.5rem; margin-top: 1rem; margin-bottom: 1rem;">
+				Accuracy: <span id="sc-res-accuracy">0%</span>
+			</div>
 
 			<div style="text-align: center; font-size: 2.5rem;">
 				<div class="lvl-res-move">N = <span class="lvl-before">1</span> <i class="bi bi-arrow-right"> </i><span class="lvl-after" style="font-size: 4rem;">2</span></div>
@@ -103,7 +108,7 @@
 				</div>
 			</div>
 
-			<div class="stats-cards" style="margin: 0 0 2rem 0;">
+			<div class="stats-cards" style="margin: 0 0 1rem 0;">
 				<div class="stats-card">
 					<div class="stats-card-title">Right</div>
 					<div id="sc-right" class="stats-card-value">-</div>
@@ -116,6 +121,11 @@
 					<div class="stats-card-title">Wrong</div>
 					<div id="sc-wrong" class="stats-card-value">-</div>
 				</div>
+			</div>
+			
+			<!-- Added accuracy display to stats dialog -->
+			<div style="text-align: center; font-size: 1.25rem; margin-top: 0.5rem; margin-bottom: 1rem;">
+				Accuracy: <span id="sc-accuracy">-%</span>
 			</div>
 
 			<div class="bar-chart-wrap">
@@ -213,6 +223,10 @@
 				<input id="n-level" type="text" oninput="nLevelInputHandler()">
 			</div>
 			<div class="setting">
+				<label>Number of Stimuli</label>
+				<input id="numStimuliSelect" type="text" oninput="numStimuliSelectInputHandler()">
+			</div>
+			<div class="setting">
 				<label>Scene Dimmer</label>
 				<input id="scene-dimmer" type="text" oninput="sceneDimmerInputHandler()">
 			</div>
@@ -223,10 +237,6 @@
 			<div class="setting">
 				<label>Perspective</label>
 				<input id="perspective" type="text" oninput="perspectiveInputHandler()">
-			</div>
-			<div class="setting">
-    				<label>Number of Stimuli</label>
-    				<input id="numStimuliSelect" type="text" oninput="numStimuliSelectInputHandler()">
 			</div>
 			<div class="setting">
 				<label>Target Number of Stimuli</label>
