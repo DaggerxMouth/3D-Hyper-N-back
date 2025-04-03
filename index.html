@@ -9,6 +9,8 @@
 	<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
 	<link rel="stylesheet" href="styles.css">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+	<!-- Add Chart.js library -->
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -151,42 +153,93 @@
 			<!-- Moved stimuli accuracy section to the bottom -->
 			<div class="stimuli-accuracy-section">
 				<h3>Stimuli Accuracy</h3>
+				
+				<!-- Adding chart for stimuli accuracy over time -->
+				<div class="stimuli-chart-container">
+					<canvas id="stimuli-chart"></canvas>
+				</div>
+				
 				<div class="stimuli-accuracy-grid">
 					<div class="stimuli-accuracy-item" id="walls-accuracy-item">
 						<div class="stimuli-accuracy-title">Walls</div>
 						<div class="stimuli-accuracy-value" id="walls-accuracy">-%</div>
+						<div class="stimuli-accuracy-details">
+							<span>Right: <span id="walls-right-count">0</span></span>
+							<span>Missed: <span id="walls-missed-count">0</span></span>
+							<span>Wrong: <span id="walls-wrong-count">0</span></span>
+						</div>
 					</div>
 					<div class="stimuli-accuracy-item" id="camera-accuracy-item">
 						<div class="stimuli-accuracy-title">Camera</div>
 						<div class="stimuli-accuracy-value" id="camera-accuracy">-%</div>
+						<div class="stimuli-accuracy-details">
+							<span>Right: <span id="camera-right-count">0</span></span>
+							<span>Missed: <span id="camera-missed-count">0</span></span>
+							<span>Wrong: <span id="camera-wrong-count">0</span></span>
+						</div>
 					</div>
 					<div class="stimuli-accuracy-item" id="face-accuracy-item">
 						<div class="stimuli-accuracy-title">Face</div>
 						<div class="stimuli-accuracy-value" id="face-accuracy">-%</div>
+						<div class="stimuli-accuracy-details">
+							<span>Right: <span id="face-right-count">0</span></span>
+							<span>Missed: <span id="face-missed-count">0</span></span>
+							<span>Wrong: <span id="face-wrong-count">0</span></span>
+						</div>
 					</div>
 					<div class="stimuli-accuracy-item" id="position-accuracy-item">
 						<div class="stimuli-accuracy-title">Position</div>
 						<div class="stimuli-accuracy-value" id="position-accuracy">-%</div>
+						<div class="stimuli-accuracy-details">
+							<span>Right: <span id="position-right-count">0</span></span>
+							<span>Missed: <span id="position-missed-count">0</span></span>
+							<span>Wrong: <span id="position-wrong-count">0</span></span>
+						</div>
 					</div>
 					<div class="stimuli-accuracy-item" id="word-accuracy-item">
 						<div class="stimuli-accuracy-title">Word</div>
 						<div class="stimuli-accuracy-value" id="word-accuracy">-%</div>
+						<div class="stimuli-accuracy-details">
+							<span>Right: <span id="word-right-count">0</span></span>
+							<span>Missed: <span id="word-missed-count">0</span></span>
+							<span>Wrong: <span id="word-wrong-count">0</span></span>
+						</div>
 					</div>
 					<div class="stimuli-accuracy-item" id="shape-accuracy-item">
 						<div class="stimuli-accuracy-title">Shape</div>
 						<div class="stimuli-accuracy-value" id="shape-accuracy">-%</div>
+						<div class="stimuli-accuracy-details">
+							<span>Right: <span id="shape-right-count">0</span></span>
+							<span>Missed: <span id="shape-missed-count">0</span></span>
+							<span>Wrong: <span id="shape-wrong-count">0</span></span>
+						</div>
 					</div>
 					<div class="stimuli-accuracy-item" id="corner-accuracy-item">
 						<div class="stimuli-accuracy-title">Corner</div>
 						<div class="stimuli-accuracy-value" id="corner-accuracy">-%</div>
+						<div class="stimuli-accuracy-details">
+							<span>Right: <span id="corner-right-count">0</span></span>
+							<span>Missed: <span id="corner-missed-count">0</span></span>
+							<span>Wrong: <span id="corner-wrong-count">0</span></span>
+						</div>
 					</div>
 					<div class="stimuli-accuracy-item" id="sound-accuracy-item">
 						<div class="stimuli-accuracy-title">Sound</div>
 						<div class="stimuli-accuracy-value" id="sound-accuracy">-%</div>
+						<div class="stimuli-accuracy-details">
+							<span>Right: <span id="sound-right-count">0</span></span>
+							<span>Missed: <span id="sound-missed-count">0</span></span>
+							<span>Wrong: <span id="sound-wrong-count">0</span></span>
+						</div>
 					</div>
 					<div class="stimuli-accuracy-item" id="color-accuracy-item">
 						<div class="stimuli-accuracy-title">Color</div>
 						<div class="stimuli-accuracy-value" id="color-accuracy">-%</div>
+						<div class="stimuli-accuracy-details">
+							<span>Right: <span id="color-right-count">0</span></span>
+							<span>Missed: <span id="color-missed-count">0</span></span>
+							<span>Wrong: <span id="color-wrong-count">0</span></span>
+						</div>
 					</div>
 				</div>
 			</div>
