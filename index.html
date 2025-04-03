@@ -127,6 +127,49 @@
 			<div style="text-align: center; font-size: 1.25rem; margin-top: 0.5rem; margin-bottom: 1rem;">
 				Accuracy: <span id="sc-accuracy">-%</span>
 			</div>
+			
+			<!-- Added individual stimuli accuracy section -->
+			<div class="stimuli-accuracy-section">
+				<h3>Stimuli Accuracy</h3>
+				<div class="stimuli-accuracy-grid">
+					<div class="stimuli-accuracy-item" id="walls-accuracy-item">
+						<div class="stimuli-accuracy-title">Walls</div>
+						<div class="stimuli-accuracy-value" id="walls-accuracy">-%</div>
+					</div>
+					<div class="stimuli-accuracy-item" id="camera-accuracy-item">
+						<div class="stimuli-accuracy-title">Camera</div>
+						<div class="stimuli-accuracy-value" id="camera-accuracy">-%</div>
+					</div>
+					<div class="stimuli-accuracy-item" id="face-accuracy-item">
+						<div class="stimuli-accuracy-title">Face</div>
+						<div class="stimuli-accuracy-value" id="face-accuracy">-%</div>
+					</div>
+					<div class="stimuli-accuracy-item" id="position-accuracy-item">
+						<div class="stimuli-accuracy-title">Position</div>
+						<div class="stimuli-accuracy-value" id="position-accuracy">-%</div>
+					</div>
+					<div class="stimuli-accuracy-item" id="word-accuracy-item">
+						<div class="stimuli-accuracy-title">Word</div>
+						<div class="stimuli-accuracy-value" id="word-accuracy">-%</div>
+					</div>
+					<div class="stimuli-accuracy-item" id="shape-accuracy-item">
+						<div class="stimuli-accuracy-title">Shape</div>
+						<div class="stimuli-accuracy-value" id="shape-accuracy">-%</div>
+					</div>
+					<div class="stimuli-accuracy-item" id="corner-accuracy-item">
+						<div class="stimuli-accuracy-title">Corner</div>
+						<div class="stimuli-accuracy-value" id="corner-accuracy">-%</div>
+					</div>
+					<div class="stimuli-accuracy-item" id="sound-accuracy-item">
+						<div class="stimuli-accuracy-title">Sound</div>
+						<div class="stimuli-accuracy-value" id="sound-accuracy">-%</div>
+					</div>
+					<div class="stimuli-accuracy-item" id="color-accuracy-item">
+						<div class="stimuli-accuracy-title">Color</div>
+						<div class="stimuli-accuracy-value" id="color-accuracy">-%</div>
+					</div>
+				</div>
+			</div>
 
 			<div class="bar-chart-wrap">
 				<div class="bar-chart">
@@ -211,6 +254,17 @@
 					<label class="toggle-btn" for="enable-sound">Sound</label>
 					<input class="toggle-trigger" hidden id="enable-color" type="checkbox" oninput="colorEnableTrigHandler()">
 					<label class="toggle-btn" for="enable-color">Color</label>
+				</div>
+			</div>
+
+			<!-- Added randomize stimuli toggle switch -->
+			<div class="setting">
+				<label>Randomize Stimuli</label>
+				<div class="toggle-switch-container">
+					<input class="toggle-trigger" hidden id="enable-randomize" type="checkbox" oninput="randomizeEnableTrigHandler()">
+					<label class="toggle-switch" for="enable-randomize">
+						<span class="toggle-slider"></span>
+					</label>
 				</div>
 			</div>
 
