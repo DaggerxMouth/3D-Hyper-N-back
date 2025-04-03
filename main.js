@@ -791,7 +791,171 @@ function loadHistory() {
   const _history = JSON.parse(localStorage.getItem(LS_HISTORY_KEY));
   if (_history) {
     history = _history;
+  } else {
+    // Add some demo data for display purposes if no history exists
+    addDemoHistoryData();
   }
+}
+
+// Function to add demo data for visualization purposes
+function addDemoHistoryData() {
+  const today = new Date().toLocaleDateString("sv");
+  const yesterday = new Date(Date.now() - 86400000).toLocaleDateString("sv");
+  
+  // Add demo data for 3D
+  history[3][yesterday] = [{
+    nLevel: 3,
+    right: 18,
+    missed: 5,
+    wrong: 3,
+    accuracy: 0.69,
+    outcome: 0,
+    stimuliData: {
+      walls: {
+        enabled: true,
+        right: 6,
+        wrong: 1,
+        matching: 8
+      },
+      camera: {
+        enabled: true,
+        right: 7,
+        wrong: 1,
+        matching: 9
+      },
+      face: {
+        enabled: true,
+        right: 5,
+        wrong: 1,
+        matching: 9
+      },
+      position: {
+        enabled: false
+      },
+      word: {
+        enabled: false
+      },
+      shape: {
+        enabled: false
+      },
+      corner: {
+        enabled: false
+      },
+      sound: {
+        enabled: false
+      },
+      color: {
+        enabled: false
+      }
+    }
+  }];
+  
+  // Add demo data for 4D
+  history[4][today] = [{
+    nLevel: 2,
+    right: 24,
+    missed: 6,
+    wrong: 2,
+    accuracy: 0.75,
+    outcome: 1,
+    stimuliData: {
+      walls: {
+        enabled: true,
+        right: 7,
+        wrong: 0,
+        matching: 8
+      },
+      camera: {
+        enabled: true,
+        right: 6,
+        wrong: 1,
+        matching: 8
+      },
+      face: {
+        enabled: true,
+        right: 5,
+        wrong: 1,
+        matching: 8
+      },
+      position: {
+        enabled: true,
+        right: 6,
+        wrong: 0,
+        matching: 8
+      },
+      word: {
+        enabled: false
+      },
+      shape: {
+        enabled: false
+      },
+      corner: {
+        enabled: false
+      },
+      sound: {
+        enabled: false
+      },
+      color: {
+        enabled: false
+      }
+    }
+  }];
+  
+  // Add demo data for 5D
+  history[5][today] = [{
+    nLevel: 2,
+    right: 25,
+    missed: 10,
+    wrong: 5,
+    accuracy: 0.625,
+    outcome: 0,
+    stimuliData: {
+      walls: {
+        enabled: true,
+        right: 5,
+        wrong: 1,
+        matching: 8
+      },
+      camera: {
+        enabled: true,
+        right: 6,
+        wrong: 1,
+        matching: 8
+      },
+      face: {
+        enabled: true,
+        right: 4,
+        wrong: 1,
+        matching: 8
+      },
+      position: {
+        enabled: true,
+        right: 5,
+        wrong: 1,
+        matching: 8
+      },
+      word: {
+        enabled: true,
+        right: 5,
+        wrong: 1,
+        matching: 8
+      },
+      shape: {
+        enabled: false
+      },
+      corner: {
+        enabled: false
+      },
+      sound: {
+        enabled: false
+      },
+      color: {
+        enabled: false
+      }
+    }
+  }];
+  
+  saveHistory(); // Save the demo data
 }
 
 function saveSettings() {
