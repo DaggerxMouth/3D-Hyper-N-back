@@ -1,81 +1,4 @@
-// Function to calculate accuracy based on correct, missed, and wrong responses
-function calculateAccuracy(correct, missed, wrong) {
-  const total = correct + missed + wrong;
-  if (total === 0) return 0;
-  return correct / total;
-}
-
-// Function to track stimulus-specific performance
-function trackStimulusPerformance() {
-  // Create an object to hold the stimulus data
-  const stimulusData = {};
-  
-  // Track each enabled stimulus
-  if (wallsEnabled) {
-    stimulusData.walls = {
-      right: rightWalls,
-      missed: 0, // We'll calculate this later
-      wrong: wrongWalls
-    };
-  }
-  
-  if (cameraEnabled) {
-    stimulusData.camera = {
-      right: rightCamera,
-      missed: 0,
-      wrong: wrongCamera
-    };
-  }
-  
-  if (faceEnabled) {
-    stimulusData.face = {
-      right: rightFace,
-      missed: 0,
-      wrong: wrongFace
-    };
-  }
-  
-  if (positionEnabled) {
-    stimulusData.position = {
-      right: rightPosition,
-      missed: 0,
-      wrong: wrongPosition
-    };
-  }
-  
-  if (wordEnabled) {
-    stimulusData.word = {
-      right: rightWord,
-      missed: 0,
-      wrong: wrongWord
-    };
-  }
-  
-  if (shapeEnabled) {
-    stimulusData.shape = {
-      right: rightShape,
-      missed: 0,
-      wrong: wrongShape
-    };
-  }
-  
-  if (cornerEnabled) {
-    stimulusData.corner = {
-      right: rightCorner,
-      missed: 0,
-      wrong: wrongCorner
-    };
-  }
-  
-  if (soundEnabled) {
-    stimulusData.sound = {
-      right: rightSound,
-      missed: 0,
-      wrong: wrongSound
-    };
-  }
-  
-  if (colorEnabled) {// Fixed main.js file for the 3D Hyper N-Back application
+// Fixed main.js file for the 3D Hyper N-Back application
 
 function deepCopy(anything) {
   return JSON.parse(JSON.stringify(anything));
@@ -1432,7 +1355,6 @@ function getGameCycle(n) {
         missed,
         wrong: mistakes,
         accuracy: accuracy,
-        stimulusData: trackStimulusPerformance(),
         outcome: 0
       };
 
@@ -1749,97 +1671,11 @@ function checkHandler(stimulus) {
   }
 }
 
-// Function to track stimulus-specific performance
-function trackStimulusPerformance() {
-  // Create an object to hold the stimulus data
-  const stimulusData = {};
-  
-  // Track each enabled stimulus
-  if (wallsEnabled) {
-    stimulusData.walls = {
-      right: rightWalls,
-      missed: 0, // We'll calculate this later
-      wrong: wrongWalls
-    };
-  }
-  
-  if (cameraEnabled) {
-    stimulusData.camera = {
-      right: rightCamera,
-      missed: 0,
-      wrong: wrongCamera
-    };
-  }
-  
-  if (faceEnabled) {
-    stimulusData.face = {
-      right: rightFace,
-      missed: 0,
-      wrong: wrongFace
-    };
-  }
-  
-  if (positionEnabled) {
-    stimulusData.position = {
-      right: rightPosition,
-      missed: 0,
-      wrong: wrongPosition
-    };
-  }
-  
-  if (wordEnabled) {
-    stimulusData.word = {
-      right: rightWord,
-      missed: 0,
-      wrong: wrongWord
-    };
-  }
-  
-  if (shapeEnabled) {
-    stimulusData.shape = {
-      right: rightShape,
-      missed: 0,
-      wrong: wrongShape
-    };
-  }
-  
-  if (cornerEnabled) {
-    stimulusData.corner = {
-      right: rightCorner,
-      missed: 0,
-      wrong: wrongCorner
-    };
-  }
-  
-  if (soundEnabled) {
-    stimulusData.sound = {
-      right: rightSound,
-      missed: 0,
-      wrong: wrongSound
-    };
-  }
-  
-  if (colorEnabled) {
-    stimulusData.color = {
-      right: rightColor,
-      missed: 0,
-      wrong: wrongColor
-    };
-  }
-  
-  // Calculate missed opportunities for each stimulus
-  // We need to distribute the total missed count proportionally 
-  // across active stimuli
-  const activeStimuli = Object.keys(stimulusData).length;
-  if (activeStimuli > 0) {
-    const missedPerStimulus = missed / activeStimuli;
-    
-    for (const stimId in stimulusData) {
-      stimulusData[stimId].missed = missedPerStimulus;
-    }
-  }
-  
-  return stimulusData;
+// Function to calculate accuracy based on correct, missed, and wrong responses
+function calculateAccuracy(correct, missed, wrong) {
+  const total = correct + missed + wrong;
+  if (total === 0) return 0;
+  return correct / total;
 }
 
 // Set up event listeners
