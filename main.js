@@ -1149,8 +1149,8 @@ function updateStimuliAccuracyDisplay(totals) {
     
     if (data.present && itemElement && valueElement) {
       // Calculate accuracy
-      const total = data.matching;
-      const accuracy = total > 0 ? (data.right / total) * 100 : 0;
+      const accuracy = data.matching > 0 ? 
+        calculateAccuracy(data.right, data.matching - data.right, data.wrong) * 100 : 0;
       
       // Update display
       valueElement.textContent = accuracy.toFixed(0) + "%";
@@ -1558,7 +1558,7 @@ function getGameCycle(n) {
         dimensions++;
         correctStimuli += rightColor;
       }
-      let percentage = correctStimuli / matchingStimuli;
+      let percentage = calculateAccuracy(correctStimuli, missed, mistakes);
       
       let mistakes = 0;
       if (wallsEnabled) {
