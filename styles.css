@@ -925,3 +925,374 @@ dialog .dialog-content {
     display: none;
   }
 }
+/* Enhanced Statistics Styles */
+
+#enhanced-stats-dialog {
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s;
+  z-index: 99999;
+  background-color: #0008;
+  color: #fff;
+  font-size: 1rem;
+  backdrop-filter: blur(8px);
+  width: 100svw;
+  height: 100svh;
+  border: none;
+  padding: 0.5em;
+}
+
+#enhanced-stats-dialog[open] {
+  opacity: 1;
+  pointer-events: inherit;
+}
+
+#enhanced-stats-dialog .close-button {
+  cursor: pointer;
+  padding: 1rem;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 1.5rem;
+}
+
+#enhanced-stats-dialog .dialog-content {
+  max-width: 800px;
+  max-height: 95vh;
+  margin: 0 auto;
+  overflow-y: auto;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  background-color: #000;
+}
+
+#enhanced-stats-dialog .dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+#enhanced-stats-dialog .dialog-header h2 {
+  margin: 0;
+  font-weight: normal;
+  font-size: 1.75rem;
+}
+
+/* Configuration Selector */
+.config-selector {
+  margin-bottom: 1.5rem;
+}
+
+.config-selector-title {
+  margin-bottom: 0.5rem;
+  text-align: center;
+  font-size: 1.1rem;
+}
+
+.config-selector-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.config-button {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: none;
+  background: #333;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-family: 'Nova Square', sans-serif;
+  font-weight: normal;
+}
+
+.config-button.active {
+  background: #fff;
+  color: #000;
+}
+
+.config-add-button {
+  padding: 0.5rem 0.75rem;
+}
+
+/* Performance Summary */
+.performance-summary {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background-color: #222;
+}
+
+.performance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.performance-header h3 {
+  margin: 0;
+  font-weight: normal;
+  font-size: 1.1rem;
+}
+
+.performance-config-badge {
+  background-color: #333;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.performance-metrics {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 0.75rem;
+}
+
+.performance-metric {
+  text-align: center;
+}
+
+.metric-value {
+  font-size: 2rem;
+}
+
+.metric-value-correct {
+  color: #a3be8c;
+}
+
+.metric-value-missed {
+  color: #ebcb8b;
+}
+
+.metric-value-wrong {
+  color: #bf616a;
+}
+
+.metric-label {
+  font-size: 0.9rem;
+}
+
+.metric-subvalue {
+  font-size: 0.8rem;
+  color: #aaa;
+}
+
+.performance-details {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.performance-details span {
+  color: #aaa;
+}
+
+/* Chart Type Selector */
+.chart-type-selector {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.chart-type-button {
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.5rem;
+  border: none;
+  background: #333;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-family: 'Nova Square', sans-serif;
+}
+
+.chart-type-button.active {
+  background: #fff;
+  color: #000;
+}
+
+/* Time Range Selector */
+.time-selector {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0;
+}
+
+.time-button {
+  padding: 0.4rem 0.8rem;
+  margin: 0 0.5rem;
+  border-radius: 0.5rem;
+  border: none;
+  background: #333;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-family: 'Nova Square', sans-serif;
+  font-weight: normal;
+}
+
+.time-button.active {
+  background: #fff;
+  color: #000;
+}
+
+/* Chart Container */
+.chart-container {
+  width: 100%;
+  height: 240px;
+  margin-bottom: 1.5rem;
+}
+
+/* Stimuli Toggle Buttons */
+.stimuli-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.stimuli-toggle-button {
+  padding: 0.25rem 0.75rem;
+  margin: 0.25rem;
+  border-radius: 0.5rem;
+  border: 2px solid #555;
+  background: #333;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-family: 'Nova Square', sans-serif;
+  font-weight: bold;
+}
+
+.stimuli-toggle-button.active {
+  border-width: 2px;
+}
+
+.stimuli-toggle-all-button {
+  padding: 0.25rem 0.75rem;
+  margin: 0.25rem;
+  border-radius: 0.5rem;
+  border: 2px solid #fff;
+  background: #333;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-family: 'Nova Square', sans-serif;
+  font-weight: bold;
+}
+
+/* Improvement Stats */
+.improvement-stats {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.improvement-stat {
+  text-align: center;
+  padding: 0.5rem 1rem;
+  background: #222;
+  border-radius: 0.5rem;
+}
+
+.improvement-stat div:first-child {
+  font-size: 0.9rem;
+  font-weight: normal;
+}
+
+.improvement-stat div:last-child {
+  font-size: 1.25rem;
+  color: #fff;
+}
+
+/* Best Sessions */
+.best-sessions {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.best-sessions h3 {
+  margin: 0.5rem 0;
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: normal;
+}
+
+.best-sessions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.best-session-item {
+  display: flex;
+  padding: 0.75rem;
+  background-color: #222;
+  border-radius: 0.5rem;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.best-session-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.best-session-accuracy {
+  background-color: #a3be8c;
+  color: #000;
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.best-session-name {
+  font-size: 0.9rem;
+}
+
+.best-session-date {
+  font-size: 0.8rem;
+  color: #aaa;
+}
+
+.best-session-details {
+  font-size: 0.8rem;
+  color: #aaa;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  #enhanced-stats-dialog .dialog-content {
+    padding: 1rem;
+  }
+  
+  .performance-details {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .best-session-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .chart-type-selector,
+  .time-selector {
+    flex-wrap: wrap;
+  }
+}
