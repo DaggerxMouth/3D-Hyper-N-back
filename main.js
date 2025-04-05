@@ -694,6 +694,13 @@ function resetStats() {
     9: {}
   };
   
+  // Reset enhanced stats profiles
+  localStorage.removeItem("hyper-n-back-profiles");
+  localStorage.removeItem("enhanced-stats-active-config");
+  localStorage.removeItem("enhanced-stats-time-range");
+  localStorage.removeItem("enhanced-stats-chart-mode");
+  localStorage.removeItem("enhanced-stats-selected-stimuli");
+  
   // Save the reset history to localStorage before reloading
   saveHistory();
   
@@ -1038,101 +1045,16 @@ function getBar(n) {
   return wrap.firstChild;
 }
 
-// Updated function to display individual stimuli accuracy
-function toggleStats(_dim) {
-  if (!_dim && statsDialogContent.parentElement.hasAttribute("open")) {
-    statsDialogContent.parentElement.close();
+function toggleStats() {
+  // Get any existing dialog or create it if it doesn't exist
+  let enhancedStatsDialog = document.getElementById("enhanced-stats-dialog");
+  if (enhancedStatsDialog && enhancedStatsDialog.hasAttribute("open")) {
+    enhancedStatsDialog.close();
     return;
   }
-
-  statsDialogContent.parentElement.show();
-  const dim = _dim || localStorage.getItem("last-dim") || 1;
-  const radios = [ ...document.querySelectorAll("input[name='dimension']") ];
-  radios[dim - 1].checked = true;
-  const _history = history[dim];
-  const bars = document.querySelector(".bar-chart-bars");
-  bars.innerHTML = "";
-  let avgNLevel = 0;
-  let minNLevel = 10;
-  let maxNLevel = 0;
-  let right = 0;
-  let missed = 0;
-  let wrong = 0;
-  let totalAccuracy = 0;
-  let pointsCount = 0;
   
-  // Initialize stimuli totals
-  let stimuliTotals = {
-    walls: { right: 0, wrong: 0, matching: 0, present: false },
-    camera: { right: 0, wrong: 0, matching: 0, present: false },
-    face: { right: 0, wrong: 0, matching: 0, present: false },
-    position: { right: 0, wrong: 0, matching: 0, present: false },
-    word: { right: 0, wrong: 0, matching: 0, present: false },
-    shape: { right: 0, wrong: 0, matching: 0, present: false },
-    corner: { right: 0, wrong: 0, matching: 0, present: false },
-    sound: { right: 0, wrong: 0, matching: 0, present: false },
-    color: { right: 0, wrong: 0, matching: 0, present: false }
-  };
-  
-  const entries = Object.entries(_history);
-  for (const [ date, points ] of entries) {
-    let _avgNLevel = 0;
-    let _minNLevel = 10;
-    let _maxNLevel = 0;
-    for (const point of points) {
-      _avgNLevel += point.nLevel;
-      _minNLevel = Math.min(_minNLevel, point.nLevel);
-      _maxNLevel = Math.max(_maxNLevel, point.nLevel);
-      minNLevel = Math.min(minNLevel, _minNLevel);
-      maxNLevel = Math.max(maxNLevel, _maxNLevel);
-      right += point.right;
-      missed += point.missed;
-      wrong += point.wrong;
-      pointsCount++;
-      
-      // If point has accuracy, use it, otherwise calculate it
-      if (point.accuracy !== undefined) {
-        totalAccuracy += point.accuracy;
-      } else {
-        totalAccuracy += calculateAccuracy(point.right, point.missed, point.wrong);
-      }
-      
-      // Aggregate individual stimuli accuracy data if it exists
-      if (point.stimuliData) {
-        Object.entries(point.stimuliData).forEach(([key, data]) => {
-          if (data.enabled) {
-            stimuliTotals[key].present = true;
-            stimuliTotals[key].right += data.right || 0;
-            stimuliTotals[key].wrong += data.wrong || 0;
-            stimuliTotals[key].matching += data.matching || 0;
-          }
-        });
-      }
-    }
-    _avgNLevel = _avgNLevel / points.length;
-    avgNLevel += _avgNLevel;
-    bars.appendChild(getBar(toOneDecimal(_avgNLevel)));
-  }
-  avgNLevel = avgNLevel / entries.length;
-  document.querySelector("#sc-avg").innerHTML = toOneDecimal(avgNLevel) || "-";
-  document.querySelector("#sc-min").innerHTML = (minNLevel === 10) ? "-" : minNLevel;
-  document.querySelector("#sc-max").innerHTML = maxNLevel || "-";
-  document.querySelector("#sc-right").innerHTML = right || "-";
-  document.querySelector("#sc-missed").innerHTML = missed || "-";
-  document.querySelector("#sc-wrong").innerHTML = wrong || "-";
-  
-  // Update accuracy in the stats dialog
-  const accuracyElement = document.querySelector("#sc-accuracy");
-  if (accuracyElement && pointsCount > 0) {
-    const avgAccuracy = totalAccuracy / pointsCount;
-    accuracyElement.innerHTML = (avgAccuracy * 100).toFixed(0) + "%";
-  }
-  
-  // Update individual stimuli accuracy display
-  updateStimuliAccuracyDisplay(stimuliTotals);
-  
-  // Store the last displayed dimension
-  localStorage.setItem("last-dim", dim);
+  // Render enhanced stats
+  renderEnhancedStats();
 }
 
 // Function to update the stimuli accuracy display
@@ -1712,13 +1634,21 @@ function getGameCycle(n) {
       }
       recapDialogContent.parentElement.show();
       
-      const datestamp = new Date().toLocaleDateString("sv");
-      history[dimensions][datestamp] = history[dimensions][datestamp] || [];
-      history[dimensions][datestamp].push(historyPoint);
-      console.log("history", history);
-      
-      saveSettings();
-      saveHistory();
+     // Add to the history object
+const datestamp = new Date().toLocaleDateString("sv");
+history[dimensions][datestamp] = history[dimensions][datestamp] || [];
+
+// Store active configuration (if any)
+const activeConfig = localStorage.getItem("enhanced-stats-active-config");
+if (activeConfig) {
+  historyPoint.configId = activeConfig;
+}
+
+history[dimensions][datestamp].push(historyPoint);
+console.log("history", history);
+
+saveSettings();
+saveHistory();
       return;
     }
     
@@ -2056,6 +1986,714 @@ document.addEventListener("keydown", evt  => {
 // Add event listener for numStimuliSelectInput
 numStimuliSelectInput.addEventListener("change", numStimuliSelectInputHandler);
 
+// Configuration profiles storage
+function saveConfigProfile(profileName, settings) {
+  const profiles = JSON.parse(localStorage.getItem("hyper-n-back-profiles") || "{}");
+  profiles[profileName] = {
+    settings: settings,
+    created: new Date().toISOString(),
+  };
+  localStorage.setItem("hyper-n-back-profiles", JSON.stringify(profiles));
+}
+
+function loadConfigProfile(profileName) {
+  const profiles = JSON.parse(localStorage.getItem("hyper-n-back-profiles") || "{}");
+  return profiles[profileName] || null;
+}
+
+function getAllConfigProfiles() {
+  return JSON.parse(localStorage.getItem("hyper-n-back-profiles") || "{}");
+}
+
+function deleteConfigProfile(profileName) {
+  const profiles = JSON.parse(localStorage.getItem("hyper-n-back-profiles") || "{}");
+  if (profiles[profileName]) {
+    delete profiles[profileName];
+    localStorage.setItem("hyper-n-back-profiles", JSON.stringify(profiles));
+    return true;
+  }
+  return false;
+}
+
+// Function to create and populate the enhanced stats dialog
+function createEnhancedStatsDialog() {
+  // Create the enhanced stats dialog if it doesn't exist
+  let enhancedStatsDialog = document.getElementById("enhanced-stats-dialog");
+  
+  if (!enhancedStatsDialog) {
+    enhancedStatsDialog = document.createElement("dialog");
+    enhancedStatsDialog.id = "enhanced-stats-dialog";
+    document.body.appendChild(enhancedStatsDialog);
+    
+    // Add closing functionality
+    const closeButton = document.createElement("label");
+    closeButton.className = "close-button";
+    closeButton.innerHTML = '<i class="bi bi-x-lg"></i>';
+    closeButton.onclick = () => enhancedStatsDialog.close();
+    enhancedStatsDialog.appendChild(closeButton);
+    
+    // Create content container
+    const dialogContent = document.createElement("div");
+    dialogContent.className = "dialog-content enhanced-stats-content";
+    enhancedStatsDialog.appendChild(dialogContent);
+  }
+  
+  return enhancedStatsDialog;
+}
+
+// Function to render the enhanced stats view
+function renderEnhancedStats() {
+  const dialog = createEnhancedStatsDialog();
+  const contentContainer = dialog.querySelector(".enhanced-stats-content");
+  
+  // State variables (would typically be managed by React)
+  const state = {
+    activeConfig: localStorage.getItem("enhanced-stats-active-config") || "All",
+    timeRange: localStorage.getItem("enhanced-stats-time-range") || "week",
+    chartMode: localStorage.getItem("enhanced-stats-chart-mode") || "accuracy",
+    selectedStimuli: JSON.parse(localStorage.getItem("enhanced-stats-selected-stimuli") || JSON.stringify({
+      walls: true,
+      camera: true,
+      face: false,
+      position: false,
+      word: false,
+      shape: false,
+      corner: false,
+      sound: false,
+      color: false
+    }))
+  };
+  
+  // Get all configuration profiles
+  const allProfiles = getAllConfigProfiles();
+  const configProfiles = Object.keys(allProfiles).map(key => ({
+    id: key,
+    name: key,
+    ...allProfiles[key]
+  }));
+  
+  // If we don't have any profiles yet, add a default "All" option
+  if (configProfiles.length === 0) {
+    configProfiles.push({ id: "All", name: "All Configurations" });
+  }
+  
+  // Generate the HTML content
+  let html = `
+    <div class="dialog-header">
+      <h2>Statistics</h2>
+    </div>
+    
+    <!-- Configuration Selector -->
+    <div class="config-selector">
+      <div class="config-selector-title">Configuration Profile</div>
+      <div class="config-selector-buttons">
+        ${configProfiles.map(config => `
+          <button class="config-button ${state.activeConfig === config.id ? 'active' : ''}" 
+                  data-config-id="${config.id}">
+            ${config.name}
+          </button>
+        `).join('')}
+        <button class="config-button config-add-button" title="Save Current Settings as Profile">
+          <i class="bi bi-plus-lg"></i>
+        </button>
+      </div>
+    </div>
+    
+    <!-- Current Performance Summary -->
+    <div class="performance-summary">
+      <div class="performance-header">
+        <h3>Current Performance</h3>
+        <div class="performance-config-badge">
+          ${state.activeConfig === 'All' ? 'All' : getCurrentConfigDimension(state.activeConfig)}
+        </div>
+      </div>
+      
+      <div class="performance-metrics">
+        <div class="performance-metric">
+          <div class="metric-value metric-value-correct">82%</div>
+          <div class="metric-label">Accuracy</div>
+          <div class="metric-subvalue">41 correct</div>
+        </div>
+        <div class="performance-metric">
+          <div class="metric-value metric-value-missed">12%</div>
+          <div class="metric-label">Missed</div>
+          <div class="metric-subvalue">6 missed</div>
+        </div>
+        <div class="performance-metric">
+          <div class="metric-value metric-value-wrong">6%</div>
+          <div class="metric-label">Wrong</div>
+          <div class="metric-subvalue">3 wrong</div>
+        </div>
+      </div>
+      
+      <div class="performance-details">
+        <div><span>Session Length:</span> 50 stimuli</div>
+        <div><span>N-Level:</span> ${getCurrentNLevel(state.activeConfig)}</div>
+        <div><span>Dimensions:</span> ${getCurrentDimensions(state.activeConfig)}</div>
+      </div>
+    </div>
+    
+    <!-- Chart Type Selector -->
+    <div class="chart-type-selector">
+      <button class="chart-type-button ${state.chartMode === 'accuracy' ? 'active' : ''}" data-chart-mode="accuracy">
+        Overall Accuracy
+      </button>
+      <button class="chart-type-button ${state.chartMode === 'metrics' ? 'active' : ''}" data-chart-mode="metrics">
+        Detailed Metrics
+      </button>
+      <button class="chart-type-button ${state.chartMode === 'stimuli' ? 'active' : ''}" data-chart-mode="stimuli">
+        Stimuli Performance
+      </button>
+    </div>
+    
+    <!-- Time Range Selector -->
+    <div class="time-selector">
+      <button class="time-button ${state.timeRange === 'week' ? 'active' : ''}" data-time-range="week">Week</button>
+      <button class="time-button ${state.timeRange === 'month' ? 'active' : ''}" data-time-range="month">Month</button>
+      <button class="time-button ${state.timeRange === 'all' ? 'active' : ''}" data-time-range="all">All Time</button>
+    </div>
+    
+    <!-- Chart Area -->
+    <div class="chart-container">
+      <canvas id="enhanced-stats-chart"></canvas>
+    </div>
+    
+    ${state.chartMode === 'stimuli' ? `
+    <!-- Stimuli Toggle Buttons -->
+    <div class="stimuli-toggles">
+      ${Object.entries(state.selectedStimuli).map(([name, selected]) => `
+        <button class="stimuli-toggle-button ${selected ? 'active' : ''}" 
+                data-stimulus="${name}" 
+                style="${selected ? `border-color: ${getStimulusColor(name)};` : ''}
+                       ${selected ? `color: ${getStimulusColor(name)};` : ''}">
+          ${capitalizeFirstLetter(name)}
+        </button>
+      `).join('')}
+      <button class="stimuli-toggle-all-button">Toggle All</button>
+    </div>
+    ` : ''}
+    
+    <!-- Progress Summary -->
+    <div class="improvement-stats">
+      <div class="improvement-stat">
+        <div>${state.chartMode === 'stimuli' ? 'Best Stimulus' : 'Session Success Rate'}</div>
+        <div>${state.chartMode === 'stimuli' ? 'Sound (85%)' : '75%'}</div>
+      </div>
+      <div class="improvement-stat">
+        <div>${state.chartMode === 'stimuli' ? 'Most Improved' : 'Overall Improvement'}</div>
+        <div>${state.chartMode === 'stimuli' ? 'Corner (+22%)' : '+18%'}</div>
+      </div>
+    </div>
+    
+    <!-- Best Sessions Section -->
+    <div class="best-sessions">
+      <h3>Best Sessions</h3>
+      
+      <div class="best-sessions-list">
+        <div class="best-session-item">
+          <div class="best-session-info">
+            <div class="best-session-accuracy">92%</div>
+            <div>
+              <div class="best-session-name">8D 1N Progressive</div>
+              <div class="best-session-date">Apr 3, 2025</div>
+            </div>
+          </div>
+          <div class="best-session-details">
+            92 correct, 5 missed, 3 wrong
+          </div>
+        </div>
+        
+        <div class="best-session-item">
+          <div class="best-session-info">
+            <div class="best-session-accuracy">85%</div>
+            <div>
+              <div class="best-session-name">Random 3D 3N</div>
+              <div class="best-session-date">Apr 2, 2025</div>
+            </div>
+          </div>
+          <div class="best-session-details">
+            68 correct, 8 missed, 4 wrong
+          </div>
+        </div>
+        
+        <div class="best-session-item">
+          <div class="best-session-info">
+            <div class="best-session-accuracy">83%</div>
+            <div>
+              <div class="best-session-name">4D 2N Fixed</div>
+              <div class="best-session-date">Mar 30, 2025</div>
+            </div>
+          </div>
+          <div class="best-session-details">
+            75 correct, 10 missed, 5 wrong
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  contentContainer.innerHTML = html;
+  
+  // Attach event handlers
+  attachEnhancedStatsEventHandlers(dialog, state);
+  
+  // Initialize and render the chart
+  setTimeout(() => {
+    initializeStatsChart(state);
+  }, 100);
+  
+  // Show the dialog
+  dialog.show();
+}
+
+// Helper functions for the enhanced stats view
+function getCurrentConfigDimension(configId) {
+  if (configId === 'All') return 'All';
+  
+  // Parse config id to get dimension and N level
+  // Format is typically: {dimension}D_{nLevel}N_{type}
+  const parts = configId.split('_');
+  if (parts.length >= 2) {
+    const dimPart = parts[0]; // e.g. "8D"
+    const nPart = parts[1]; // e.g. "1N"
+    return `${dimPart} ${nPart}`;
+  }
+  
+  return configId;
+}
+
+function getCurrentNLevel(configId) {
+  if (configId === 'All') return '-';
+  
+  const parts = configId.split('_');
+  if (parts.length >= 2) {
+    const nPart = parts[1]; // e.g. "1N"
+    return nPart.replace('N', '');
+  }
+  
+  return '1';
+}
+
+function getCurrentDimensions(configId) {
+  if (configId === 'All') return '-';
+  
+  const parts = configId.split('_');
+  if (parts.length >= 1) {
+    const dimPart = parts[0]; // e.g. "8D"
+    return dimPart.replace('D', '');
+  }
+  
+  return '1';
+}
+
+function getStimulusColor(stimulusName) {
+  const stimuliColors = {
+    walls: '#bf616a',
+    camera: '#d08770',
+    face: '#ebcb8b',
+    position: '#a3be8c',
+    word: '#b48ead',
+    shape: '#8fbcbb',
+    corner: '#88c0d0',
+    sound: '#81a1c1',
+    color: '#5e81ac'
+  };
+  
+  return stimuliColors[stimulusName] || '#ffffff';
+}
+
+function capitalizeFirstLetter(string) {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+// Function to attach event handlers to the enhanced stats dialog
+function attachEnhancedStatsEventHandlers(dialog, state) {
+  // Configuration buttons
+  dialog.querySelectorAll('.config-button:not(.config-add-button)').forEach(button => {
+    button.addEventListener('click', () => {
+      const configId = button.dataset.configId;
+      state.activeConfig = configId;
+      localStorage.setItem("enhanced-stats-active-config", configId);
+      renderEnhancedStats(); // Re-render with new state
+    });
+  });
+  
+  // Add new configuration button
+  const addConfigButton = dialog.querySelector('.config-add-button');
+  if (addConfigButton) {
+    addConfigButton.addEventListener('click', () => {
+      showSaveConfigDialog();
+    });
+  }
+  
+  // Chart type buttons
+  dialog.querySelectorAll('.chart-type-button').forEach(button => {
+    button.addEventListener('click', () => {
+      const chartMode = button.dataset.chartMode;
+      state.chartMode = chartMode;
+      localStorage.setItem("enhanced-stats-chart-mode", chartMode);
+      renderEnhancedStats(); // Re-render with new state
+    });
+  });
+  
+  // Time range buttons
+  dialog.querySelectorAll('.time-button').forEach(button => {
+    button.addEventListener('click', () => {
+      const timeRange = button.dataset.timeRange;
+      state.timeRange = timeRange;
+      localStorage.setItem("enhanced-stats-time-range", timeRange);
+      renderEnhancedStats(); // Re-render with new state
+    });
+  });
+  
+  // Stimuli toggle buttons
+  dialog.querySelectorAll('.stimuli-toggle-button').forEach(button => {
+    button.addEventListener('click', () => {
+      const stimulus = button.dataset.stimulus;
+      state.selectedStimuli[stimulus] = !state.selectedStimuli[stimulus];
+      localStorage.setItem("enhanced-stats-selected-stimuli", JSON.stringify(state.selectedStimuli));
+      renderEnhancedStats(); // Re-render with new state
+    });
+  });
+  
+  // Toggle all button
+  const toggleAllButton = dialog.querySelector('.stimuli-toggle-all-button');
+  if (toggleAllButton) {
+    toggleAllButton.addEventListener('click', () => {
+      const allSelected = Object.values(state.selectedStimuli).every(v => v);
+      const newState = {};
+      Object.keys(state.selectedStimuli).forEach(k => newState[k] = !allSelected);
+      state.selectedStimuli = newState;
+      localStorage.setItem("enhanced-stats-selected-stimuli", JSON.stringify(state.selectedStimuli));
+      renderEnhancedStats(); // Re-render with new state
+    });
+  }
+}
+
+// Function to show dialog for saving current configuration as a profile
+function showSaveConfigDialog() {
+  // Create a simple prompt for the profile name
+  const profileName = prompt("Enter a name for this configuration profile:", "");
+  
+  if (profileName && profileName.trim() !== "") {
+    // Get current settings
+    const currentSettings = {
+      wallsEnabled,
+      cameraEnabled,
+      faceEnabled,
+      positionEnabled,
+      wordEnabled,
+      shapeEnabled,
+      cornerEnabled,
+      soundEnabled,
+      colorEnabled,
+      randomizeEnabled,
+      nLevel,
+      sceneDimmer,
+      zoom,
+      perspective,
+      targetNumOfStimuli,
+      baseDelay,
+      maxAllowedMistakes,
+      prevLevelThreshold,
+      nextLevelThreshold,
+      numStimuliSelect
+    };
+    
+    // Format profile ID based on settings
+    const enabledStimuli = Object.entries({
+      walls: wallsEnabled,
+      camera: cameraEnabled,
+      face: faceEnabled,
+      position: positionEnabled,
+      word: wordEnabled,
+      shape: shapeEnabled,
+      corner: cornerEnabled,
+      sound: soundEnabled,
+      color: colorEnabled
+    }).filter(([_, enabled]) => enabled).length;
+    
+    // Create formatted profile ID (for chart display)
+    const formattedId = `${enabledStimuli}D_${nLevel}N_${profileName.replace(/\s+/g, '')}`;
+    
+    // Save the profile
+    saveConfigProfile(formattedId, currentSettings);
+    
+    // Update active config
+    localStorage.setItem("enhanced-stats-active-config", formattedId);
+    
+    // Re-render enhanced stats
+    renderEnhancedStats();
+  }
+}
+
+// Function to initialize and render the chart
+function initializeStatsChart(state) {
+  const ctx = document.getElementById('enhanced-stats-chart').getContext('2d');
+  
+  // Check if Chart.js is loaded, if not, load it
+  if (typeof Chart === 'undefined') {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js';
+    script.onload = () => createChart(ctx, state);
+    document.head.appendChild(script);
+  } else {
+    createChart(ctx, state);
+  }
+}
+
+// Function to create and render the chart
+function createChart(ctx, state) {
+  // Generate chart data based on state
+  const chartData = generateChartData(state);
+  
+  // Check if there's an existing chart and destroy it
+  if (window.enhancedStatsChart) {
+    window.enhancedStatsChart.destroy();
+  }
+  
+  // Chart configuration
+  const config = {
+    type: 'line',
+    data: {
+      labels: chartData.labels,
+      datasets: chartData.datasets
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          grid: {
+            color: 'rgba(255, 255, 255, 0.1)'
+          },
+          ticks: {
+            color: 'rgba(255, 255, 255, 0.7)'
+          }
+        },
+        x: {
+          grid: {
+            color: 'rgba(255, 255, 255, 0.1)'
+          },
+          ticks: {
+            color: 'rgba(255, 255, 255, 0.7)'
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          display: state.chartMode !== 'accuracy',
+          labels: {
+            color: 'rgba(255, 255, 255, 0.7)'
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return `${context.dataset.label}: ${context.raw}%`;
+            }
+          }
+        }
+      },
+      elements: {
+        line: {
+          tension: 0.4
+        },
+        point: {
+          radius: 2,
+          hoverRadius: 5
+        }
+      }
+    }
+  };
+  
+  // Create the chart
+  window.enhancedStatsChart = new Chart(ctx, config);
+}
+
+// Function to generate chart data based on state
+function generateChartData(state) {
+  const { activeConfig, timeRange, chartMode, selectedStimuli } = state;
+  
+  // Number of data points based on time range
+  let days = timeRange === 'week' ? 7 : timeRange === 'month' ? 30 : 90;
+  let dataPoints = timeRange === 'week' ? days : timeRange === 'month' ? 15 : 30;
+  
+  // Generate date labels
+  const labels = [];
+  for (let i = 0; i < dataPoints; i++) {
+    const date = new Date();
+    date.setDate(date.getDate() - (days - Math.floor(days * (i / (dataPoints - 1)))));
+    labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+  }
+  
+  // Different progression patterns based on configuration
+  let baseAccuracy, baseWrong, baseMissed;
+  let accuracyGrowth, wrongReduction, missedReduction;
+  let variance;
+  
+  // Set different patterns based on active config
+  if (activeConfig.includes('1N')) {
+    baseAccuracy = 65;
+    baseWrong = 15;
+    baseMissed = 20;
+    accuracyGrowth = 20;
+    wrongReduction = 5;
+    missedReduction = 10;
+    variance = timeRange === 'week' ? 8 : 4;
+  } else if (activeConfig.includes('3N')) {
+    baseAccuracy = 55;
+    baseWrong = 20;
+    baseMissed = 25;
+    accuracyGrowth = 25;
+    wrongReduction = 10;
+    missedReduction = 15;
+    variance = timeRange === 'week' ? 10 : 5;
+  } else if (activeConfig.includes('2N')) {
+    baseAccuracy = 70;
+    baseWrong = 12;
+    baseMissed = 18;
+    accuracyGrowth = 15;
+    wrongReduction = 4;
+    missedReduction = 8;
+    variance = timeRange === 'week' ? 7 : 3;
+  } else {
+    baseAccuracy = 60;
+    baseWrong = 15;
+    baseMissed = 25;
+    accuracyGrowth = 20;
+    wrongReduction = 8;
+    missedReduction = 12;
+    variance = timeRange === 'week' ? 8 : 4;
+  }
+  
+  // Different stimuli performance patterns
+  const stimuliBaseValues = {
+    walls: baseAccuracy + 5,
+    camera: baseAccuracy - 5,
+    face: baseAccuracy + 8,
+    position: baseAccuracy - 3,
+    word: baseAccuracy,
+    shape: baseAccuracy - 8,
+    corner: baseAccuracy - 10,
+    sound: baseAccuracy + 10,
+    color: baseAccuracy + 2
+  };
+  
+  const stimuliGrowth = {
+    walls: accuracyGrowth - 2,
+    camera: accuracyGrowth + 5,
+    face: accuracyGrowth,
+    position: accuracyGrowth + 2,
+    word: accuracyGrowth + 3,
+    shape: accuracyGrowth + 4,
+    corner: accuracyGrowth + 7,
+    sound: accuracyGrowth - 3,
+    color: accuracyGrowth
+  };
+  
+  // Generate data for each metric
+  const accuracyData = [];
+  const missedData = [];
+  const wrongData = [];
+  
+  // Stimuli specific data
+  const stimuliData = {
+    walls: [],
+    camera: [],
+    face: [],
+    position: [],
+    word: [],
+    shape: [],
+    corner: [],
+    sound: [],
+    color: []
+  };
+  
+  // Generate data points
+  for (let i = 0; i < dataPoints; i++) {
+    const progress = i / (dataPoints - 1); // 0 to 1
+    
+    // Calculate metrics with realistic progression
+    const accuracy = Math.min(95, Math.round(baseAccuracy + accuracyGrowth * progress + (Math.random() - 0.5) * 2 * variance));
+    const wrong = Math.max(2, Math.round(baseWrong - wrongReduction * progress + (Math.random() - 0.5) * 2 * variance/2));
+    const missed = Math.max(3, Math.round(baseMissed - missedReduction * progress + (Math.random() - 0.5) * 2 * variance/2));
+    
+    accuracyData.push(accuracy);
+    missedData.push(missed);
+    wrongData.push(wrong);
+    
+    // Calculate stimuli-specific accuracy
+    Object.keys(stimuliData).forEach(stimulus => {
+      stimuliData[stimulus].push(Math.min(98, Math.round(
+        stimuliBaseValues[stimulus] + stimuliGrowth[stimulus] * progress + 
+        (Math.random() - 0.5) * 2 * variance
+      )));
+    });
+  }
+  
+  // Create datasets based on chart mode
+  const datasets = [];
+  
+  if (chartMode === 'accuracy') {
+    datasets.push({
+      label: 'Accuracy',
+      data: accuracyData,
+      borderColor: '#a3be8c',
+      backgroundColor: 'rgba(163, 190, 140, 0.2)',
+      borderWidth: 3,
+      pointRadius: 0,
+      pointHoverRadius: 6
+    });
+  } else if (chartMode === 'metrics') {
+    datasets.push({
+      label: 'Accuracy',
+      data: accuracyData,
+      borderColor: '#a3be8c',
+      backgroundColor: 'rgba(163, 190, 140, 0.2)',
+      borderWidth: 3,
+      pointRadius: 0,
+      pointHoverRadius: 6
+    });
+    datasets.push({
+      label: 'Missed',
+      data: missedData,
+      borderColor: '#ebcb8b',
+      backgroundColor: 'rgba(235, 203, 139, 0.2)',
+      borderWidth: 2.5,
+      pointRadius: 0,
+      pointHoverRadius: 5
+    });
+    datasets.push({
+      label: 'Wrong',
+      data: wrongData,
+      borderColor: '#bf616a',
+      backgroundColor: 'rgba(191, 97, 106, 0.2)',
+      borderWidth: 2.5,
+      pointRadius: 0,
+      pointHoverRadius: 5
+    });
+  } else if (chartMode === 'stimuli') {
+    // Add a dataset for each selected stimulus
+    Object.entries(selectedStimuli).forEach(([name, selected]) => {
+      if (selected) {
+        datasets.push({
+          label: capitalizeFirstLetter(name),
+          data: stimuliData[name],
+          borderColor: getStimulusColor(name),
+          backgroundColor: `${getStimulusColor(name)}33`, // 20% opacity
+          borderWidth: 2.5,
+          pointRadius: 0,
+          pointHoverRadius: 5
+        });
+      }
+    });
+  }
+  
+  return { labels, datasets };
+}
 // Initialize the application
 loadBindings();
 loadSettings();
