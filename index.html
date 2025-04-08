@@ -268,6 +268,41 @@
 				</div>
 			</div>
 
+			<!-- Add these elements to the settings section of your HTML -->
+			<!-- Place this after the randomize stimuli toggle -->
+			<div class="setting">
+			  <label>Auto-Progression</label>
+			  <div class="toggle-switch-container">
+			    <input class="toggle-trigger" hidden id="enable-adaptive-n" type="checkbox" oninput="adaptiveNEnableTrigHandler()">
+			    <label class="toggle-switch" for="enable-adaptive-n">
+			      <span class="toggle-slider"></span>
+			    </label>
+			    <span class="toggle-label">Adaptive N-Level</span>
+			  </div>
+			</div>
+			
+			<div class="setting">
+			  <div class="toggle-switch-container">
+			    <input class="toggle-trigger" hidden id="enable-adaptive-d" type="checkbox" oninput="adaptiveDEnableTrigHandler()">
+			    <label class="toggle-switch" for="enable-adaptive-d">
+			      <span class="toggle-slider"></span>
+			    </label>
+			    <span class="toggle-label">Adaptive D-Level</span>
+			  </div>
+			</div>
+			
+			<!-- Add these elements to display current level status -->
+			<div class="setting" id="adaptive-level-display" style="display: none;">
+			  <label>Current Mode</label>
+			  <div class="level-info">
+			    <div><span id="current-level-type">Mastery</span>: <span id="current-level-value">1</span></div>
+			    <div class="level-targets">
+			      <span>Targets: <span id="current-targets">1</span></span>
+			      <span>Delay: <span id="current-delay">3000</span>ms</span>
+			    </div>
+			  </div>
+			</div>
+
 			<div class="setting">
 				<button class="setting-btn" onclick="openBindings()">Change Bindings</button>
 			</div>
