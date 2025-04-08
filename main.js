@@ -205,6 +205,34 @@ let prevLevelThreshold = defVal_prevLevelThreshold;
 let nextLevelThreshold = defVal_nextLevelThreshold;
 let numStimuliSelect = defVal_numStimuliSelect;
 
+let enableAdaptiveN = false; // Toggle for adaptive n-level progression
+let enableAdaptiveD = false; // Toggle for adaptive D-level (dimensional) progression
+
+// Difficulty tracking
+let masteryLevel = 1; // Current mastery n-back level
+let challengeLevel = 2; // Current challenge n-back level
+let masteryDimensions = 2; // Current mastery stimuli count
+let challengeDimensions = 3; // Current challenge stimuli count
+let currentLevel = "mastery"; // Current active level (mastery or challenge)
+
+// Performance tracking
+let consecutiveCorrect = 0;
+let consecutiveIncorrect = 0;
+let accuracyThresholdUpper = 0.90; // 90% accuracy to level up
+let accuracyThresholdLower = 0.75; // 75% accuracy to level down
+let sessionResponses = []; // Store correct/incorrect responses for the session
+let isFirstChallengeAttempt = true;
+let challengeAttemptCount = 0;
+
+const defVal_enableAdaptiveN = false;
+const defVal_enableAdaptiveD = false;
+const defVal_masteryLevel = 1;
+const defVal_challengeLevel = 2;
+const defVal_masteryDimensions = 2;
+const defVal_challengeDimensions = 3;
+const defVal_isFirstChallengeAttempt = true;
+const defVal_challengeAttemptCount = 0;
+
 // Game states
 let matchingStimuli = 0;
 let stimuliCount = 0;
@@ -275,6 +303,44 @@ function randomizeEnableTrigHandler(evt, defVal) {
   } else {
     randomizeEnabled = !randomizeEnabled;
     saveSettings();
+  }
+}
+
+// Handler for Adaptive N-Level toggle
+function adaptiveNEnableTrigHandler(evt, defVal) {
+  if (defVal != null) {
+    document.getElementById("enable-adaptive-n").checked = defVal;
+    enableAdaptiveN = defVal;
+  } else {
+    enableAdaptiveN = !enableAdaptiveN;
+    saveSettings();
+  }
+  
+  // Disable adaptive D if adaptive N is enabled (they're mutually exclusive)
+  if (enableAdaptiveN) {
+    adaptiveDEnableTrigHandler(null, false);
+    document.getElementById("enable-adaptive-d").disabled = true;
+  } else {
+    document.getElementById("enable-adaptive-d").disabled = false;
+  }
+}
+
+// Handler for Adaptive D-Level toggle
+function adaptiveDEnableTrigHandler(evt, defVal) {
+  if (defVal != null) {
+    document.getElementById("enable-adaptive-d").checked = defVal;
+    enableAdaptiveD = defVal;
+  } else {
+    enableAdaptiveD = !enableAdaptiveD;
+    saveSettings();
+  }
+  
+  // Disable adaptive N if adaptive D is enabled (they're mutually exclusive)
+  if (enableAdaptiveD) {
+    adaptiveNEnableTrigHandler(null, false);
+    document.getElementById("enable-adaptive-n").disabled = true;
+  } else {
+    document.getElementById("enable-adaptive-n").disabled = false;
   }
 }
 
@@ -606,6 +672,48 @@ function numStimuliSelectInputHandler(evt, defVal) {
     numStimuliSelectInput.classList.add("input-incorrect");
   } else {
     numStimuliSelectInput.classList.remove("input-incorrect");
+  }
+}
+
+// Function to set the active number of stimuli based on dimension count
+function setActiveStimuli(dimensionCount) {
+  // Disable all stimuli first
+  wallsEnableTrigHandler(null, false);
+  cameraEnableTrigHandler(null, false);
+  faceEnableTrigHandler(null, false);
+  positionEnableTrigHandler(null, false);
+  wordEnableTrigHandler(null, false);
+  shapeEnableTrigHandler(null, false);
+  cornerEnableTrigHandler(null, false);
+  soundEnableTrigHandler(null, false);
+  colorEnableTrigHandler(null, false);
+  
+  // Enable stimuli based on dimension count
+  switch(dimensionCount) {
+    case 9:
+      colorEnableTrigHandler(null, true);
+      // Fall through to enable all previous stimuli too
+    case 8:
+      soundEnableTrigHandler(null, true);
+    case 7:
+      cornerEnableTrigHandler(null, true);
+    case 6:
+      shapeEnableTrigHandler(null, true);
+    case 5:
+      wordEnableTrigHandler(null, true);
+    case 4:
+      positionEnableTrigHandler(null, true);
+    case 3:
+      faceEnableTrigHandler(null, true);
+    case 2:
+      cameraEnableTrigHandler(null, true);
+    case 1:
+      wallsEnableTrigHandler(null, true);
+      break;
+    default:
+      // Default to 2 stimuli
+      wallsEnableTrigHandler(null, true);
+      cameraEnableTrigHandler(null, true);
   }
 }
 
@@ -987,6 +1095,15 @@ function saveSettings() {
     maxAllowedMistakes,
     prevLevelThreshold,
     nextLevelThreshold,
+    enableAdaptiveN,
+    enableAdaptiveD,
+    masteryLevel,
+    challengeLevel,
+    masteryDimensions,
+    challengeDimensions,
+    currentLevel,
+    isFirstChallengeAttempt,
+    challengeAttemptCount,
     numStimuliSelect
   };
   localStorage.setItem(LS_SETTINGS_KEY, JSON.stringify(settings));
@@ -1020,6 +1137,30 @@ function loadSettings() {
   previousLevelThresholdInputHandler(null, settings.prevLevelThreshold);
   nextLevelThresholdInputHandler(null, settings.nextLevelThreshold);
   numStimuliSelectInputHandler(null, settings.numStimuliSelect);
+  adaptiveNEnableTrigHandler(null, settings.enableAdaptiveN || defVal_enableAdaptiveN);
+adaptiveDEnableTrigHandler(null, settings.enableAdaptiveD || defVal_enableAdaptiveD);
+
+// Load adaptive progression settings if they exist
+masteryLevel = settings.masteryLevel || defVal_masteryLevel;
+challengeLevel = settings.challengeLevel || defVal_challengeLevel;
+masteryDimensions = settings.masteryDimensions || defVal_masteryDimensions;
+challengeDimensions = settings.challengeDimensions || defVal_challengeDimensions;
+currentLevel = settings.currentLevel || "mastery";
+isFirstChallengeAttempt = settings.isFirstChallengeAttempt !== undefined ? settings.isFirstChallengeAttempt : defVal_isFirstChallengeAttempt;
+challengeAttemptCount = settings.challengeAttemptCount || defVal_challengeAttemptCount;
+
+// Set the current n-level based on the adaptive progression settings
+if (enableAdaptiveN) {
+  nLevelInputHandler(null, currentLevel === "mastery" ? masteryLevel : challengeLevel);
+} else if (enableAdaptiveD) {
+  // Set stimuli count based on current level
+  const dimensionCount = currentLevel === "mastery" ? masteryDimensions : challengeDimensions;
+  setActiveStimuli(dimensionCount);
+  nLevelInputHandler(null, 1); // Keep n=1 for adaptive D mode
+}
+
+// Initialize adaptive progression UI
+initializeAutoProgressionUI();
 }
 
 function openBindings() {
@@ -1842,9 +1983,11 @@ function checkHandler(stimulus) {
       if (curr.isMatching) {
         rightWalls++;
         button.classList.add("right");
+        recordResponse(true);
       } else {
         wrongWalls++;
         button.classList.add("wrong");
+        recordResponse(false);
       }
       break;
     }
@@ -1853,9 +1996,11 @@ function checkHandler(stimulus) {
       if (curr.isMatching) {
         rightCamera++;
         button.classList.add("right");
+        recordResponse(true);
       } else {
         wrongCamera++;
         button.classList.add("wrong");
+        recordResponse(false);
       }
       break;
     }
@@ -1864,9 +2009,11 @@ function checkHandler(stimulus) {
       if (curr.isMatching) {
         rightFace++;
         button.classList.add("right");
+        recordResponse(true);
       } else {
         wrongFace++;
         button.classList.add("wrong");
+        recordResponse(false);
       }
       break;
     }
@@ -1875,9 +2022,11 @@ function checkHandler(stimulus) {
       if (curr.isMatching) {
         rightPosition++;
         button.classList.add("right");
+        recordResponse(true);
       } else {
         wrongPosition++;
         button.classList.add("wrong");
+        recordResponse(false);
       }
       break;
     }
@@ -1886,9 +2035,11 @@ function checkHandler(stimulus) {
       if (curr.isMatching) {
         rightWord++;
         button.classList.add("right");
+        recordResponse(true);
       } else {
         wrongWord++;
         button.classList.add("wrong");
+        recordResponse(false);
       }
       break;
     }
@@ -1897,9 +2048,11 @@ function checkHandler(stimulus) {
       if (curr.isMatching) {
         rightShape++;
         button.classList.add("right");
+        recordResponse(true);
       } else {
         wrongShape++;
         button.classList.add("wrong");
+        recordResponse(false);
       }
       break;
     }
@@ -1908,9 +2061,11 @@ function checkHandler(stimulus) {
       if (curr.isMatching) {
         rightCorner++;
         button.classList.add("right");
+        recordResponse(true);
       } else {
         wrongCorner++;
         button.classList.add("wrong");
+        recordResponse(false);
       }
       break;
     }
@@ -1919,9 +2074,11 @@ function checkHandler(stimulus) {
       if (curr.isMatching) {
         rightSound++;
         button.classList.add("right");
+        recordResponse(true);
       } else {
         wrongSound++;
         button.classList.add("wrong");
+        recordResponse(false);
       }
       break;
     }
@@ -1930,12 +2087,222 @@ function checkHandler(stimulus) {
       if (curr.isMatching) {
         rightColor++;
         button.classList.add("right");
+        recordResponse(true);
       } else {
         wrongColor++;
         button.classList.add("wrong");
+        recordResponse(false);
       }
       break;
     }
+  }
+}
+
+// Function to record response and update consecutive counters
+function recordResponse(isCorrect) {
+  if (!enableAdaptiveN && !enableAdaptiveD) return;
+  
+  sessionResponses.push(isCorrect);
+  
+  if (isCorrect) {
+    consecutiveCorrect++;
+    consecutiveIncorrect = 0;
+  } else {
+    consecutiveIncorrect++;
+    consecutiveCorrect = 0;
+  }
+  
+  // Apply adaptive difficulty changes
+  updateDifficulty();
+}
+
+// Update difficulty based on consecutive responses
+function updateDifficulty() {
+  // Skip if auto-progression not enabled
+  if (!enableAdaptiveN && !enableAdaptiveD) return;
+  
+  // Adjust delay based on consecutive streaks
+  if (consecutiveCorrect >= 3) {
+    // Calculate acceleration factor
+    let accelerationFactor = 1 + ((consecutiveCorrect - 3) * 0.2);
+    // Decrease delay (make harder)
+    let adjustment = Math.round(500 * accelerationFactor);
+    baseDelay = Math.max(2000, baseDelay - adjustment);
+    baseDelayInputHandler(null, baseDelay);
+  }
+  
+  if (consecutiveIncorrect >= 3) {
+    // Calculate acceleration factor
+    let accelerationFactor = 1 + ((consecutiveIncorrect - 3) * 0.2);
+    
+    // Increase delay more aggressively for first challenge attempt
+    if (currentLevel === "challenge" && isFirstChallengeAttempt) {
+      let adjustment = Math.round(1000 * accelerationFactor);
+      baseDelay = Math.min(10000, baseDelay + adjustment);
+    } else {
+      // Standard adjustment for other cases
+      let adjustment = Math.round(500 * accelerationFactor);
+      baseDelay = Math.min(8000, baseDelay + adjustment);
+    }
+    
+    baseDelayInputHandler(null, baseDelay);
+  }
+  
+  // Adjust target matches if delay threshold reached
+  if (baseDelay <= 2000 && targetNumOfStimuli == 1 && consecutiveCorrect >= 5) {
+    targetNumOfStimuli = 2;
+    baseDelay = 5000; // Reset to higher delay for adjustment
+    targetStimuliInputHandler(null, targetNumOfStimuli);
+    baseDelayInputHandler(null, baseDelay);
+  }
+}
+
+// Evaluate session performance and adjust levels
+function evaluateSession() {
+  if (!enableAdaptiveN && !enableAdaptiveD) return;
+  
+  // Calculate accuracy
+  const correctResponses = sessionResponses.filter(r => r).length;
+  const accuracy = sessionResponses.length > 0 ? correctResponses / sessionResponses.length : 0;
+  
+  // Reset session tracking
+  sessionResponses = [];
+  consecutiveCorrect = 0;
+  consecutiveIncorrect = 0;
+  
+  if (enableAdaptiveN) {
+    evaluateAdaptiveNSession(accuracy);
+  } else if (enableAdaptiveD) {
+    evaluateAdaptiveDSession(accuracy);
+  }
+  
+  // Save updated settings
+  saveSettings();
+}
+
+// Evaluate session for Adaptive N-Level progression
+function evaluateAdaptiveNSession(accuracy) {
+  const isChallenge = currentLevel === "challenge";
+  
+  if (isChallenge) {
+    if (accuracy <= accuracyThresholdLower) {
+      // Move back to mastery, but increase its difficulty
+      if (baseDelay > 4000) baseDelay -= 500;
+      if (targetNumOfStimuli < 2) targetNumOfStimuli = 2;
+      
+      // Make challenge easier for next time
+      challengeLevel = Math.max(masteryLevel + 1, challengeLevel);
+      currentLevel = "mastery";
+      
+      // Reset first challenge attempt flag and increment attempt counter
+      isFirstChallengeAttempt = false;
+      challengeAttemptCount++;
+      
+      nLevelInputHandler(null, masteryLevel);
+    } else if (accuracy >= accuracyThresholdUpper && baseDelay <= 4000 && targetNumOfStimuli >= 2) {
+      // Challenge becomes new mastery, create new challenge
+      masteryLevel = challengeLevel;
+      challengeLevel = masteryLevel + 1;
+      
+      // Reset difficulty params and challenge attempt tracking
+      baseDelay = 5000;
+      targetNumOfStimuli = 1;
+      isFirstChallengeAttempt = true;
+      challengeAttemptCount = 0;
+      
+      nLevelInputHandler(null, masteryLevel);
+    }
+  } else { // At mastery level
+    if (accuracy >= accuracyThresholdUpper) {
+      // Ready to move up to challenge
+      currentLevel = "challenge";
+      
+      // Set first challenge attempt flag if this is a new challenge level
+      if (challengeAttemptCount == 0) {
+        isFirstChallengeAttempt = true;
+        // Start with a high delay for first attempt at a new challenge level
+        baseDelay = Math.max(baseDelay, 6000);
+        baseDelayInputHandler(null, baseDelay);
+      }
+      
+      nLevelInputHandler(null, challengeLevel);
+    }
+  }
+  
+  // Update inputs
+  baseDelayInputHandler(null, baseDelay);
+  targetStimuliInputHandler(null, targetNumOfStimuli);
+}
+
+// Evaluate session for Adaptive D-Level progression
+function evaluateAdaptiveDSession(accuracy) {
+  const isChallenge = currentLevel === "challenge";
+  
+  if (isChallenge) {
+    if (accuracy <= accuracyThresholdLower) {
+      // Move back to mastery, but increase its difficulty
+      if (baseDelay > 4000) baseDelay -= 500;
+      if (targetNumOfStimuli < 2) targetNumOfStimuli = 2;
+      
+      // Make challenge easier for next time
+      challengeDimensions = Math.max(masteryDimensions + 1, challengeDimensions);
+      currentLevel = "mastery";
+      
+      // Reset first challenge attempt flag and increment attempt counter
+      isFirstChallengeAttempt = false;
+      challengeAttemptCount++;
+      
+      setActiveStimuli(masteryDimensions);
+    } else if (accuracy >= accuracyThresholdUpper && baseDelay <= 4000 && targetNumOfStimuli >= 2) {
+      // Challenge becomes new mastery, create new challenge
+      masteryDimensions = challengeDimensions;
+      challengeDimensions = Math.min(9, masteryDimensions + 1);
+      
+      // Reset difficulty params and challenge attempt tracking
+      baseDelay = 5000;
+      targetNumOfStimuli = 1;
+      isFirstChallengeAttempt = true;
+      challengeAttemptCount = 0;
+      
+      setActiveStimuli(masteryDimensions);
+    }
+  } else { // At mastery level
+    if (accuracy >= accuracyThresholdUpper) {
+      // Ready to move up to challenge
+      currentLevel = "challenge";
+      
+      // Set first challenge attempt flag if this is a new challenge level
+      if (challengeAttemptCount == 0) {
+        isFirstChallengeAttempt = true;
+        // Start with a high delay for first attempt at a new challenge level
+        baseDelay = Math.max(baseDelay, 6000);
+        baseDelayInputHandler(null, baseDelay);
+      }
+      
+      setActiveStimuli(challengeDimensions);
+    }
+  }
+  
+  // Update inputs
+  baseDelayInputHandler(null, baseDelay);
+  targetStimuliInputHandler(null, targetNumOfStimuli);
+}
+
+function initializeAutoProgressionUI() {
+  const adaptiveNToggle = document.getElementById("enable-adaptive-n");
+  const adaptiveDToggle = document.getElementById("enable-adaptive-d");
+  
+  // Update UI based on loaded settings
+  if (adaptiveNToggle) adaptiveNToggle.checked = enableAdaptiveN;
+  if (adaptiveDToggle) adaptiveDToggle.checked = enableAdaptiveD;
+  
+  // Apply mutual exclusivity
+  if (enableAdaptiveN && adaptiveDToggle) {
+    adaptiveDToggle.disabled = true;
+  }
+  
+  if (enableAdaptiveD && adaptiveNToggle) {
+    adaptiveNToggle.disabled = true;
   }
 }
 
@@ -2691,7 +3058,7 @@ function generateChartData(state) {
       }
     });
   }
-  
+  evaluateSession();
   return { labels, datasets };
 }
 // Initialize the application
