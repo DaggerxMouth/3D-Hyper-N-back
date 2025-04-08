@@ -1296,3 +1296,69 @@ dialog .dialog-content {
     flex-wrap: wrap;
   }
 }
+/* Add these styles to your CSS file */
+
+/* Toggle switch label styles */
+.toggle-switch-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.toggle-label {
+  font-size: 0.8em;
+  color: #fff;
+}
+
+/* Level info display */
+.level-info {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9em;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.level-targets {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  font-size: 0.8em;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Highlighting for progression changes */
+.level-up {
+  animation: pulse-green 1s;
+}
+
+.level-down {
+  animation: pulse-orange 1s;
+}
+
+@keyframes pulse-green {
+  0% {
+    background-color: rgba(0, 255, 0, 0);
+  }
+  50% {
+    background-color: rgba(0, 255, 0, 0.3);
+  }
+  100% {
+    background-color: rgba(0, 255, 0, 0);
+  }
+}
+
+@keyframes pulse-orange {
+  0% {
+    background-color: rgba(255, 165, 0, 0);
+  }
+  50% {
+    background-color: rgba(255, 165, 0, 0.3);
+  }
+  100% {
+    background-color: rgba(255, 165, 0, 0);
+  }
+}
