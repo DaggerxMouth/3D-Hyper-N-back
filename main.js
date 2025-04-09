@@ -189,6 +189,11 @@ const defVal_masteryDimensions = 2;
 const defVal_challengeDimensions = 3;
 const defVal_isFirstChallengeAttempt = true;
 const defVal_challengeAttemptCount = 0;
+// Algo tracking
+const defVal_masterySuccessStreak = 0;
+const defVal_masteryFailureStreak = 0;
+const defVal_challengeSuccessStreak = 0;
+const defVal_challengeFailureStreak = 0;
 
 
 // Editable settings
@@ -214,6 +219,13 @@ let maxAllowedMistakes = defVal_maxAllowedMistakes;
 let prevLevelThreshold = defVal_prevLevelThreshold;
 let nextLevelThreshold = defVal_nextLevelThreshold;
 let numStimuliSelect = defVal_numStimuliSelect;
+
+// Add these variables to track streaks separately for mastery and challenge levels
+let masterySuccessStreak = 0;
+let masteryFailureStreak = 0;
+let challengeSuccessStreak = 0;
+let challengeFailureStreak = 0;
+
 let enableAdaptiveN = false; // Toggle for adaptive n-level progression
 let enableAdaptiveD = false; // Toggle for adaptive D-level (dimensional) progression
 
@@ -1097,7 +1109,12 @@ function saveSettings() {
     currentLevel,
     isFirstChallengeAttempt,
     challengeAttemptCount,
-    numStimuliSelect
+    numStimuliSelect,
+    // algo metrics
+    masterySuccessStreak,
+    masteryFailureStreak,
+    challengeSuccessStreak,
+    challengeFailureStreak
   };
   localStorage.setItem(LS_SETTINGS_KEY, JSON.stringify(settings));
   return settings;
@@ -1131,36 +1148,40 @@ function loadSettings() {
   nextLevelThresholdInputHandler(null, settings.nextLevelThreshold);
   numStimuliSelectInputHandler(null, settings.numStimuliSelect);
   adaptiveNEnableTrigHandler(null, settings.enableAdaptiveN || defVal_enableAdaptiveN);
-adaptiveDEnableTrigHandler(null, settings.enableAdaptiveD || defVal_enableAdaptiveD);
+  adaptiveDEnableTrigHandler(null, settings.enableAdaptiveD || defVal_enableAdaptiveD);
 
-// Load adaptive progression settings if they exist
-masteryLevel = settings.masteryLevel || defVal_masteryLevel;
-challengeLevel = settings.challengeLevel || defVal_challengeLevel;
-masteryDimensions = settings.masteryDimensions || defVal_masteryDimensions;
-challengeDimensions = settings.challengeDimensions || defVal_challengeDimensions;
-currentLevel = settings.currentLevel || "mastery";
-isFirstChallengeAttempt = settings.isFirstChallengeAttempt !== undefined ? settings.isFirstChallengeAttempt : defVal_isFirstChallengeAttempt;
-challengeAttemptCount = settings.challengeAttemptCount || defVal_challengeAttemptCount;
-
-// Set the current n-level based on the adaptive progression settings
-if (enableAdaptiveN) {
-  nLevelInputHandler(null, currentLevel === "mastery" ? masteryLevel : challengeLevel);
-} else if (enableAdaptiveD) {
-  // Set stimuli count based on current level
-  const dimensionCount = currentLevel === "mastery" ? masteryDimensions : challengeDimensions;
-  setActiveStimuli(dimensionCount);
-  nLevelInputHandler(null, 1); // Keep n=1 for adaptive D mode
-}
-
-// Initialize adaptive progression UI
-initializeAutoProgressionUI();
-}
+  // Load adaptive progression settings if they exist
+  masteryLevel = settings.masteryLevel || defVal_masteryLevel;
+  challengeLevel = settings.challengeLevel || defVal_challengeLevel;
+  masteryDimensions = settings.masteryDimensions || defVal_masteryDimensions;
+  challengeDimensions = settings.challengeDimensions || defVal_challengeDimensions;
+  currentLevel = settings.currentLevel || "mastery";
+  isFirstChallengeAttempt = settings.isFirstChallengeAttempt !== undefined ? settings.isFirstChallengeAttempt : defVal_isFirstChallengeAttempt;
+  challengeAttemptCount = settings.challengeAttemptCount || defVal_challengeAttemptCount;
+  
+  // Set the current n-level based on the adaptive progression settings
+  if (enableAdaptiveN) {
+    nLevelInputHandler(null, currentLevel === "mastery" ? masteryLevel : challengeLevel);
+  } else if (enableAdaptiveD) {
+    // Set stimuli count based on current level
+    const dimensionCount = currentLevel === "mastery" ? masteryDimensions : challengeDimensions;
+    setActiveStimuli(dimensionCount);
+    nLevelInputHandler(null, 1); // Keep n=1 for adaptive D mode
+  }
+  
+  // Initialize adaptive progression UI
+  initializeAutoProgressionUI();
+  }
 
 function openBindings() {
   bindDialogContent.parentElement.show();
   for (const [stim, key] of Object.entries(keyBindings)) {
     document.querySelector("#binding-" + stim).value = key;
   }
+  masterySuccessStreak = settings.masterySuccessStreak || defVal_masterySuccessStreak;
+  masteryFailureStreak = settings.masteryFailureStreak || defVal_masteryFailureStreak;
+  challengeSuccessStreak = settings.challengeSuccessStreak || defVal_challengeSuccessStreak;
+  challengeFailureStreak = settings.challengeFailureStreak || defVal_challengeFailureStreak;
 }
 
 function toggleOptions() {
@@ -2189,22 +2210,62 @@ function checkHandler(stimulus) {
   }
 }
 
-// Function to record response and update consecutive counters
 function recordResponse(isCorrect) {
   if (!enableAdaptiveN && !enableAdaptiveD) return;
   
   sessionResponses.push(isCorrect);
   
-  if (isCorrect) {
-    consecutiveCorrect++;
-    consecutiveIncorrect = 0;
-  } else {
-    consecutiveIncorrect++;
-    consecutiveCorrect = 0;
+  // Update the streak for the current level type
+  if (currentLevel === "mastery") {
+    if (isCorrect) {
+      masterySuccessStreak++;
+      masteryFailureStreak = 0;
+    } else {
+      masteryFailureStreak++;
+      masterySuccessStreak = 0;
+    }
+  } else { // Challenge level
+    if (isCorrect) {
+      challengeSuccessStreak++;
+      challengeFailureStreak = 0;
+    } else {
+      challengeFailureStreak++;
+      challengeSuccessStreak = 0;
+    }
   }
+  
+  // Store the overall consecutive counters for compatibility with existing code
+  consecutiveCorrect = currentLevel === "mastery" ? masterySuccessStreak : challengeSuccessStreak;
+  consecutiveIncorrect = currentLevel === "mastery" ? masteryFailureStreak : challengeFailureStreak;
   
   // Apply adaptive difficulty changes
   updateDifficulty();
+  
+  // Save updated streak values
+  saveSettings();
+}
+
+function addLevelChangeHistory(changeDescription) {
+  let levelChanges = JSON.parse(localStorage.getItem('levelChangeHistory') || '[]');
+  
+  levelChanges.push({
+    timestamp: new Date().toISOString(),
+    description: changeDescription,
+    currentLevel,
+    masteryLevel,
+    challengeLevel,
+    masteryDimensions,
+    challengeDimensions,
+    baseDelay,
+    targetNumOfStimuli
+  });
+  
+  // Keep only the most recent 50 changes
+  if (levelChanges.length > 50) {
+    levelChanges = levelChanges.slice(-50);
+  }
+  
+  localStorage.setItem('levelChangeHistory', JSON.stringify(levelChanges));
 }
 
 // Update difficulty based on consecutive responses
@@ -2271,12 +2332,12 @@ function evaluateSession() {
   saveSettings();
 }
 
-// Evaluate session for Adaptive N-Level progression
 function evaluateAdaptiveNSession(accuracy) {
   const isChallenge = currentLevel === "challenge";
   
   if (isChallenge) {
-    if (accuracy <= accuracyThresholdLower) {
+    // Check for challenge failure (3 consecutive failures)
+    if (challengeFailureStreak >= 3) {
       // Move back to mastery, but increase its difficulty
       if (baseDelay > 4000) baseDelay -= 500;
       if (targetNumOfStimuli < 2) targetNumOfStimuli = 2;
@@ -2289,8 +2350,19 @@ function evaluateAdaptiveNSession(accuracy) {
       isFirstChallengeAttempt = false;
       challengeAttemptCount++;
       
+      // Record the level change
+      addLevelChangeHistory("Challenge → Mastery (3 consecutive failures)");
+      
+      // Reset the streaks after level change
+      challengeSuccessStreak = 0;
+      challengeFailureStreak = 0;
+      masterySuccessStreak = 0;
+      masteryFailureStreak = 0;
+      
       nLevelInputHandler(null, masteryLevel);
-    } else if (accuracy >= accuracyThresholdUpper && baseDelay <= 4000 && targetNumOfStimuli >= 2) {
+    } 
+    // Check for mastering challenge (3 consecutive successes)
+    else if (challengeSuccessStreak >= 3 && baseDelay <= 4000 && targetNumOfStimuli >= 2) {
       // Challenge becomes new mastery, create new challenge
       masteryLevel = challengeLevel;
       challengeLevel = masteryLevel + 1;
@@ -2301,11 +2373,21 @@ function evaluateAdaptiveNSession(accuracy) {
       isFirstChallengeAttempt = true;
       challengeAttemptCount = 0;
       
+      // Record the level change
+      addLevelChangeHistory(`Mastery Level increased to ${masteryLevel} (3 consecutive successes)`);
+      
+      // Reset the streaks after level change
+      challengeSuccessStreak = 0;
+      challengeFailureStreak = 0;
+      masterySuccessStreak = 0;
+      masteryFailureStreak = 0;
+      
       nLevelInputHandler(null, masteryLevel);
     }
   } else { // At mastery level
-    if (accuracy >= accuracyThresholdUpper) {
-      // Ready to move up to challenge
+    // Check for ready to challenge (3 consecutive successes)
+    if (masterySuccessStreak >= 3) {
+      // Move up to challenge
       currentLevel = "challenge";
       
       // Set first challenge attempt flag if this is a new challenge level
@@ -2315,6 +2397,15 @@ function evaluateAdaptiveNSession(accuracy) {
         baseDelay = Math.max(baseDelay, 6000);
         baseDelayInputHandler(null, baseDelay);
       }
+      
+      // Record the level change
+      addLevelChangeHistory("Mastery → Challenge (3 consecutive successes)");
+      
+      // Reset the streaks after level change
+      masterySuccessStreak = 0;
+      masteryFailureStreak = 0;
+      challengeSuccessStreak = 0;
+      challengeFailureStreak = 0;
       
       nLevelInputHandler(null, challengeLevel);
     }
@@ -2326,57 +2417,42 @@ function evaluateAdaptiveNSession(accuracy) {
 }
 
 // Evaluate session for Adaptive D-Level progression
-function evaluateAdaptiveDSession(accuracy) {
-  const isChallenge = currentLevel === "challenge";
+function updateAdaptiveProgressDisplay() {
+  // Check if adaptive progress section exists, if not create it
+  let adaptiveSection = document.getElementById('adaptive-progress-section');
   
-  if (isChallenge) {
-    if (accuracy <= accuracyThresholdLower) {
-      // Move back to mastery, but increase its difficulty
-      if (baseDelay > 4000) baseDelay -= 500;
-      if (targetNumOfStimuli < 2) targetNumOfStimuli = 2;
-      
-      // Make challenge easier for next time
-      challengeDimensions = Math.max(masteryDimensions + 1, challengeDimensions);
-      currentLevel = "mastery";
-      
-      // Reset first challenge attempt flag and increment attempt counter
-      isFirstChallengeAttempt = false;
-      challengeAttemptCount++;
-      
-      setActiveStimuli(masteryDimensions);
-    } else if (accuracy >= accuracyThresholdUpper && baseDelay <= 4000 && targetNumOfStimuli >= 2) {
-      // Challenge becomes new mastery, create new challenge
-      masteryDimensions = challengeDimensions;
-      challengeDimensions = Math.min(9, masteryDimensions + 1);
-      
-      // Reset difficulty params and challenge attempt tracking
-      baseDelay = 5000;
-      targetNumOfStimuli = 1;
-      isFirstChallengeAttempt = true;
-      challengeAttemptCount = 0;
-      
-      setActiveStimuli(masteryDimensions);
-    }
-  } else { // At mastery level
-    if (accuracy >= accuracyThresholdUpper) {
-      // Ready to move up to challenge
-      currentLevel = "challenge";
-      
-      // Set first challenge attempt flag if this is a new challenge level
-      if (challengeAttemptCount == 0) {
-        isFirstChallengeAttempt = true;
-        // Start with a high delay for first attempt at a new challenge level
-        baseDelay = Math.max(baseDelay, 6000);
-        baseDelayInputHandler(null, baseDelay);
-      }
-      
-      setActiveStimuli(challengeDimensions);
-    }
+  if (!adaptiveSection) {
+    const statsContainer = document.querySelector('#stats-dialog .dialog-content');
+    adaptiveSection = document.createElement('div');
+    adaptiveSection.id = 'adaptive-progress-section';
+    adaptiveSection.className = 'adaptive-progress-section';
+    
+    // Create the basic structure
+    adaptiveSection.innerHTML = `
+      <h3>Adaptive Progression</h3>
+      <div class="adaptive-progress-tabs">
+        <button class="adaptive-tab ${enableAdaptiveN ? 'active' : ''}" data-tab="adaptive-n">Adaptive N</button>
+        <button class="adaptive-tab ${enableAdaptiveD ? 'active' : ''}" data-tab="adaptive-d">Adaptive D</button>
+      </div>
+      <div class="adaptive-progress-content"></div>
+    `;
+    
+    // Add tab switching functionality
+    const tabs = adaptiveSection.querySelectorAll('.adaptive-tab');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        displayAdaptiveContent(tab.dataset.tab);
+      });
+    });
+    
+    statsContainer.appendChild(adaptiveSection);
   }
   
-  // Update inputs
-  baseDelayInputHandler(null, baseDelay);
-  targetStimuliInputHandler(null, targetNumOfStimuli);
+  // Display content based on active tab
+  const activeTab = adaptiveSection.querySelector('.adaptive-tab.active');
+  displayAdaptiveContent(activeTab ? activeTab.dataset.tab : (enableAdaptiveN ? 'adaptive-n' : 'adaptive-d'));
 }
 
 function initializeAutoProgressionUI() {
@@ -2394,6 +2470,23 @@ function initializeAutoProgressionUI() {
   
   if (enableAdaptiveD && adaptiveNToggle) {
     adaptiveNToggle.disabled = true;
+  }
+}
+
+function displayAdaptiveContent(tabName) {
+  const contentContainer = document.querySelector('.adaptive-progress-content');
+  if (!contentContainer) return;
+  
+  // Clear previous content
+  contentContainer.innerHTML = '';
+  
+  // Get the level change history
+  const levelChanges = JSON.parse(localStorage.getItem('levelChangeHistory') || '[]');
+  
+  if (tabName === 'adaptive-n') {
+    displayAdaptiveNContent(contentContainer, levelChanges);
+  } else {
+    displayAdaptiveDContent(contentContainer, levelChanges);
   }
 }
 
