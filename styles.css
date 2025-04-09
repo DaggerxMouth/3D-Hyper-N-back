@@ -874,28 +874,30 @@ dialog .dialog-content {
 
 .bar-chart {
   display: flex;
+  flex-direction: row;
   gap: 0.5rem;
-  min-height: 18rem;
+  align-items: flex-end;
+  height: 18rem;
   margin-bottom: 1rem;
 }
   
-  .bar-chart-axis {
-    display: flex;
-    flex-direction: row;
-    width: 100%;
-    justify-content: space-between;
-    margin-bottom: 0.5rem;
-  }
+  .bar-chart-axis div {
+  height: 2rem;
+  width: 2rem;
+  font-size: 1.5rem;
+  line-height: 2rem;
+  text-align: center;
+}
   
  .bar-chart-bars {
   flex: 1 0 0;
   display: flex;
   align-items: flex-end;
   gap: 4px;
-  min-height: 18rem;
+  height: 100%;
 }
   
-  .bar-chart-bar {
+ .bar-chart-bar {
   flex: 1 0 auto;
   width: 30px;
   max-width: 40px;
