@@ -903,14 +903,67 @@ function loadBindings() {
   reloadBindKeys();
 }
 
+// Add this function to initialize adaptive progression UI
+function initializeAutoProgressionUI() {
+  // Update display of adaptive levels if either adaptive mode is enabled
+  if (enableAdaptiveN || enableAdaptiveD) {
+    const adaptiveLevelDisplay = document.getElementById('adaptive-level-display');
+    if (adaptiveLevelDisplay) {
+      adaptiveLevelDisplay.style.display = 'block';
+      
+      // Update the displayed values
+      document.getElementById('current-level-type').textContent = 
+        currentLevel === "mastery" ? "Mastery" : "Challenge";
+      document.getElementById('current-level-value').textContent = 
+        enableAdaptiveN ? 
+          (currentLevel === "mastery" ? masteryLevel : challengeLevel) : 
+          (currentLevel === "mastery" ? masteryDimensions : challengeDimensions);
+      document.getElementById('current-targets').textContent = targetNumOfStimuli;
+      document.getElementById('current-delay').textContent = baseDelay;
+    }
+  }
+}
+
 function saveHistory() {
-  localStorage.setItem(LS_HISTORY_KEY, JSON.stringify(history));
+  // Create a backup of current history before saving
+  const backupKey = LS_HISTORY_KEY + "_backup";
+  const currentHistory = localStorage.getItem(LS_HISTORY_KEY);
+  if (currentHistory) {
+    localStorage.setItem(backupKey, currentHistory);
+  }
+  
+  // Ensure we're not saving null or undefined
+  if (history) {
+    localStorage.setItem(LS_HISTORY_KEY, JSON.stringify(history));
+  } else {
+    console.error("Attempted to save undefined history");
+    // Restore from backup if history is undefined
+    const backup = localStorage.getItem(backupKey);
+    if (backup) {
+      history = JSON.parse(backup);
+      localStorage.setItem(LS_HISTORY_KEY, backup);
+    } else {
+      // Reset to empty history structure
+      history = {
+        1: {}, 2: {}, 3: {}, 4: {}, 5: {}, 6: {}, 7: {}, 8: {}, 9: {}
+      };
+      localStorage.setItem(LS_HISTORY_KEY, JSON.stringify(history));
+    }
+  }
 }
 
 function loadHistory() {
   const _history = JSON.parse(localStorage.getItem(LS_HISTORY_KEY));
   if (_history) {
-    history = _history;
+    // Use deep copy to avoid reference issues
+    history = deepCopy(_history);
+    
+    // Ensure all dimension levels exist in the history
+    for (let i = 1; i <= 9; i++) {
+      if (!history[i]) {
+        history[i] = {};
+      }
+    }
   } else {
     // Add some demo data for display purposes if no history exists
     addDemoHistoryData();
