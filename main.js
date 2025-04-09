@@ -1158,6 +1158,11 @@ function loadSettings() {
   currentLevel = settings.currentLevel || "mastery";
   isFirstChallengeAttempt = settings.isFirstChallengeAttempt !== undefined ? settings.isFirstChallengeAttempt : defVal_isFirstChallengeAttempt;
   challengeAttemptCount = settings.challengeAttemptCount || defVal_challengeAttemptCount;
+  // In the loadSettings function, add:
+  masterySuccessStreak = settings.masterySuccessStreak || defVal_masterySuccessStreak;
+  masteryFailureStreak = settings.masteryFailureStreak || defVal_masteryFailureStreak;
+  challengeSuccessStreak = settings.challengeSuccessStreak || defVal_challengeSuccessStreak;
+  challengeFailureStreak = settings.challengeFailureStreak || defVal_challengeFailureStreak;
   
   // Set the current n-level based on the adaptive progression settings
   if (enableAdaptiveN) {
@@ -1178,10 +1183,6 @@ function openBindings() {
   for (const [stim, key] of Object.entries(keyBindings)) {
     document.querySelector("#binding-" + stim).value = key;
   }
-  masterySuccessStreak = settings.masterySuccessStreak || defVal_masterySuccessStreak;
-  masteryFailureStreak = settings.masteryFailureStreak || defVal_masteryFailureStreak;
-  challengeSuccessStreak = settings.challengeSuccessStreak || defVal_challengeSuccessStreak;
-  challengeFailureStreak = settings.challengeFailureStreak || defVal_challengeFailureStreak;
 }
 
 function toggleOptions() {
@@ -1292,6 +1293,8 @@ function toggleStats(_dim) {
   
   // Update individual stimuli accuracy display
   updateStimuliAccuracyDisplay(stimuliTotals);
+
+updateAdaptiveProgressDisplay();
   
   // Store the last displayed dimension
   localStorage.setItem("last-dim", dim);
@@ -1324,6 +1327,140 @@ function updateStimuliAccuracyDisplay(totals) {
       itemElement.classList.add('active');
     }
   });
+}
+
+// Function to display adaptive progression information in the stats dialog
+function updateAdaptiveProgressDisplay() {
+  // Remove existing adaptive section if it exists
+  const existingSection = document.getElementById('adaptive-progress-section');
+  if (existingSection) {
+    existingSection.remove();
+  }
+  
+  // If adaptive progression isn't enabled, don't add the section
+  if (!enableAdaptiveN && !enableAdaptiveD) {
+    return;
+  }
+  
+  // Get the stats container
+  const statsContainer = document.querySelector('#stats-dialog .dialog-content');
+  
+  // Create the adaptive section
+  const adaptiveSection = document.createElement('div');
+  adaptiveSection.id = 'adaptive-progress-section';
+  adaptiveSection.className = 'stimuli-accuracy-section'; // Use existing section styling
+  
+  // Create the section header like other sections
+  const heading = document.createElement('h3');
+  heading.textContent = 'Adaptive Progression';
+  adaptiveSection.appendChild(heading);
+  
+  // Create mode selector tabs using the existing radio-dimensions style
+  const tabsContainer = document.createElement('div');
+  tabsContainer.className = 'radio-dimensions';
+  
+  const nTab = document.createElement('label');
+  nTab.className = 'radio-dimension';
+  nTab.innerHTML = `
+    <input type="radio" name="adaptive-mode" value="adaptive-n" ${enableAdaptiveN ? 'checked' : ''} hidden>
+    <div>N-Level</div>
+  `;
+  
+  const dTab = document.createElement('label');
+  dTab.className = 'radio-dimension';
+  dTab.innerHTML = `
+    <input type="radio" name="adaptive-mode" value="adaptive-d" ${enableAdaptiveD ? 'checked' : ''} hidden>
+    <div>D-Level</div>
+  `;
+  
+  tabsContainer.appendChild(nTab);
+  tabsContainer.appendChild(dTab);
+  adaptiveSection.appendChild(tabsContainer);
+  
+  // Create content container using the existing class for consistency
+  const contentContainer = document.createElement('div');
+  contentContainer.className = 'stimuli-accuracy-grid';
+  contentContainer.style.display = 'block'; // Override grid display for this content
+  adaptiveSection.appendChild(contentContainer);
+  
+  // Add the section to the stats dialog
+  statsContainer.appendChild(adaptiveSection);
+  
+  // Set up event listeners for the tabs
+  const radioButtons = adaptiveSection.querySelectorAll('input[name="adaptive-mode"]');
+  radioButtons.forEach(radio => {
+    radio.addEventListener('change', (event) => {
+      displayAdaptiveContent(event.target.value, contentContainer);
+    });
+  });
+  
+  // Display initial content based on which mode is active
+  const activeMode = enableAdaptiveN ? 'adaptive-n' : 'adaptive-d';
+  displayAdaptiveContent(activeMode, contentContainer);
+}
+
+// Function to display specific adaptive content based on mode
+function displayAdaptiveContent(mode, container) {
+  if (!container) return;
+  
+  // Clear previous content
+  container.innerHTML = '';
+  
+  // Create a styled container for the adaptive info that matches existing UI
+  const infoContainer = document.createElement('div');
+  infoContainer.style.padding = '0.5rem';
+  infoContainer.style.textAlign = 'center';
+  infoContainer.style.fontSize = '1rem';
+  
+  if (mode === 'adaptive-n') {
+    // Display N-Level progression info
+    infoContainer.innerHTML = `
+      <div style="margin-bottom: 1rem;">
+        <strong>Current Level:</strong> ${currentLevel === "mastery" ? "Mastery" : "Challenge"}
+      </div>
+      <div class="stats-cards" style="font-size: 1rem; margin: 1rem 0;">
+        <div class="stats-card">
+          <div class="stats-card-title">Mastery N</div>
+          <div class="stats-card-value">${masteryLevel}</div>
+        </div>
+        <div class="stats-card">
+          <div class="stats-card-title">Challenge N</div>
+          <div class="stats-card-value">${challengeLevel}</div>
+        </div>
+      </div>
+      <div style="margin-top: 1rem;">
+        <div><strong>Success Streak:</strong> ${currentLevel === "mastery" ? masterySuccessStreak : challengeSuccessStreak}</div>
+        <div><strong>Mistake Streak:</strong> ${currentLevel === "mastery" ? masteryFailureStreak : challengeFailureStreak}</div>
+        <div><strong>Delay:</strong> ${baseDelay}ms</div>
+        <div><strong>Target Stimuli:</strong> ${targetNumOfStimuli}</div>
+      </div>
+    `;
+  } else {
+    // Display D-Level progression info
+    infoContainer.innerHTML = `
+      <div style="margin-bottom: 1rem;">
+        <strong>Current Level:</strong> ${currentLevel === "mastery" ? "Mastery" : "Challenge"}
+      </div>
+      <div class="stats-cards" style="font-size: 1rem; margin: 1rem 0;">
+        <div class="stats-card">
+          <div class="stats-card-title">Mastery D</div>
+          <div class="stats-card-value">${masteryDimensions}</div>
+        </div>
+        <div class="stats-card">
+          <div class="stats-card-title">Challenge D</div>
+          <div class="stats-card-value">${challengeDimensions}</div>
+        </div>
+      </div>
+      <div style="margin-top: 1rem;">
+        <div><strong>Success Streak:</strong> ${currentLevel === "mastery" ? masterySuccessStreak : challengeSuccessStreak}</div>
+        <div><strong>Mistake Streak:</strong> ${currentLevel === "mastery" ? masteryFailureStreak : challengeFailureStreak}</div>
+        <div><strong>Delay:</strong> ${baseDelay}ms</div>
+        <div><strong>Target Stimuli:</strong> ${targetNumOfStimuli}</div>
+      </div>
+    `;
+  }
+  
+  container.appendChild(infoContainer);
 }
 
 function toOneDecimal(n) {
@@ -2421,6 +2558,93 @@ function evaluateAdaptiveNSession(accuracy) {
   targetStimuliInputHandler(null, targetNumOfStimuli);
 }
 
+function evaluateAdaptiveDSession(accuracy) {
+  const isChallenge = currentLevel === "challenge";
+  
+  if (isChallenge) {
+    // Check for challenge failure (3 consecutive failures)
+    if (challengeFailureStreak >= 3) {
+      // Move back to mastery, but increase its difficulty
+      if (baseDelay > 4000) baseDelay -= 500;
+      if (targetNumOfStimuli < 2) targetNumOfStimuli = 2;
+      
+      // Make challenge easier for next time
+      challengeDimensions = Math.max(masteryDimensions + 1, challengeDimensions);
+      currentLevel = "mastery";
+      
+      // Reset first challenge attempt flag and increment attempt counter
+      isFirstChallengeAttempt = false;
+      challengeAttemptCount++;
+      
+      // Record the level change
+      addLevelChangeHistory("Challenge → Mastery (3 consecutive failures)");
+      
+      // Reset the streaks after level change
+      challengeSuccessStreak = 0;
+      challengeFailureStreak = 0;
+      masterySuccessStreak = 0;
+      masteryFailureStreak = 0;
+      
+      // Set active stimuli for mastery dimensions
+      setActiveStimuli(masteryDimensions);
+    } 
+    // Check for mastering challenge (3 consecutive successes)
+    else if (challengeSuccessStreak >= 3 && baseDelay <= 4000 && targetNumOfStimuli >= 2) {
+      // Challenge becomes new mastery, create new challenge
+      masteryDimensions = challengeDimensions;
+      challengeDimensions = Math.min(9, masteryDimensions + 1);
+      
+      // Reset difficulty params and challenge attempt tracking
+      baseDelay = 5000;
+      targetNumOfStimuli = 1;
+      isFirstChallengeAttempt = true;
+      challengeAttemptCount = 0;
+      
+      // Record the level change
+      addLevelChangeHistory(`Mastery Dimensions increased to ${masteryDimensions} (3 consecutive successes)`);
+      
+      // Reset the streaks after level change
+      challengeSuccessStreak = 0;
+      challengeFailureStreak = 0;
+      masterySuccessStreak = 0;
+      masteryFailureStreak = 0;
+      
+      // Set active stimuli for mastery dimensions
+      setActiveStimuli(masteryDimensions);
+    }
+  } else { // At mastery level
+    // Check for ready to challenge (3 consecutive successes)
+    if (masterySuccessStreak >= 3) {
+      // Move up to challenge
+      currentLevel = "challenge";
+      
+      // Set first challenge attempt flag if this is a new challenge level
+      if (challengeAttemptCount == 0) {
+        isFirstChallengeAttempt = true;
+        // Start with a high delay for first attempt at a new challenge level
+        baseDelay = Math.max(baseDelay, 6000);
+        baseDelayInputHandler(null, baseDelay);
+      }
+      
+      // Record the level change
+      addLevelChangeHistory("Mastery → Challenge (3 consecutive successes)");
+      
+      // Reset the streaks after level change
+      masterySuccessStreak = 0;
+      masteryFailureStreak = 0;
+      challengeSuccessStreak = 0;
+      challengeFailureStreak = 0;
+      
+      // Set active stimuli for challenge dimensions
+      setActiveStimuli(challengeDimensions);
+    }
+  }
+  
+  // Update inputs
+  baseDelayInputHandler(null, baseDelay);
+  targetStimuliInputHandler(null, targetNumOfStimuli);
+}
+
 // Updated displayAdaptiveContent function to target a specific container
 function displayAdaptiveContent(mode, container) {
   if (!container) return;
@@ -2451,7 +2675,69 @@ function getLastValueForLevel(levelChanges, levelType) {
   }
   return null;
 }
-  }
+
+// Function to display N-Level adaptive content
+function displayAdaptiveNContent(container, levelChanges) {
+  const infoContainer = document.createElement('div');
+  infoContainer.style.padding = '0.5rem';
+  infoContainer.style.textAlign = 'center';
+  infoContainer.style.fontSize = '1rem';
+  
+  infoContainer.innerHTML = `
+    <div style="margin-bottom: 1rem;">
+      <strong>Current Level:</strong> ${currentLevel === "mastery" ? "Mastery" : "Challenge"}
+    </div>
+    <div class="stats-cards" style="font-size: 1rem; margin: 1rem 0;">
+      <div class="stats-card">
+        <div class="stats-card-title">Mastery N</div>
+        <div class="stats-card-value">${masteryLevel}</div>
+      </div>
+      <div class="stats-card">
+        <div class="stats-card-title">Challenge N</div>
+        <div class="stats-card-value">${challengeLevel}</div>
+      </div>
+    </div>
+    <div style="margin-top: 1rem;">
+      <div><strong>Success Streak:</strong> ${currentLevel === "mastery" ? masterySuccessStreak : challengeSuccessStreak}</div>
+      <div><strong>Mistake Streak:</strong> ${currentLevel === "mastery" ? masteryFailureStreak : challengeFailureStreak}</div>
+      <div><strong>Delay:</strong> ${baseDelay}ms</div>
+      <div><strong>Target Stimuli:</strong> ${targetNumOfStimuli}</div>
+    </div>
+  `;
+  
+  container.appendChild(infoContainer);
+}
+
+// Function to display D-Level adaptive content
+function displayAdaptiveDContent(container, levelChanges) {
+  const infoContainer = document.createElement('div');
+  infoContainer.style.padding = '0.5rem';
+  infoContainer.style.textAlign = 'center';
+  infoContainer.style.fontSize = '1rem';
+  
+  infoContainer.innerHTML = `
+    <div style="margin-bottom: 1rem;">
+      <strong>Current Level:</strong> ${currentLevel === "mastery" ? "Mastery" : "Challenge"}
+    </div>
+    <div class="stats-cards" style="font-size: 1rem; margin: 1rem 0;">
+      <div class="stats-card">
+        <div class="stats-card-title">Mastery D</div>
+        <div class="stats-card-value">${masteryDimensions}</div>
+      </div>
+      <div class="stats-card">
+        <div class="stats-card-title">Challenge D</div>
+        <div class="stats-card-value">${challengeDimensions}</div>
+      </div>
+    </div>
+    <div style="margin-top: 1rem;">
+      <div><strong>Success Streak:</strong> ${currentLevel === "mastery" ? masterySuccessStreak : challengeSuccessStreak}</div>
+      <div><strong>Mistake Streak:</strong> ${currentLevel === "mastery" ? masteryFailureStreak : challengeFailureStreak}</div>
+      <div><strong>Delay:</strong> ${baseDelay}ms</div>
+      <div><strong>Target Stimuli:</strong> ${targetNumOfStimuli}</div>
+    </div>
+  `;
+  
+  container.appendChild(infoContainer);
 }
 
 // Function to calculate accuracy based on correct, missed, and wrong responses
