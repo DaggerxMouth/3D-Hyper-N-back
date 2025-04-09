@@ -991,3 +991,334 @@ dialog .dialog-content {
     background-color: rgba(255, 165, 0, 0);
   }
 }
+/* Add these styles to your styles.css file */
+
+/* Adaptive Progress Section */
+.adaptive-progress-section {
+  margin: 1.5rem 0;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.adaptive-progress-section h3 {
+  margin: 0.5rem 0;
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: normal;
+}
+
+/* Tabs */
+.adaptive-progress-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.adaptive-tab {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 0.5rem;
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 0.5rem 1rem;
+}
+
+.adaptive-tab.active {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Content Container */
+.adaptive-progress-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Cards */
+.progress-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+}
+
+.progress-card-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.dimension-label {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+/* Level Tables */
+.level-tables {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.level-table {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+}
+
+.level-table-header {
+  text-align: center;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mastery-header {
+  color: #a3be8c;
+}
+
+.challenge-header {
+  color: #d08770;
+}
+
+.level-table-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  padding: 0.25rem 0;
+}
+
+.level-table-label {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Streak Panels */
+.streak-panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.streak-panel {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+}
+
+.streak-panel-header {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  text-align: center;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.streak-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.streak-label {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.streak-dots {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.streak-dot {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.streak-dot.success {
+  background: #a3be8c;
+}
+
+.streak-dot.failure {
+  background: #bf616a;
+}
+
+.streak-count {
+  font-size: 0.9rem;
+  margin-left: 0.5rem;
+}
+
+.success-count {
+  color: #a3be8c;
+}
+
+.failure-count {
+  color: #bf616a;
+}
+
+/* Streak Boxes (for level tables) */
+.streak-container {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.streak-title {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 0.25rem;
+}
+
+.streak-boxes {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.streak-box {
+  width: 1rem;
+  height: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 0.2rem;
+}
+
+.streak-box.success {
+  background: #a3be8c;
+}
+
+.streak-box.failure {
+  background: #bf616a;
+}
+
+/* Dimension Graph */
+.dimension-graph {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.dimension-cell {
+  height: 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 0.25rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.8rem;
+}
+
+.dimension-cell.mastery {
+  background: #a3be8c;
+  color: #000;
+}
+
+.dimension-cell.challenge {
+  background: #d08770;
+  color: #000;
+}
+
+/* Current Mode Indicator */
+.current-mode-indicator {
+  position: relative;
+  padding: 0.5rem;
+  text-align: center;
+  margin: 1rem 0;
+  font-size: 1.1rem;
+}
+
+.current-mode-mastery {
+  background: rgba(163, 190, 140, 0.1);
+  border: 1px solid #a3be8c;
+  border-radius: 0.5rem;
+  color: #a3be8c;
+}
+
+.current-mode-challenge {
+  background: rgba(208, 135, 112, 0.1);
+  border: 1px solid #d08770;
+  border-radius: 0.5rem;
+  color: #d08770;
+}
+
+/* History Entries */
+.progress-history {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.history-entry {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.25rem;
+}
+
+.history-date {
+  color: #81a1c1;
+}
+
+.progress-indicator {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  margin-right: 0.25rem;
+}
+
+.progress-up {
+  background-color: #a3be8c;
+}
+
+.progress-down {
+  background-color: #bf616a;
+}
+
+.progress-same {
+  background-color: #ebcb8b;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 600px) {
+  .level-tables, .streak-panels {
+    grid-template-columns: 1fr;
+  }
+  
+  .dimension-graph {
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: 2fr;
+  }
+  
+  .dimension-cell:nth-child(n+6) {
+    grid-row: 2;
+  }
+  
+  .dimension-cell:nth-child(6) {
+    grid-column: 1;
+  }
+  
+  .dimension-cell:nth-child(7) {
+    grid-column: 2;
+  }
+  
+  .dimension-cell:nth-child(8) {
+    grid-column: 3;
+  }
+  
+  .dimension-cell:nth-child(9) {
+    grid-column: 4;
+  }
+}
