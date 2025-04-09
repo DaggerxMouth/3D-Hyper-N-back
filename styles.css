@@ -1385,3 +1385,64 @@ dialog .dialog-content {
   width: 100%;
   text-align: center;
 }
+
+/* Adaptive progression section styles */
+.adaptive-content {
+  margin: 1rem 0;
+}
+
+.current-mode {
+  text-align: center;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.current-mode-label {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  margin-bottom: 0.25rem;
+}
+
+.current-mode-value {
+  font-size: 1.25rem;
+}
+
+.adaptive-performance {
+  margin-top: 1rem;
+}
+
+.adaptive-metrics {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+}
+
+.adaptive-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.adaptive-metric-label {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  margin-bottom: 0.25rem;
+}
+
+.adaptive-metric-value {
+  font-size: 1.1rem;
+}
+
+.success-value {
+  color: #a3be8c;
+}
+
+.mistake-value {
+  color: #bf616a;
+}
