@@ -741,6 +741,9 @@ dialog {
   height: 100svh;
   border: none;
   padding: 0.5em;
+  overflow: hidden; /* Add this line to prevent dialog from scrolling */
+  max-height: 100vh; /* Add this line to limit height to viewport */
+  max-width: 100vw; /* Add this line to limit width to viewport */
 }
 
 dialog[open] {
@@ -758,9 +761,28 @@ dialog .close-button {
 
 dialog .dialog-content {
   max-width: 600px;
-  max-height: 100%;
+  max-height: calc(100vh - 4rem); /* Changed from 100% to account for padding and close button */
   margin: 0 auto;
   overflow-y: auto;
+  width: 100%; /* Add this line to take full width available */
+  padding: 1rem; /* Add this line for some padding */
+}
+
+/* Stats dialog responsive fixes */
+@media (max-width: 768px) {
+  dialog .dialog-content {
+    font-size: 1.5rem; /* Smaller font on mobile */
+  }
+  
+  .stats-cards {
+    font-size: 1rem;
+    gap: 0.5rem;
+  }
+  
+  .stimuli-accuracy-grid {
+    grid-template-columns: repeat(2, 1fr); /* 2 columns on mobile instead of 3 */
+    font-size: 0.9rem;
+  }
 }
 
 .radio-dimensions {
@@ -849,42 +871,39 @@ dialog .dialog-content {
   font-size: 1.25rem;
 }
 
-.bar-chart {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.bar-chart-axis div {
-  height: 2rem;
-  width: 2rem;
-  font-size: 1.5rem;
-  line-height: 2rem;
-  text-align: center;
-}
-
-.bar-chart-bars {
-  flex: 1 0 0;
-  display: flex;
-  align-items: end;
-  gap: 1px;
-}
-
-.bar-chart-bar {
-  flex: 1 0 0;
-  max-width: 2rem;
-  min-width: 1px;
-  background-color: #fff;
-  color: #000;
-  font-size: 1rem;
-  line-height: 1.5rem;
-  overflow: hidden;
-  text-align: center;
-}
-
-.bar-chart-title {
-  font-size: 1.25rem;
-  margin-top: 0.5rem;
-  margin-left: 2rem;
+/* Fix for bar chart on smaller screens */
+@media (max-width: 768px) {
+  .bar-chart {
+    flex-direction: column; /* Stack axis and bars vertically on mobile */
+    align-items: center;
+  }
+  
+  .bar-chart-axis {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+  
+  .bar-chart-bars {
+    width: 100%;
+    height: 200px; /* Fixed height for bars */
+    flex-direction: row;
+    align-items: flex-end;
+  }
+  
+  .bar-chart-bar {
+    height: 100%; /* Full height container */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+  
+  .bar-chart-title {
+    margin-left: 0;
+    text-align: center;
+  }
 }
 
 .bind-form {
@@ -1321,4 +1340,28 @@ dialog .dialog-content {
   .dimension-cell:nth-child(9) {
     grid-column: 4;
   }
+}
+/* Fix for adaptive progress section layout */
+.adaptive-progress-section {
+  width: 100%;
+  margin-top: 2rem;
+}
+
+/* Ensure stimuli accuracy section is fully visible */
+.stimuli-accuracy-section {
+  width: 100%;
+}
+
+.stimuli-accuracy-item.active {
+  display: block;
+}
+
+/* Fix the adaptive display layout */
+#adaptive-level-display {
+  margin-top: 1rem;
+}
+
+.level-info {
+  width: 100%;
+  text-align: center;
 }
