@@ -1298,7 +1298,7 @@ function toggleStats(_dim) {
   
   // If adaptive mode is enabled, show the adaptive progress
   if (enableAdaptiveN || enableAdaptiveD) {
-    updateAdaptiveProgressDisplay();
+    displayAdaptiveContent();
   }
 }
 
@@ -2421,77 +2421,36 @@ function evaluateAdaptiveNSession(accuracy) {
   targetStimuliInputHandler(null, targetNumOfStimuli);
 }
 
-// Evaluate session for Adaptive D-Level progression
-function updateAdaptiveProgressDisplay() {
-  // Check if adaptive progress section exists, if not create it
-  let adaptiveSection = document.getElementById('adaptive-progress-section');
-  
-  if (!adaptiveSection) {
-    const statsContainer = document.querySelector('#stats-dialog .dialog-content');
-    adaptiveSection = document.createElement('div');
-    adaptiveSection.id = 'adaptive-progress-section';
-    adaptiveSection.className = 'adaptive-progress-section';
-    
-    // Create the basic structure
-    adaptiveSection.innerHTML = `
-      <h3>Adaptive Progression</h3>
-      <div class="adaptive-progress-tabs">
-        <button class="adaptive-tab ${enableAdaptiveN ? 'active' : ''}" data-tab="adaptive-n">Adaptive N</button>
-        <button class="adaptive-tab ${enableAdaptiveD ? 'active' : ''}" data-tab="adaptive-d">Adaptive D</button>
-      </div>
-      <div class="adaptive-progress-content"></div>
-    `;
-    
-    // Add tab switching functionality
-    const tabs = adaptiveSection.querySelectorAll('.adaptive-tab');
-    tabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        tabs.forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        displayAdaptiveContent(tab.dataset.tab);
-      });
-    });
-    
-    statsContainer.appendChild(adaptiveSection);
-  }
-  
-  // Display content based on active tab
-  const activeTab = adaptiveSection.querySelector('.adaptive-tab.active');
-  displayAdaptiveContent(activeTab ? activeTab.dataset.tab : (enableAdaptiveN ? 'adaptive-n' : 'adaptive-d'));
-}
-
-function initializeAutoProgressionUI() {
-  const adaptiveNToggle = document.getElementById("enable-adaptive-n");
-  const adaptiveDToggle = document.getElementById("enable-adaptive-d");
-  
-  // Update UI based on loaded settings
-  if (adaptiveNToggle) adaptiveNToggle.checked = enableAdaptiveN;
-  if (adaptiveDToggle) adaptiveDToggle.checked = enableAdaptiveD;
-  
-  // Apply mutual exclusivity
-  if (enableAdaptiveN && adaptiveDToggle) {
-    adaptiveDToggle.disabled = true;
-  }
-  
-  if (enableAdaptiveD && adaptiveNToggle) {
-    adaptiveNToggle.disabled = true;
-  }
-}
-
-function displayAdaptiveContent(tabName) {
-  const contentContainer = document.querySelector('.adaptive-progress-content');
-  if (!contentContainer) return;
+// Updated displayAdaptiveContent function to target a specific container
+function displayAdaptiveContent(mode, container) {
+  if (!container) return;
   
   // Clear previous content
-  contentContainer.innerHTML = '';
+  container.innerHTML = '';
   
   // Get the level change history
   const levelChanges = JSON.parse(localStorage.getItem('levelChangeHistory') || '[]');
   
-  if (tabName === 'adaptive-n') {
-    displayAdaptiveNContent(contentContainer, levelChanges);
+  if (mode === 'adaptive-n') {
+    displayAdaptiveNContent(container, levelChanges);
   } else {
-    displayAdaptiveDContent(contentContainer, levelChanges);
+    displayAdaptiveDContent(container, levelChanges);
+  }
+}
+// Helper function for retrieving latest values
+function getLastValueForLevel(levelChanges, levelType) {
+  // Find the last change that contains values for the specified level type
+  for (let i = levelChanges.length - 1; i >= 0; i--) {
+    const change = levelChanges[i];
+    if (change.currentLevel === levelType) {
+      return {
+        baseDelay: change.baseDelay,
+        targetNumOfStimuli: change.targetNumOfStimuli
+      };
+    }
+  }
+  return null;
+}
   }
 }
 
