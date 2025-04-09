@@ -1416,7 +1416,7 @@ function updateStimuliAccuracyDisplay(totals) {
   });
 }
 
-// Function to display adaptive progression information in the stats dialog
+// Function to update the adaptive progression display in the stats dialog
 function updateAdaptiveProgressDisplay() {
   // Remove existing adaptive section if it exists
   const existingSection = document.getElementById('adaptive-progress-section');
@@ -1437,7 +1437,7 @@ function updateAdaptiveProgressDisplay() {
   adaptiveSection.id = 'adaptive-progress-section';
   adaptiveSection.className = 'stimuli-accuracy-section'; // Use existing section styling
   
-  // Create the section header like other sections
+  // Create the section header
   const heading = document.createElement('h3');
   heading.textContent = 'Adaptive Progression';
   adaptiveSection.appendChild(heading);
@@ -1464,10 +1464,10 @@ function updateAdaptiveProgressDisplay() {
   tabsContainer.appendChild(dTab);
   adaptiveSection.appendChild(tabsContainer);
   
-  // Create content container using the existing class for consistency
+  // Create content container for adaptive progression info
   const contentContainer = document.createElement('div');
-  contentContainer.className = 'stimuli-accuracy-grid';
-  contentContainer.style.display = 'block'; // Override grid display for this content
+  contentContainer.id = 'adaptive-content-container';
+  contentContainer.className = 'adaptive-content';
   adaptiveSection.appendChild(contentContainer);
   
   // Add the section to the stats dialog
@@ -1477,14 +1477,15 @@ function updateAdaptiveProgressDisplay() {
   const radioButtons = adaptiveSection.querySelectorAll('input[name="adaptive-mode"]');
   radioButtons.forEach(radio => {
     radio.addEventListener('change', (event) => {
-      displayAdaptiveContent(event.target.value, contentContainer);
+      displayAdaptiveContent(event.target.value);
     });
   });
   
   // Display initial content based on which mode is active
   const activeMode = enableAdaptiveN ? 'adaptive-n' : 'adaptive-d';
-  displayAdaptiveContent(activeMode, contentContainer);
+  displayAdaptiveContent(activeMode);
 }
+
 
 // Function to display specific adaptive content based on mode
 function displayAdaptiveContent(mode, container) {
@@ -2732,21 +2733,83 @@ function evaluateAdaptiveDSession(accuracy) {
   targetStimuliInputHandler(null, targetNumOfStimuli);
 }
 
-// Updated displayAdaptiveContent function to target a specific container
-function displayAdaptiveContent(mode, container) {
+// Function to display specific adaptive content based on mode
+function displayAdaptiveContent(mode) {
+  const container = document.getElementById('adaptive-content-container');
   if (!container) return;
   
   // Clear previous content
   container.innerHTML = '';
   
-  // Get the level change history
-  const levelChanges = JSON.parse(localStorage.getItem('levelChangeHistory') || '[]');
+  // Current mode display
+  const currentModeDiv = document.createElement('div');
+  currentModeDiv.className = 'current-mode';
+  currentModeDiv.innerHTML = `
+    <div class="current-mode-label">Current Mode</div>
+    <div class="current-mode-value">${currentLevel === "mastery" ? "Mastery" : "Challenge"}</div>
+  `;
+  container.appendChild(currentModeDiv);
+  
+  // Create stats cards for levels
+  const statsCards = document.createElement('div');
+  statsCards.className = 'stats-cards';
   
   if (mode === 'adaptive-n') {
-    displayAdaptiveNContent(container, levelChanges);
+    // Display N-Level progression info
+    statsCards.innerHTML = `
+      <div class="stats-card">
+        <div class="stats-card-title">Mastery N</div>
+        <div class="stats-card-value">${masteryLevel}</div>
+      </div>
+      <div class="stats-card">
+        <div class="stats-card-title">Challenge N</div>
+        <div class="stats-card-value">${challengeLevel}</div>
+      </div>
+    `;
   } else {
-    displayAdaptiveDContent(container, levelChanges);
+    // Display D-Level progression info
+    statsCards.innerHTML = `
+      <div class="stats-card">
+        <div class="stats-card-title">Mastery D</div>
+        <div class="stats-card-value">${masteryDimensions}</div>
+      </div>
+      <div class="stats-card">
+        <div class="stats-card-title">Challenge D</div>
+        <div class="stats-card-value">${challengeDimensions}</div>
+      </div>
+    `;
   }
+  
+  container.appendChild(statsCards);
+  
+  // Create performance metrics
+  const performanceDiv = document.createElement('div');
+  performanceDiv.className = 'adaptive-performance';
+  
+  performanceDiv.innerHTML = `
+    <div class="adaptive-metrics">
+      <div class="adaptive-metric">
+        <span class="adaptive-metric-label">Success Streak</span>
+        <span class="adaptive-metric-value success-value">${currentLevel === "mastery" ? masterySuccessStreak : challengeSuccessStreak}</span>
+      </div>
+      <div class="adaptive-metric">
+        <span class="adaptive-metric-label">Mistake Streak</span>
+        <span class="adaptive-metric-value mistake-value">${currentLevel === "mastery" ? masteryFailureStreak : challengeFailureStreak}</span>
+      </div>
+    </div>
+    <div class="adaptive-metrics">
+      <div class="adaptive-metric">
+        <span class="adaptive-metric-label">Delay</span>
+        <span class="adaptive-metric-value">${baseDelay}ms</span>
+      </div>
+      <div class="adaptive-metric">
+        <span class="adaptive-metric-label">Target Stimuli</span>
+        <span class="adaptive-metric-value">${targetNumOfStimuli}</span>
+      </div>
+    </div>
+  `;
+  
+  container.appendChild(performanceDiv);
 }
 // Helper function for retrieving latest values
 function getLastValueForLevel(levelChanges, levelType) {
