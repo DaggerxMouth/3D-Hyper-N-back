@@ -1295,6 +1295,11 @@ function toggleStats(_dim) {
   
   // Store the last displayed dimension
   localStorage.setItem("last-dim", dim);
+  
+  // If adaptive mode is enabled, show the adaptive progress
+  if (enableAdaptiveN || enableAdaptiveD) {
+    updateAdaptiveProgressDisplay();
+  }
 }
 
 // Function to update the stimuli accuracy display
