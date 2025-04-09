@@ -727,8 +727,7 @@ body {
 }
 
 dialog {
-  display: grid;
-  place-items: center;
+  display: block;
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.5s;
@@ -741,9 +740,7 @@ dialog {
   height: 100svh;
   border: none;
   padding: 0.5em;
-  overflow: hidden; /* Add this line to prevent dialog from scrolling */
-  max-height: 100vh; /* Add this line to limit height to viewport */
-  max-width: 100vw; /* Add this line to limit width to viewport */
+  overflow-y: auto;
 }
 
 dialog[open] {
@@ -760,12 +757,10 @@ dialog .close-button {
 }
 
 dialog .dialog-content {
-  max-width: 600px;
-  max-height: calc(100vh - 4rem); /* Changed from 100% to account for padding and close button */
-  margin: 0 auto;
-  overflow-y: auto;
-  width: 100%; /* Add this line to take full width available */
-  padding: 1rem; /* Add this line for some padding */
+  max-width: 800px;
+  width: 100%;
+  margin: 2rem auto;
+  padding-bottom: 2rem;
 }
 
 /* Stats dialog responsive fixes */
@@ -871,12 +866,18 @@ dialog .dialog-content {
   font-size: 1.25rem;
 }
 
-/* Fix for bar chart on smaller screens */
-@media (max-width: 768px) {
-  .bar-chart {
-    flex-direction: column; /* Stack axis and bars vertically on mobile */
-    align-items: center;
-  }
+.bar-chart-wrap {
+  margin: 0 auto;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.bar-chart {
+  display: flex;
+  gap: 0.5rem;
+  min-height: 18rem;
+  margin-bottom: 1rem;
+}
   
   .bar-chart-axis {
     display: flex;
@@ -886,19 +887,27 @@ dialog .dialog-content {
     margin-bottom: 0.5rem;
   }
   
-  .bar-chart-bars {
-    width: 100%;
-    height: 200px; /* Fixed height for bars */
-    flex-direction: row;
-    align-items: flex-end;
-  }
+ .bar-chart-bars {
+  flex: 1 0 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  min-height: 18rem;
+}
   
   .bar-chart-bar {
-    height: 100%; /* Full height container */
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-  }
+  flex: 1 0 auto;
+  width: 30px;
+  max-width: 40px;
+  min-width: 20px;
+  background-color: #fff;
+  color: #000;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  overflow: hidden;
+  text-align: center;
+  border-radius: 4px 4px 0 0;
+}
   
   .bar-chart-title {
     margin-left: 0;
