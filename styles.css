@@ -1446,3 +1446,10 @@ dialog .dialog-content {
 .mistake-value {
   color: #bf616a;
 }
+
+#adaptive-progress-section .radio-dimension div {
+  width: 8em;  /* Increased width to make buttons wider */
+  font-size: 1rem;
+  padding: 0.5em;  /* Increased padding to give more space around text */
+  border-radius: 0.75em;
+}
