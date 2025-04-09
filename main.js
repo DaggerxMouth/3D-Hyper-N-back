@@ -1254,7 +1254,6 @@ function getBar(n) {
   return wrap.firstChild;
 }
 
-// Updated function to display individual stimuli accuracy
 function toggleStats(_dim) {
   if (!_dim && statsDialogContent.parentElement.hasAttribute("open")) {
     statsDialogContent.parentElement.close();
@@ -1263,11 +1262,16 @@ function toggleStats(_dim) {
 
   statsDialogContent.parentElement.show();
   const dim = _dim || localStorage.getItem("last-dim") || 1;
-  const radios = [ ...document.querySelectorAll("input[name='dimension']") ];
-  radios[dim - 1].checked = true;
-  const _history = history[dim];
+  const radios = [...document.querySelectorAll("input[name='dimension']")];
+  
+  // Ensure dim is within range
+  const validDim = Math.min(Math.max(1, dim), 9);
+  radios[validDim - 1].checked = true;
+  
+  const _history = history[validDim];
   const bars = document.querySelector(".bar-chart-bars");
   bars.innerHTML = "";
+  
   let avgNLevel = 0;
   let minNLevel = 10;
   let maxNLevel = 0;
@@ -1290,47 +1294,62 @@ function toggleStats(_dim) {
     color: { right: 0, wrong: 0, matching: 0, present: false }
   };
   
-  const entries = Object.entries(_history);
-  for (const [ date, points ] of entries) {
-    let _avgNLevel = 0;
-    let _minNLevel = 10;
-    let _maxNLevel = 0;
-    for (const point of points) {
-      _avgNLevel += point.nLevel;
-      _minNLevel = Math.min(_minNLevel, point.nLevel);
-      _maxNLevel = Math.max(_maxNLevel, point.nLevel);
-      minNLevel = Math.min(minNLevel, _minNLevel);
-      maxNLevel = Math.max(maxNLevel, _maxNLevel);
-      right += point.right;
-      missed += point.missed;
-      wrong += point.wrong;
-      pointsCount++;
+  // Check if the history exists and has entries
+  const entries = _history ? Object.entries(_history) : [];
+  
+  if (entries.length > 0) {
+    for (const [date, points] of entries) {
+      if (!Array.isArray(points) || points.length === 0) continue;
       
-      // If point has accuracy, use it, otherwise calculate it
-      if (point.accuracy !== undefined) {
-        totalAccuracy += point.accuracy;
-      } else {
-        totalAccuracy += calculateAccuracy(point.right, point.missed, point.wrong);
+      let _avgNLevel = 0;
+      let _minNLevel = 10;
+      let _maxNLevel = 0;
+      
+      for (const point of points) {
+        _avgNLevel += point.nLevel || 0;
+        _minNLevel = Math.min(_minNLevel, point.nLevel || 10);
+        _maxNLevel = Math.max(_maxNLevel, point.nLevel || 0);
+        minNLevel = Math.min(minNLevel, _minNLevel);
+        maxNLevel = Math.max(maxNLevel, _maxNLevel);
+        right += point.right || 0;
+        missed += point.missed || 0;
+        wrong += point.wrong || 0;
+        pointsCount++;
+        
+        // If point has accuracy, use it, otherwise calculate it
+        if (point.accuracy !== undefined) {
+          totalAccuracy += point.accuracy;
+        } else {
+          totalAccuracy += calculateAccuracy(point.right || 0, point.missed || 0, point.wrong || 0);
+        }
+        
+        // Aggregate individual stimuli accuracy data if it exists
+        if (point.stimuliData) {
+          Object.entries(point.stimuliData).forEach(([key, data]) => {
+            if (data && data.enabled) {
+              stimuliTotals[key].present = true;
+              stimuliTotals[key].right += data.right || 0;
+              stimuliTotals[key].wrong += data.wrong || 0;
+              stimuliTotals[key].matching += data.matching || 0;
+            }
+          });
+        }
       }
       
-      // Aggregate individual stimuli accuracy data if it exists
-      if (point.stimuliData) {
-        Object.entries(point.stimuliData).forEach(([key, data]) => {
-          if (data.enabled) {
-            stimuliTotals[key].present = true;
-            stimuliTotals[key].right += data.right || 0;
-            stimuliTotals[key].wrong += data.wrong || 0;
-            stimuliTotals[key].matching += data.matching || 0;
-          }
-        });
+      if (points.length > 0) {
+        _avgNLevel = _avgNLevel / points.length;
+        avgNLevel += _avgNLevel;
+        bars.appendChild(getBar(toOneDecimal(_avgNLevel)));
       }
     }
-    _avgNLevel = _avgNLevel / points.length;
-    avgNLevel += _avgNLevel;
-    bars.appendChild(getBar(toOneDecimal(_avgNLevel)));
+    
+    if (entries.length > 0) {
+      avgNLevel = avgNLevel / entries.length;
+    }
   }
-  avgNLevel = avgNLevel / entries.length;
-  document.querySelector("#sc-avg").innerHTML = toOneDecimal(avgNLevel) || "-";
+  
+  // Update the stats display
+  document.querySelector("#sc-avg").innerHTML = entries.length > 0 ? toOneDecimal(avgNLevel) : "-";
   document.querySelector("#sc-min").innerHTML = (minNLevel === 10) ? "-" : minNLevel;
   document.querySelector("#sc-max").innerHTML = maxNLevel || "-";
   document.querySelector("#sc-right").innerHTML = right || "-";
@@ -1339,26 +1358,34 @@ function toggleStats(_dim) {
   
   // Update accuracy in the stats dialog
   const accuracyElement = document.querySelector("#sc-accuracy");
-  if (accuracyElement && pointsCount > 0) {
-    const avgAccuracy = totalAccuracy / pointsCount;
-    accuracyElement.innerHTML = (avgAccuracy * 100).toFixed(0) + "%";
+  if (accuracyElement) {
+    if (pointsCount > 0) {
+      const avgAccuracy = totalAccuracy / pointsCount;
+      accuracyElement.innerHTML = (avgAccuracy * 100).toFixed(0) + "%";
+    } else {
+      accuracyElement.innerHTML = "-%";
+    }
   }
   
   // Update individual stimuli accuracy display
   updateStimuliAccuracyDisplay(stimuliTotals);
 
-updateAdaptiveProgressDisplay();
+  // Update adaptive progress display if applicable
+  if (typeof updateAdaptiveProgressDisplay === 'function') {
+    updateAdaptiveProgressDisplay();
+  }
   
   // Store the last displayed dimension
-  localStorage.setItem("last-dim", dim);
+  localStorage.setItem("last-dim", validDim);
   
   // If adaptive mode is enabled, show the adaptive progress
   if (enableAdaptiveN || enableAdaptiveD) {
-    displayAdaptiveContent();
+    if (typeof displayAdaptiveContent === 'function') {
+      displayAdaptiveContent();
+    }
   }
 }
 
-// Function to update the stimuli accuracy display
 function updateStimuliAccuracyDisplay(totals) {
   // Hide all items first
   document.querySelectorAll('.stimuli-accuracy-item').forEach(item => {
@@ -1370,14 +1397,21 @@ function updateStimuliAccuracyDisplay(totals) {
     const itemElement = document.getElementById(`${key}-accuracy-item`);
     const valueElement = document.getElementById(`${key}-accuracy`);
     
-    if (data.present && itemElement && valueElement) {
-      // Calculate accuracy
-      const accuracy = data.matching > 0 ? 
-        calculateAccuracy(data.right, data.matching - data.right, data.wrong) * 100 : 0;
-      
-      // Update display
-      valueElement.textContent = accuracy.toFixed(0) + "%";
-      itemElement.classList.add('active');
+    if (itemElement && valueElement) {
+      if (data.present && data.matching > 0) {
+        // Calculate accuracy
+        const accuracy = calculateAccuracy(data.right, data.matching - data.right, data.wrong) * 100;
+        
+        // Update display
+        valueElement.textContent = accuracy.toFixed(0) + "%";
+        itemElement.classList.add('active');
+      } else {
+        valueElement.textContent = "-%";
+        // Only show if this stimulus was ever used
+        if (data.present) {
+          itemElement.classList.add('active');
+        }
+      }
     }
   });
 }
