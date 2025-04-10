@@ -10,3 +10,4 @@
 - Current adaptive algorithm level on settings page not immediately updating
 - End game dialog n-level is higher than it should be
 - adaptive algorithm breaks when advancing too quickly
+- 
