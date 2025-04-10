@@ -1,8 +1,12 @@
 # 3D Hyper N-back
 - Fixed stats reset
-- Improved accuracy metrics and added % to stats page and round completion overlay
-- Set number of stimuli and randomize them every time you press play
+- Improved accuracy criteria
+- Added individual stimuli accuracy metrics
+- Randomized stimuli game mode
+- Adaptive N algorithm: Ratcheting adaptive algorithm that simultaneously reduces difficulty of your next n-level while increasing difficulty of your current n-level
+- Adaptive D algorithm (progressive stimuli count): Ratcheting adaptive algorithm that simultaneously reduces difficulty of your next additional stimuli while increasing difficulty of your current number of stimuli
 
-# To-do
-- Detailed stats page with accuracy % of each individual stimuli
-- Randomization toggle on/off
+# Bug/to-do list
+- Current adaptive algorithm level on settings page not immediately updating
+- End game dialog n-level is higher than it should be
+- adaptive algorithm breaks when advancing too quickly
