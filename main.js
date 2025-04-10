@@ -183,10 +183,10 @@ const defVal_numStimuliSelect = 2;
 // Algo constants
 const defVal_enableAdaptiveN = false;
 const defVal_enableAdaptiveD = false;
-const defVal_masteryLevel = 1;
-const defVal_challengeLevel = 2;
-const defVal_masteryDimensions = 2;
-const defVal_challengeDimensions = 3;
+const defVal_masteryLevel = 4;
+const defVal_challengeLevel = 5;
+const defVal_masteryDimensions = 8;
+const defVal_challengeDimensions = 9;
 const defVal_isFirstChallengeAttempt = true;
 const defVal_challengeAttemptCount = 0;
 // Algo tracking
@@ -230,10 +230,10 @@ let enableAdaptiveN = false; // Toggle for adaptive n-level progression
 let enableAdaptiveD = false; // Toggle for adaptive D-level (dimensional) progression
 
 // Difficulty tracking
-let masteryLevel = 1; // Current mastery n-back level
-let challengeLevel = 2; // Current challenge n-back level
-let masteryDimensions = 2; // Current mastery stimuli count
-let challengeDimensions = 3; // Current challenge stimuli count
+let masteryLevel = 4; // Current mastery n-back level
+let challengeLevel = 5; // Current challenge n-back level
+let masteryDimensions = 8; // Current mastery stimuli count
+let challengeDimensions = 9; // Current challenge stimuli count
 let currentLevel = "mastery"; // Current active level (mastery or challenge)
 
 // Performance tracking
@@ -249,6 +249,10 @@ let challengeAttemptCount = 0;
 let matchingStimuli = 0;
 let stimuliCount = 0;
 let intervals = [];
+
+let currentDifficulty = 0;
+let highestDifficulty = 0;
+let difficultyHistory = [];
 
 let isRunning = false;
 
@@ -1167,7 +1171,10 @@ function saveSettings() {
     masterySuccessStreak,
     masteryFailureStreak,
     challengeSuccessStreak,
-    challengeFailureStreak
+    challengeFailureStreak,
+    currentDifficulty,
+    highestDifficulty,
+    difficultyHistory
   };
   localStorage.setItem(LS_SETTINGS_KEY, JSON.stringify(settings));
   return settings;
@@ -1216,6 +1223,9 @@ function loadSettings() {
   masteryFailureStreak = settings.masteryFailureStreak || defVal_masteryFailureStreak;
   challengeSuccessStreak = settings.challengeSuccessStreak || defVal_challengeSuccessStreak;
   challengeFailureStreak = settings.challengeFailureStreak || defVal_challengeFailureStreak;
+  currentDifficulty = settings.currentDifficulty || 0;
+  highestDifficulty = settings.highestDifficulty || 0;
+  difficultyHistory = settings.difficultyHistory || [];
   
   // Set the current n-level based on the adaptive progression settings
   if (enableAdaptiveN) {
@@ -1368,6 +1378,59 @@ function toggleStats(_dim) {
   
   // Update individual stimuli accuracy display
   updateStimuliAccuracyDisplay(stimuliTotals);
+
+  // Create difficulty metrics section
+let difficultySection = document.querySelector('.difficulty-metrics-section');
+if (!difficultySection) {
+  difficultySection = document.createElement('div');
+  difficultySection.className = 'stimuli-accuracy-section difficulty-metrics-section';
+  difficultySection.innerHTML = `
+    <h3>Difficulty Metrics</h3>
+    <div class="stats-cards" style="font-size: 1rem; margin: 1rem 0;">
+      <div class="stats-card">
+        <div class="stats-card-title">Average</div>
+        <div id="sc-avg-difficulty" class="stats-card-value">-</div>
+      </div>
+      <div class="stats-card">
+        <div class="stats-card-title">Highest</div>
+        <div id="sc-max-difficulty" class="stats-card-value">-</div>
+      </div>
+    </div>
+  `;
+  
+  // Add to dialog after the bar chart
+  const barChartSection = document.querySelector('.bar-chart-wrap');
+  barChartSection.parentNode.insertBefore(difficultySection, barChartSection.nextSibling);
+}
+
+// Calculate difficulty metrics
+let totalDifficulty = 0;
+let maxDifficulty = 0;
+let pointsWithDifficulty = 0;
+
+for (const [date, points] of entries) {
+  if (!Array.isArray(points) || points.length === 0) continue;
+  
+  for (const point of points) {
+    if (point.difficulty) {
+      totalDifficulty += point.difficulty;
+      maxDifficulty = Math.max(maxDifficulty, point.difficulty);
+      pointsWithDifficulty++;
+    }
+  }
+}
+
+// Update difficulty metrics display
+const avgDifficultyEl = document.getElementById('sc-avg-difficulty');
+const maxDifficultyEl = document.getElementById('sc-max-difficulty');
+
+if (pointsWithDifficulty > 0) {
+  avgDifficultyEl.textContent = (totalDifficulty / pointsWithDifficulty).toFixed(1);
+  maxDifficultyEl.textContent = maxDifficulty.toFixed(1);
+} else {
+  avgDifficultyEl.textContent = "-";
+  maxDifficultyEl.textContent = "-";
+}
 
   // Update adaptive progress display if applicable
   if (typeof updateAdaptiveProgressDisplay === 'function') {
@@ -2062,8 +2125,40 @@ function getGameCycle(n) {
       if (accuracyElement) {
         accuracyElement.innerHTML = (accuracy * 100).toFixed(0) + "%";
       }
+      // Calculate difficulty score for the session
+currentDifficulty = calculateDifficultyScore(nLevel, targetNumOfStimuli, baseDelay);
 
-      // Log all decision factors for debugging
+// Check if we already have a difficulty element
+let difficultyElement = document.getElementById("sc-res-difficulty");
+if (!difficultyElement) {
+  // Create a new difficulty display element
+  const accuracyContainer = accuracyElement.parentElement;
+  
+  // Create a wrapper for the difficulty score
+  const difficultyWrapper = document.createElement("div");
+  difficultyWrapper.style.textAlign = "center";
+  difficultyWrapper.style.fontSize = "1.5rem";
+  difficultyWrapper.style.marginTop = "1rem";
+  difficultyWrapper.style.marginBottom = "1rem";
+  
+  // Add the content
+  difficultyWrapper.innerHTML = `
+    Difficulty: <span id="sc-res-difficulty">${currentDifficulty.toFixed(1)}</span>
+  `;
+  
+  // Insert after accuracy
+  accuracyContainer.parentNode.insertBefore(difficultyWrapper, accuracyContainer.nextSibling);
+} else {
+  // Update existing element
+  difficultyElement.textContent = currentDifficulty.toFixed(1);
+}
+
+// Update highest difficulty if current is higher
+if (currentDifficulty > highestDifficulty) {
+  highestDifficulty = currentDifficulty;
+}
+
+// Log all decision factors for debugging
 console.log("Level decision values:", {
   accuracy,
   nextLevelThreshold,
@@ -2081,28 +2176,46 @@ console.log("Level conditions:", {
 });
 
       localStorage.setItem("last-dim", dimensions);
-      const historyPoint = {
-        nLevel,
-        right: correctStimuli,
-        missed,
-        wrong: mistakes,
-        accuracy: accuracy,
-        outcome: 0,
-        stimuliData: stimuliData // Add the stimuli data to history
-      };
+      // Calculate difficulty score
+const sessionDifficulty = calculateDifficultyScore(nLevel, targetNumOfStimuli, baseDelay);
 
+// Create history point with difficulty data
+const historyPoint = {
+  nLevel,
+  right: correctStimuli,
+  missed,
+  wrong: mistakes,
+  accuracy: accuracy,
+  outcome: 0,
+  stimuliData: stimuliData,
+  // Add difficulty information
+  difficulty: sessionDifficulty,
+  difficultyParams: {
+    nLevel: nLevel,
+    matches: targetNumOfStimuli,
+    delay: baseDelay
+  }
+};
+
+      // In getGameCycle function, find the levelUpCond/levelDownCond code block and replace it with this:
       if (levelUpCond) {
         historyPoint.outcome = 1;
-        nLevelInputHandler(null, nLevel + 1);
+        // Store original level before updating
+        const originalLevel = nLevel;
+        // Update the level
+        nLevelInputHandler(null, originalLevel + 1);
         document.querySelector(".lvl-res-move").style.display = "block";
-        document.querySelector(".lvl-before").innerHTML = nLevel;
-        document.querySelector(".lvl-after").innerHTML = nLevel + 1;
+        document.querySelector(".lvl-before").innerHTML = originalLevel;
+        document.querySelector(".lvl-after").innerHTML = originalLevel + 1;
       } else if (levelDownCond) {
         historyPoint.outcome = -1;
-        nLevelInputHandler(null, nLevel - 1);
+        // Store original level before updating
+        const originalLevel = nLevel;
+        // Update the level
+        nLevelInputHandler(null, originalLevel - 1);
         document.querySelector(".lvl-res-move").style.display = "block";
-        document.querySelector(".lvl-before").innerHTML = nLevel;
-        document.querySelector(".lvl-after").innerHTML = nLevel - 1;
+        document.querySelector(".lvl-before").innerHTML = originalLevel;
+        document.querySelector(".lvl-after").innerHTML = originalLevel - 1;
       } else {
         document.querySelector(".lvl-res-stay").style.display = "block";
         document.querySelector(".lvl-stays").innerHTML = nLevel;
@@ -2190,33 +2303,39 @@ evaluateSession();
 }
 
 function play() {
-  if (isRunning) {
-    return;
+    if (isRunning) {
+      return;
+    }
+  
+    document.querySelectorAll("dialog").forEach(d => d.close());
+    closeOptions();
+    
+    // Check if randomize is enabled, if so select random stimuli
+    if (randomizeEnabled) {
+      selectRandomStimuli(numStimuliSelect);
+    }
+    
+    // Reset game state before starting
+    resetPoints();
+    resetBlock();
+    resetIntervals();
+    
+    isRunning = true;
+    
+    speak("Start.");
+    document.querySelector(".stop").classList.remove("active");
+    document.querySelector(".play").classList.add("active");
+  
+    try {
+      updateDifficultyDisplay();
+    } catch (e) {
+      console.error("Error updating difficulty display:", e);
+    }
+  
+    intervals.push(
+      setInterval(getGameCycle(nLevel), baseDelay)
+    );
   }
-
-  document.querySelectorAll("dialog").forEach(d => d.close());
-  closeOptions();
-  
-  // Check if randomize is enabled, if so select random stimuli
-  if (randomizeEnabled) {
-    selectRandomStimuli(numStimuliSelect);
-  }
-  
-  // Reset game state before starting
-  resetPoints();
-  resetBlock();
-  resetIntervals();
-  
-  isRunning = true;
-  
-  speak("Start.");
-  document.querySelector(".stop").classList.remove("active");
-  document.querySelector(".play").classList.add("active");
-
-  intervals.push(
-    setInterval(getGameCycle(nLevel), baseDelay)
-  );
-}
 
 function stop() {
   if (!isRunning) {
@@ -2232,6 +2351,11 @@ function stop() {
   speak("Stop.");
   document.querySelector(".stop").classList.add("active");
   document.querySelector(".play").classList.remove("active");
+
+  const difficultyDisplay = document.getElementById('difficulty-display');
+  if (difficultyDisplay) {
+    difficultyDisplay.textContent = '';
+  }
 }
 
 function checkHandler(stimulus) {
@@ -2444,29 +2568,6 @@ function recordResponse(isCorrect) {
   
   sessionResponses.push(isCorrect);
   
-  // Update the streak for the current level type
-  if (currentLevel === "mastery") {
-    if (isCorrect) {
-      masterySuccessStreak++;
-      masteryFailureStreak = 0;
-    } else {
-      masteryFailureStreak++;
-      masterySuccessStreak = 0;
-    }
-  } else { // Challenge level
-    if (isCorrect) {
-      challengeSuccessStreak++;
-      challengeFailureStreak = 0;
-    } else {
-      challengeFailureStreak++;
-      challengeSuccessStreak = 0;
-    }
-  }
-  
-  // Store the overall consecutive counters for compatibility with existing code
-  consecutiveCorrect = currentLevel === "mastery" ? masterySuccessStreak : challengeSuccessStreak;
-  consecutiveIncorrect = currentLevel === "mastery" ? masteryFailureStreak : challengeFailureStreak;
-  
   // Apply adaptive difficulty changes
   updateDifficulty();
   
@@ -2497,60 +2598,220 @@ function addLevelChangeHistory(changeDescription) {
   localStorage.setItem('levelChangeHistory', JSON.stringify(levelChanges));
 }
 
-// Update difficulty based on consecutive responses
+// Update difficulty based on consecutive responses using optimal parameter selection
 function updateDifficulty() {
   // Skip if auto-progression not enabled
   if (!enableAdaptiveN && !enableAdaptiveD) return;
   
-  // Adjust delay based on consecutive streaks
-  if (consecutiveCorrect >= 3) {
-    // Calculate acceleration factor
-    let accelerationFactor = 1 + ((consecutiveCorrect - 3) * 0.2);
-    // Decrease delay (make harder)
-    let adjustment = Math.round(500 * accelerationFactor);
-    baseDelay = Math.max(2000, baseDelay - adjustment);
-    baseDelayInputHandler(null, baseDelay);
-  }
+  // Get current difficulty score
+  const currentScore = calculateDifficultyScore(nLevel, targetNumOfStimuli, baseDelay);
   
-  if (consecutiveIncorrect >= 3) {
-    // Calculate acceleration factor
-    let accelerationFactor = 1 + ((consecutiveIncorrect - 3) * 0.2);
+  // Skip micro-adjustments if we already made changes recently
+  // This prevents too-frequent adjustments
+  if (sessionResponses.length < 3) return;
+  
+  // Calculate recent performance (last 5 responses)
+  const recentResponses = sessionResponses.slice(-5);
+  const recentCorrect = recentResponses.filter(r => r).length;
+  const recentAccuracy = recentResponses.length > 0 ? recentCorrect / recentResponses.length : 0;
+  
+  // Calculate target difficulty adjustment
+  let targetDifficulty = currentScore;
+  
+  // Handle consecutive correct responses - increase difficulty
+  if (consecutiveCorrect >= 3) {
+    // Calculate adjustment factor (larger for longer streaks)
+    const adjustmentFactor = 1 + (Math.min(consecutiveCorrect - 2, 5) * 0.05);
     
-    // Increase delay more aggressively for first challenge attempt
-    if (currentLevel === "challenge" && isFirstChallengeAttempt) {
-      let adjustment = Math.round(1000 * accelerationFactor);
-      baseDelay = Math.min(10000, baseDelay + adjustment);
-    } else {
-      // Standard adjustment for other cases
-      let adjustment = Math.round(500 * accelerationFactor);
-      baseDelay = Math.min(8000, baseDelay + adjustment);
+    // Calculate target difficulty with smoother progression
+    targetDifficulty = currentScore * adjustmentFactor;
+    
+    console.log(`Consecutive correct (${consecutiveCorrect}): Increasing difficulty to ${targetDifficulty.toFixed(1)}`);
+    
+    // Find optimal parameters to reach target difficulty
+    const optimalParams = findOptimalParameters(targetDifficulty, {
+      // Prefer adjusting delay first, then matches
+      // Keep N level consistent during a session
+      minN: nLevel,
+      maxN: nLevel
+    });
+    
+    // Apply the adjustments
+    if (optimalParams.delay !== baseDelay) {
+      baseDelay = optimalParams.delay;
+      baseDelayInputHandler(null, baseDelay);
     }
     
-    baseDelayInputHandler(null, baseDelay);
+    if (optimalParams.matches !== targetNumOfStimuli) {
+      targetNumOfStimuli = optimalParams.matches;
+      targetStimuliInputHandler(null, targetNumOfStimuli);
+    }
   }
   
-  // Adjust target matches if delay threshold reached
-  if (baseDelay <= 2000 && targetNumOfStimuli == 1 && consecutiveCorrect >= 5) {
-    targetNumOfStimuli = 2;
-    baseDelay = 5000; // Reset to higher delay for adjustment
-    targetStimuliInputHandler(null, targetNumOfStimuli);
-    baseDelayInputHandler(null, baseDelay);
+  // Handle consecutive incorrect responses - decrease difficulty
+  if (consecutiveIncorrect >= 2) {
+    // More aggressive adjustment for incorrect responses
+    const adjustmentFactor = 1 - (Math.min(consecutiveIncorrect, 4) * 0.1);
+    
+    // Calculate target difficulty
+    targetDifficulty = currentScore * adjustmentFactor;
+    
+    console.log(`Consecutive incorrect (${consecutiveIncorrect}): Decreasing difficulty to ${targetDifficulty.toFixed(1)}`);
+    
+    // Find optimal parameters to reach target difficulty
+    const optimalParams = findOptimalParameters(targetDifficulty, {
+      // Prefer adjusting delay first, then matches
+      // Keep N level consistent during a session
+      minN: nLevel,
+      maxN: nLevel
+    });
+    
+    // Apply the adjustments
+    if (optimalParams.delay !== baseDelay) {
+      baseDelay = optimalParams.delay;
+      baseDelayInputHandler(null, baseDelay);
+    }
+    
+    if (optimalParams.matches !== targetNumOfStimuli) {
+      targetNumOfStimuli = optimalParams.matches;
+      targetStimuliInputHandler(null, targetNumOfStimuli);
+    }
   }
+  
+  // Track the new difficulty score
+  currentDifficulty = calculateDifficultyScore(nLevel, targetNumOfStimuli, baseDelay);
+  updateDifficultyDisplay();
 }
 
-// Evaluate session performance and adjust levels
+/**
+ * Calculates a difficulty score based on n-back level, match count, and delay
+ * 
+ * Difficulty = (N^1.4) × [1 + ln(Matches) × 1.5] × [(6000/delay)^0.8]
+ * 
+ * @param {number} nLevel - Current n-back level
+ * @param {number} matches - Number of target matches
+ * @param {number} delay - Delay between stimuli in milliseconds
+ * @return {number} - Calculated difficulty score
+ */
+function calculateDifficultyScore(nLevel, matches, delay) {
+  // Ensure inputs are valid numbers and at least 1
+  nLevel = Math.max(1, nLevel);
+  matches = Math.max(1, matches);
+  delay = Math.max(1, delay);
+  
+  // Calculate each component of the formula
+  const nFactor = Math.pow(nLevel, 1.4);
+  const matchFactor = 1 + (Math.log(matches) * 1.5);
+  const speedFactor = Math.pow(6000 / delay, 0.8);
+  
+  // Calculate total difficulty
+  const difficulty = nFactor * matchFactor * speedFactor;
+  
+  // Round to 2 decimal places for readability
+  return Math.round(difficulty * 100) / 100;
+}
+
+/**
+ * Updates the difficulty display during gameplay
+ */
+function updateDifficultyDisplay() {
+    try {
+      // Calculate current difficulty
+      const currentScore = calculateDifficultyScore(nLevel, targetNumOfStimuli, baseDelay);
+      
+      // Check if difficulty display exists, create if not
+      let difficultyDisplay = document.getElementById('difficulty-display');
+      if (!difficultyDisplay) {
+        // Create the difficulty display element
+        const nBackElement = document.querySelector('.n-back');
+        if (!nBackElement) {
+          console.error("Cannot find n-back element");
+          return;
+        }
+        
+        difficultyDisplay = document.createElement('div');
+        difficultyDisplay.id = 'difficulty-display';
+        difficultyDisplay.style.position = 'absolute';
+        difficultyDisplay.style.top = '2.5em';
+        difficultyDisplay.style.color = '#ffff';
+        difficultyDisplay.style.transform = 'translateZ(1em)';
+        difficultyDisplay.style.fontSize = '0.8em';
+        difficultyDisplay.style.opacity = '0.8';
+        
+        // Insert after n-back display
+        nBackElement.parentNode.insertBefore(difficultyDisplay, nBackElement.nextSibling);
+      }
+      
+      // Update the display
+      difficultyDisplay.textContent = `Difficulty: ${currentScore.toFixed(1)}`;
+      
+      // Update the global tracking variable
+      currentDifficulty = currentScore;
+    } catch (e) {
+      console.error("Error in updateDifficultyDisplay:", e);
+    }
+  }
+
 function evaluateSession() {
   if (!enableAdaptiveN && !enableAdaptiveD) return;
   
-  // Calculate accuracy
+  // Calculate accuracy for the entire round
   const correctResponses = sessionResponses.filter(r => r).length;
   const accuracy = sessionResponses.length > 0 ? correctResponses / sessionResponses.length : 0;
   
-  // Reset session tracking
-  sessionResponses = [];
-  consecutiveCorrect = 0;
-  consecutiveIncorrect = 0;
+  console.log("Session accuracy:", accuracy, "Responses:", sessionResponses.length);
   
+  // Calculate current difficulty score
+  currentDifficulty = calculateDifficultyScore(nLevel, targetNumOfStimuli, baseDelay);
+  
+  // Update highest difficulty if current is higher
+  if (currentDifficulty > highestDifficulty) {
+    highestDifficulty = currentDifficulty;
+  }
+  
+  // Add to difficulty history (keep last 10 sessions)
+  difficultyHistory.push({
+    timestamp: Date.now(),
+    difficulty: currentDifficulty,
+    accuracy: accuracy
+  });
+  
+  if (difficultyHistory.length > 10) {
+    difficultyHistory.shift(); // Remove oldest entry
+  }
+  
+  console.log("Current difficulty:", currentDifficulty, "Highest:", highestDifficulty);
+  
+  // Determine if the round was a success or failure based on accuracy
+  const isSuccessful = accuracy >= 0.75; // 75% threshold for success
+  
+  // Update the streaks based on the entire round's performance
+  if (currentLevel === "mastery") {
+    if (isSuccessful) {
+      masterySuccessStreak++;
+      masteryFailureStreak = 0;
+    } else {
+      masteryFailureStreak++;
+      masterySuccessStreak = 0;
+    }
+  } else { // Challenge level
+    if (isSuccessful) {
+      challengeSuccessStreak++;
+      challengeFailureStreak = 0;
+    } else {
+      challengeFailureStreak++;
+      challengeSuccessStreak = 0;
+    }
+  }
+  
+  // Set the overall consecutive counters
+  consecutiveCorrect = currentLevel === "mastery" ? masterySuccessStreak : challengeSuccessStreak;
+  consecutiveIncorrect = currentLevel === "mastery" ? masteryFailureStreak : challengeFailureStreak;
+  
+  // Reset session responses for next round
+  sessionResponses = [];
+  
+  // Continue with adaptive progression
   if (enableAdaptiveN) {
     evaluateAdaptiveNSession(accuracy);
   } else if (enableAdaptiveD) {
@@ -2559,114 +2820,272 @@ function evaluateSession() {
   
   // Save updated settings
   saveSettings();
+  
+  // Update the UI
+  initializeAutoProgressionUI();
+}
+
+/**
+ * Calculates optimal delay time to achieve target difficulty
+ * @param {number} nLevel - Current n-back level
+ * @param {number} matches - Target number of matches
+ * @return {number} - Optimal delay in milliseconds
+ */
+function calculateOptimalDelay(nLevel, matches) {
+  // Target difficulty based on n-level
+  let targetDifficulty;
+  
+  if (nLevel <= 2) {
+    targetDifficulty = 4; // Easier targets for beginners
+  } else if (nLevel <= 4) {
+    targetDifficulty = 7; // Medium difficulty
+  } else {
+    targetDifficulty = 10; // Harder difficulty for higher levels
+  }
+  
+  // Work backward from the difficulty formula to solve for delay
+  // Difficulty = (N^1.4) × [1 + ln(Matches) × 1.5] × [(6000/delay)^0.8]
+  const nFactor = Math.pow(nLevel, 1.4);
+  const matchFactor = 1 + (Math.log(matches) * 1.5);
+  
+  // Solve for speedFactor
+  const speedFactor = targetDifficulty / (nFactor * matchFactor);
+  
+  // Solve for delay
+  // speedFactor = (6000/delay)^0.8
+  // (speedFactor)^(1/0.8) = 6000/delay
+  // delay = 6000 / (speedFactor)^(1/0.8)
+  const delay = 6000 / Math.pow(speedFactor, 1/0.8);
+  
+  // Constrain to reasonable limits
+  return Math.min(8000, Math.max(2500, Math.round(delay)));
+}
+
+/**
+ * Finds optimal parameter combination to achieve a target difficulty
+ * @param {number} targetDifficulty - The desired difficulty score to achieve
+ * @param {Object} constraints - Constraints on parameter values
+ * @return {Object} - Optimal parameter combination
+ */
+function findOptimalParameters(targetDifficulty, constraints = {}) {
+  // Default constraints
+  const defaults = {
+    minN: 1,
+    maxN: 9,
+    minMatches: 1,
+    maxMatches: 5,
+    minDelay: 2500,
+    maxDelay: 8000,
+    currentN: nLevel,
+    currentMatches: targetNumOfStimuli,
+    currentDelay: baseDelay
+  };
+  
+  // Merge provided constraints with defaults
+  const options = { ...defaults, ...constraints };
+  
+  // Start with current values
+  let bestParams = {
+    n: options.currentN,
+    matches: options.currentMatches,
+    delay: options.currentDelay
+  };
+  
+  // Calculate current difficulty
+  let currentDiff = calculateDifficultyScore(
+    bestParams.n, 
+    bestParams.matches, 
+    bestParams.delay
+  );
+  
+  // Score how close we are to target
+  let bestScore = Math.abs(targetDifficulty - currentDiff);
+  
+  console.log(`Target difficulty: ${targetDifficulty}, Current: ${currentDiff} (Score: ${bestScore})`);
+  
+  // Try adjusting delay first (least disruptive)
+  for (let delay = options.minDelay; delay <= options.maxDelay; delay += 500) {
+    const diff = calculateDifficultyScore(bestParams.n, bestParams.matches, delay);
+    const score = Math.abs(targetDifficulty - diff);
+    
+    if (score < bestScore) {
+      bestScore = score;
+      bestParams.delay = delay;
+      currentDiff = diff;
+    }
+  }
+  
+  // If we're still not close enough, try adjusting matches
+  if (bestScore > 0.5) {
+    for (let matches = options.minMatches; matches <= options.maxMatches; matches++) {
+      const diff = calculateDifficultyScore(bestParams.n, matches, bestParams.delay);
+      const score = Math.abs(targetDifficulty - diff);
+      
+      if (score < bestScore) {
+        bestScore = score;
+        bestParams.matches = matches;
+        currentDiff = diff;
+      }
+    }
+  }
+  
+  // If we're still not close enough, try adjusting N-level (most disruptive)
+  if (bestScore > 0.5) {
+    // Avoid changing N-level too drastically
+    const nRange = 2;
+    const minN = Math.max(options.minN, options.currentN - nRange);
+    const maxN = Math.min(options.maxN, options.currentN + nRange);
+    
+    for (let n = minN; n <= maxN; n++) {
+      const diff = calculateDifficultyScore(n, bestParams.matches, bestParams.delay);
+      const score = Math.abs(targetDifficulty - diff);
+      
+      if (score < bestScore) {
+        bestScore = score;
+        bestParams.n = n;
+        currentDiff = diff;
+      }
+    }
+  }
+  
+  console.log(`Found optimal parameters: N=${bestParams.n}, Matches=${bestParams.matches}, Delay=${bestParams.delay} → Difficulty: ${currentDiff}`);
+  
+  return bestParams;
 }
 
 function evaluateAdaptiveNSession(accuracy) {
   const isChallenge = currentLevel === "challenge";
   
+  // Calculate target difficulties for current levels
+  const masteryTargetDifficulty = Math.max(5, calculateDifficultyScore(masteryLevel, targetNumOfStimuli, baseDelay));
+  const challengeTargetDifficulty = Math.max(8, calculateDifficultyScore(challengeLevel, targetNumOfStimuli, baseDelay));
+  
+  console.log(`Current level: ${currentLevel}, Mastery target: ${masteryTargetDifficulty.toFixed(1)}, Challenge target: ${challengeTargetDifficulty.toFixed(1)}`);
+  
   if (isChallenge) {
-    // Check for challenge failure (3 consecutive failures)
-    if (challengeFailureStreak >= 3) {
-      // Move back to mastery, but increase its difficulty
-      if (baseDelay > 4000) baseDelay -= 500;
-      if (targetNumOfStimuli < 2) targetNumOfStimuli = 2;
-      
-      // Make challenge easier for next time
-      challengeLevel = Math.max(masteryLevel + 1, challengeLevel);
+    // Check for challenge failure
+    if (challengeFailureStreak >= 3 || accuracy < 0.5) {
+      // Move back to mastery with optimized parameters
       currentLevel = "mastery";
       
-      // Reset first challenge attempt flag and increment attempt counter
-      isFirstChallengeAttempt = false;
-      challengeAttemptCount++;
+      // Find optimal parameters for 90% of mastery difficulty 
+      // (make it slightly easier than the full mastery level)
+      const targetDifficulty = masteryTargetDifficulty * 0.9;
+      const optimalParams = findOptimalParameters(targetDifficulty, {
+        currentN: masteryLevel,
+        maxN: masteryLevel // Don't increase N when dropping back
+      });
+      
+      // Apply the optimal parameters
+      nLevelInputHandler(null, optimalParams.n);
+      targetStimuliInputHandler(null, optimalParams.matches);
+      baseDelayInputHandler(null, optimalParams.delay);
       
       // Record the level change
-      addLevelChangeHistory("Challenge → Mastery (3 consecutive failures)");
+      addLevelChangeHistory(`Challenge → Mastery (Difficulty: ${currentDifficulty.toFixed(1)} → ${targetDifficulty.toFixed(1)})`);
       
-      // Reset the streaks after level change
+      // Reset streaks
       challengeSuccessStreak = 0;
       challengeFailureStreak = 0;
       masterySuccessStreak = 0;
       masteryFailureStreak = 0;
-      
-      nLevelInputHandler(null, masteryLevel);
     } 
-    // Check for mastering challenge (3 consecutive successes)
-    else if (challengeSuccessStreak >= 3 && baseDelay <= 4000 && targetNumOfStimuli >= 2) {
+    // Check for mastering challenge
+    else if (challengeSuccessStreak >= 3 && accuracy >= 0.8) {
       // Challenge becomes new mastery, create new challenge
       masteryLevel = challengeLevel;
       challengeLevel = masteryLevel + 1;
       
-      // Reset difficulty params and challenge attempt tracking
-      baseDelay = 5000;
-      targetNumOfStimuli = 1;
-      isFirstChallengeAttempt = true;
-      challengeAttemptCount = 0;
+      // Find optimal parameters for the new mastery level
+      const targetDifficulty = calculateDifficultyScore(masteryLevel, 2, 4000); // Balanced difficulty
+      const optimalParams = findOptimalParameters(targetDifficulty, {
+        currentN: masteryLevel,
+        minN: masteryLevel, // Keep at least the mastery level
+        maxN: masteryLevel // Don't exceed mastery level
+      });
+      
+      // Apply the optimal parameters
+      nLevelInputHandler(null, optimalParams.n);
+      targetStimuliInputHandler(null, optimalParams.matches);
+      baseDelayInputHandler(null, optimalParams.delay);
       
       // Record the level change
-      addLevelChangeHistory(`Mastery Level increased to ${masteryLevel} (3 consecutive successes)`);
+      addLevelChangeHistory(`Mastery Level increased to ${masteryLevel} (Difficulty: ${targetDifficulty.toFixed(1)})`);
       
-      // Reset the streaks after level change
+      // Reset streaks
       challengeSuccessStreak = 0;
       challengeFailureStreak = 0;
       masterySuccessStreak = 0;
       masteryFailureStreak = 0;
-      
-      nLevelInputHandler(null, masteryLevel);
     }
   } else { // At mastery level
-    // Check for ready to challenge (3 consecutive successes)
-    if (masterySuccessStreak >= 3) {
+    // Check for ready to challenge
+    if (masterySuccessStreak >= 3 && accuracy >= 0.8) {
       // Move up to challenge
       currentLevel = "challenge";
       
-      // Set first challenge attempt flag if this is a new challenge level
-      if (challengeAttemptCount == 0) {
-        isFirstChallengeAttempt = true;
-        // Start with a high delay for first attempt at a new challenge level
-        baseDelay = Math.max(baseDelay, 6000);
-        baseDelayInputHandler(null, baseDelay);
-      }
+      // Find optimal parameters for the challenge level
+      const targetDifficulty = calculateDifficultyScore(challengeLevel, 1, 5000); // Start with manageable difficulty
+      const optimalParams = findOptimalParameters(targetDifficulty, {
+        currentN: challengeLevel,
+        minN: challengeLevel, // Keep at least the challenge level
+        maxN: challengeLevel  // Don't exceed challenge level
+      });
+      
+      // Apply the optimal parameters
+      nLevelInputHandler(null, optimalParams.n);
+      targetStimuliInputHandler(null, optimalParams.matches);
+      baseDelayInputHandler(null, optimalParams.delay);
       
       // Record the level change
-      addLevelChangeHistory("Mastery → Challenge (3 consecutive successes)");
+      addLevelChangeHistory(`Mastery → Challenge (Difficulty: ${currentDifficulty.toFixed(1)} → ${targetDifficulty.toFixed(1)})`);
       
-      // Reset the streaks after level change
+      // Reset streaks
       masterySuccessStreak = 0;
       masteryFailureStreak = 0;
       challengeSuccessStreak = 0;
       challengeFailureStreak = 0;
-      
-      nLevelInputHandler(null, challengeLevel);
     }
   }
-  
-  // Update inputs
-  baseDelayInputHandler(null, baseDelay);
-  targetStimuliInputHandler(null, targetNumOfStimuli);
 }
 
 function evaluateAdaptiveDSession(accuracy) {
   const isChallenge = currentLevel === "challenge";
   
+  // Calculate base difficulty targets based on dimensions
+  // Higher dimension counts should have higher difficulty
+  const baseMasteryDifficulty = masteryDimensions * 0.8; 
+  const baseChallengeDifficulty = challengeDimensions * 0.8;
+  
+  // Calculate current difficulties
+  const masteryDifficulty = Math.max(baseMasteryDifficulty, calculateDifficultyScore(nLevel, targetNumOfStimuli, baseDelay));
+  const challengeDifficulty = Math.max(baseChallengeDifficulty, calculateDifficultyScore(nLevel, targetNumOfStimuli, baseDelay));
+  
+  console.log(`D-Level - Current level: ${currentLevel}, Mastery target: ${masteryDifficulty.toFixed(1)}, Challenge target: ${challengeDifficulty.toFixed(1)}`);
+  
   if (isChallenge) {
-    // Check for challenge failure (3 consecutive failures)
-    if (challengeFailureStreak >= 3) {
-      // Move back to mastery, but increase its difficulty
-      if (baseDelay > 4000) baseDelay -= 500;
-      if (targetNumOfStimuli < 2) targetNumOfStimuli = 2;
-      
-      // Make challenge easier for next time
-      challengeDimensions = Math.max(masteryDimensions + 1, challengeDimensions);
+    // Check for challenge failure
+    if (challengeFailureStreak >= 3 || accuracy < 0.5) {
+      // Move back to mastery with optimized parameters
       currentLevel = "mastery";
       
-      // Reset first challenge attempt flag and increment attempt counter
-      isFirstChallengeAttempt = false;
-      challengeAttemptCount++;
+      // Find optimal parameters for 90% of mastery difficulty
+      const targetDifficulty = masteryDifficulty * 0.9;
+      const optimalParams = findOptimalParameters(targetDifficulty, {
+        // Keep N-level constrained, we're adapting dimensions instead
+        currentN: nLevel,
+        minN: nLevel,
+        maxN: nLevel
+      });
+      
+      // Apply optimal parameters
+      targetStimuliInputHandler(null, optimalParams.matches);
+      baseDelayInputHandler(null, optimalParams.delay);
       
       // Record the level change
-      addLevelChangeHistory("Challenge → Mastery (3 consecutive failures)");
+      addLevelChangeHistory(`Challenge → Mastery (Difficulty: ${currentDifficulty.toFixed(1)} → ${targetDifficulty.toFixed(1)})`);
       
-      // Reset the streaks after level change
+      // Reset streaks
       challengeSuccessStreak = 0;
       challengeFailureStreak = 0;
       masterySuccessStreak = 0;
@@ -2675,22 +3094,29 @@ function evaluateAdaptiveDSession(accuracy) {
       // Set active stimuli for mastery dimensions
       setActiveStimuli(masteryDimensions);
     } 
-    // Check for mastering challenge (3 consecutive successes)
-    else if (challengeSuccessStreak >= 3 && baseDelay <= 4000 && targetNumOfStimuli >= 2) {
+    // Check for mastering challenge
+    else if (challengeSuccessStreak >= 3 && accuracy >= 0.8) {
       // Challenge becomes new mastery, create new challenge
       masteryDimensions = challengeDimensions;
       challengeDimensions = Math.min(9, masteryDimensions + 1);
       
-      // Reset difficulty params and challenge attempt tracking
-      baseDelay = 5000;
-      targetNumOfStimuli = 1;
-      isFirstChallengeAttempt = true;
-      challengeAttemptCount = 0;
+      // Find optimal parameters for the new difficulty
+      const targetDifficulty = challengeDifficulty * 0.9; // Start slightly easier
+      const optimalParams = findOptimalParameters(targetDifficulty, {
+        // Keep N-level constrained, we're adapting dimensions
+        currentN: nLevel,
+        minN: nLevel,
+        maxN: nLevel
+      });
+      
+      // Apply optimal parameters
+      targetStimuliInputHandler(null, optimalParams.matches);
+      baseDelayInputHandler(null, optimalParams.delay);
       
       // Record the level change
-      addLevelChangeHistory(`Mastery Dimensions increased to ${masteryDimensions} (3 consecutive successes)`);
+      addLevelChangeHistory(`Mastery Dimensions increased to ${masteryDimensions} (Difficulty: ${targetDifficulty.toFixed(1)})`);
       
-      // Reset the streaks after level change
+      // Reset streaks
       challengeSuccessStreak = 0;
       challengeFailureStreak = 0;
       masterySuccessStreak = 0;
@@ -2700,23 +3126,28 @@ function evaluateAdaptiveDSession(accuracy) {
       setActiveStimuli(masteryDimensions);
     }
   } else { // At mastery level
-    // Check for ready to challenge (3 consecutive successes)
-    if (masterySuccessStreak >= 3) {
+    // Check for ready to challenge
+    if (masterySuccessStreak >= 3 && accuracy >= 0.8) {
       // Move up to challenge
       currentLevel = "challenge";
       
-      // Set first challenge attempt flag if this is a new challenge level
-      if (challengeAttemptCount == 0) {
-        isFirstChallengeAttempt = true;
-        // Start with a high delay for first attempt at a new challenge level
-        baseDelay = Math.max(baseDelay, 6000);
-        baseDelayInputHandler(null, baseDelay);
-      }
+      // Find optimal parameters for the challenge level
+      const targetDifficulty = challengeDifficulty * 0.9; // Start slightly easier
+      const optimalParams = findOptimalParameters(targetDifficulty, {
+        // Keep N-level constrained, we're adapting dimensions
+        currentN: nLevel,
+        minN: nLevel,
+        maxN: nLevel
+      });
+      
+      // Apply optimal parameters
+      targetStimuliInputHandler(null, optimalParams.matches);
+      baseDelayInputHandler(null, optimalParams.delay);
       
       // Record the level change
-      addLevelChangeHistory("Mastery → Challenge (3 consecutive successes)");
+      addLevelChangeHistory(`Mastery → Challenge (Difficulty: ${currentDifficulty.toFixed(1)} → ${targetDifficulty.toFixed(1)})`);
       
-      // Reset the streaks after level change
+      // Reset streaks
       masterySuccessStreak = 0;
       masteryFailureStreak = 0;
       challengeSuccessStreak = 0;
@@ -2726,19 +3157,39 @@ function evaluateAdaptiveDSession(accuracy) {
       setActiveStimuli(challengeDimensions);
     }
   }
-  
-  // Update inputs
-  baseDelayInputHandler(null, baseDelay);
-  targetStimuliInputHandler(null, targetNumOfStimuli);
 }
 
 // Function to display specific adaptive content based on mode
-function displayAdaptiveContent(mode) {
-  const container = document.getElementById('adaptive-content-container');
-  if (!container) return;
+function displayAdaptiveContent(mode, providedContainer) {
+    // Use provided container if available, otherwise get from DOM
+    const container = providedContainer || document.getElementById('adaptive-content-container');
+    
+    // If no container found, exit early
+    if (!container) {
+      console.log("Adaptive content container not found");
+      return;
+    }
+    
+    // Determine which mode to display if none specified
+    if (!mode) {
+      mode = enableAdaptiveN ? 'adaptive-n' : 'adaptive-d';
+    }
+    
+    // Clear previous content
+    container.innerHTML = '';
   
-  // Clear previous content
-  container.innerHTML = '';
+  // Add difficulty score display
+  const difficultyDiv = document.createElement('div');
+  difficultyDiv.className = 'current-mode';
+  difficultyDiv.style.marginBottom = '1rem';
+  difficultyDiv.innerHTML = `
+    <div class="current-mode-label">Difficulty Score</div>
+    <div class="current-mode-value">${currentDifficulty.toFixed(1)}</div>
+    <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.5rem;">
+      Highest: ${highestDifficulty.toFixed(1)}
+    </div>
+  `;
+  container.appendChild(difficultyDiv);
   
   // Current mode display
   const currentModeDiv = document.createElement('div');
@@ -2810,6 +3261,7 @@ function displayAdaptiveContent(mode) {
   
   container.appendChild(performanceDiv);
 }
+
 // Helper function for retrieving latest values
 function getLastValueForLevel(levelChanges, levelType) {
   // Find the last change that contains values for the specified level type
