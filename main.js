@@ -1224,7 +1224,6 @@ function loadSettings() {
     // Set stimuli count based on current level
     const dimensionCount = currentLevel === "mastery" ? masteryDimensions : challengeDimensions;
     setActiveStimuli(dimensionCount);
-    nLevelInputHandler(null, 1); // Keep n=1 for adaptive D mode
   }
   
   // Initialize adaptive progression UI
