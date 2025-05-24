@@ -180,27 +180,7 @@ const defVal_maxAllowedMistakes = 3;
 const defVal_prevLevelThreshold = 0.5;
 const defVal_nextLevelThreshold = 0.8;
 const defVal_numStimuliSelect = 2;
-// Algo constants
-const defVal_enableAdaptiveN = false;
-const defVal_enableAdaptiveD = false;
-const defVal_masteryLevel = 4;
-const defVal_challengeLevel = 5;
-const defVal_masteryDimensions = 8;
-const defVal_challengeDimensions = 9;
-const defVal_isFirstChallengeAttempt = true;
-const defVal_challengeAttemptCount = 0;
-// Default values for mode-specific settings
-const defVal_masteryTargetStimuli = 2; // Default mastery mode should start with fewer stimuli
-const defVal_challengeTargetStimuli = 1; // Default challenge mode should start with just one stimulus
 
-// Algo tracking
-const defVal_masterySuccessStreak = 0;
-const defVal_masteryFailureStreak = 0;
-const defVal_challengeSuccessStreak = 0;
-const defVal_challengeFailureStreak = 0;
-const defVal_currentDifficulty = 0;
-const defVal_highestDifficulty = 0;
-const defVal_difficultyHistory = [];
 
 
 
@@ -228,46 +208,11 @@ let prevLevelThreshold = defVal_prevLevelThreshold;
 let nextLevelThreshold = defVal_nextLevelThreshold;
 let numStimuliSelect = defVal_numStimuliSelect;
 
-// Add these variables to track streaks separately for mastery and challenge levels
-let masterySuccessStreak = 0;
-let masteryFailureStreak = 0;
-let challengeSuccessStreak = 0;
-let challengeFailureStreak = 0;
-
-// Add these variables to store separate settings for each mode
-let masteryDelay = defVal_baseDelay;
-let challengeDelay = defVal_baseDelay;
-let masteryTargetStimuli = defVal_masteryTargetStimuli; // Use mastery-specific default
-let challengeTargetStimuli = defVal_challengeTargetStimuli; // Use challenge-specific default
-
-let enableAdaptiveN = false; // Toggle for adaptive n-level progression
-let enableAdaptiveD = false; // Toggle for adaptive D-level (dimensional) progression
-
-// Difficulty tracking
-let masteryLevel = 4; // Current mastery n-back level
-let challengeLevel = 5; // Current challenge n-back level
-let masteryDimensions = 8; // Current mastery stimuli count
-let challengeDimensions = 9; // Current challenge stimuli count
-let currentLevel = "mastery"; // Current active level (mastery or challenge)
-
-// Performance tracking
-let consecutiveCorrect = 0;
-let consecutiveIncorrect = 0;
-let accuracyThresholdUpper = 0.90; // 90% accuracy to level up
-let accuracyThresholdLower = 0.75; // 75% accuracy to level down
-let sessionResponses = []; // Store correct/incorrect responses for the session
-let isFirstChallengeAttempt = true;
-let challengeAttemptCount = 0;
-
 
 // Game states
 let matchingStimuli = 0;
 let stimuliCount = 0;
 let intervals = [];
-
-let currentDifficulty = 0;
-let highestDifficulty = 0;
-let difficultyHistory = [];
 
 let isRunning = false;
 
@@ -337,23 +282,7 @@ function randomizeEnableTrigHandler(evt, defVal) {
   }
 }
 
-// Simplified dummy handler (adaptive functionality has been removed)
-function adaptiveNEnableTrigHandler(evt, defVal) {
-  if (defVal != null) {
-    enableAdaptiveN = defVal;
-  } else {
-    enableAdaptiveN = false;
-  }
-}
 
-// Simplified dummy handler (adaptive functionality has been removed)
-function adaptiveDEnableTrigHandler(evt, defVal) {
-  if (defVal != null) {
-    enableAdaptiveD = defVal;
-  } else {
-    enableAdaptiveD = false;
-  }
-}
 
 // Handler functions for enabling/disabling stimuli
 function wallsEnableTrigHandler(evt, defVal) {
@@ -887,10 +816,6 @@ function loadBindings() {
   reloadBindKeys();
 }
 
-function initializeAutoProgressionUI() {
-  // Adaptive progression UI has been removed
-  console.log("Adaptive progression disabled");
-}
 
 function saveHistory() {
   // Create a backup of current history before saving
@@ -1122,28 +1047,7 @@ function saveSettings() {
     maxAllowedMistakes,
     prevLevelThreshold,
     nextLevelThreshold,
-    enableAdaptiveN,
-    enableAdaptiveD,
-    masteryLevel,
-    challengeLevel,
-    masteryDimensions,
-    challengeDimensions,
-    currentLevel,
-    isFirstChallengeAttempt,
-    challengeAttemptCount,
-    numStimuliSelect,
-    // algo metrics
-    masteryDelay,
-    challengeDelay,
-    masteryTargetStimuli,
-    challengeTargetStimuli,
-    masterySuccessStreak,
-    masteryFailureStreak,
-    challengeSuccessStreak,
-    challengeFailureStreak,
-    currentDifficulty,
-    highestDifficulty,
-    difficultyHistory
+    numStimuliSelect
   };
   localStorage.setItem(LS_SETTINGS_KEY, JSON.stringify(settings));
   return settings;
@@ -1176,67 +1080,7 @@ function loadSettings() {
   previousLevelThresholdInputHandler(null, settings.prevLevelThreshold);
   nextLevelThresholdInputHandler(null, settings.nextLevelThreshold);
   numStimuliSelectInputHandler(null, settings.numStimuliSelect);
-  // Reset adaptive settings to disabled
-  // Reset adaptive settings to disabled
-  enableAdaptiveN = false;
-  enableAdaptiveD = false;
-
-  // Load adaptive progression settings
-  masteryLevel = settings.masteryLevel || defVal_masteryLevel;
-  challengeLevel = settings.challengeLevel || defVal_challengeLevel;
-  masteryDimensions = settings.masteryDimensions || defVal_masteryDimensions;
-  challengeDimensions = settings.challengeDimensions || defVal_challengeDimensions;
-  currentLevel = settings.currentLevel || "mastery";
-  isFirstChallengeAttempt = settings.isFirstChallengeAttempt !== undefined ? 
-                            settings.isFirstChallengeAttempt : defVal_isFirstChallengeAttempt;
-  challengeAttemptCount = settings.challengeAttemptCount || defVal_challengeAttemptCount;
-
-  // Load separate settings for mastery and challenge modes
-  masteryDelay = settings.masteryDelay || defVal_baseDelay;
-  challengeDelay = settings.challengeDelay || defVal_baseDelay;
-  masteryTargetStimuli = settings.masteryTargetStimuli || defVal_targetNumOfStimuli;
-  challengeTargetStimuli = settings.challengeTargetStimuli || defVal_targetNumOfStimuli;
   
-  // Load streak counters
-  masterySuccessStreak = settings.masterySuccessStreak !== undefined ? 
-                          settings.masterySuccessStreak : defVal_masterySuccessStreak;
-  masteryFailureStreak = settings.masteryFailureStreak !== undefined ? 
-                          settings.masteryFailureStreak : defVal_masteryFailureStreak;
-  challengeSuccessStreak = settings.challengeSuccessStreak !== undefined ? 
-                            settings.challengeSuccessStreak : defVal_challengeSuccessStreak;
-  challengeFailureStreak = settings.challengeFailureStreak !== undefined ? 
-                            settings.challengeFailureStreak : defVal_challengeFailureStreak;
-  
-  // Ensure difficulty tracking is loaded
-  currentDifficulty = settings.currentDifficulty || defVal_currentDifficulty;
-  highestDifficulty = settings.highestDifficulty || defVal_highestDifficulty;
-  difficultyHistory = settings.difficultyHistory || defVal_difficultyHistory;
-  
-  // Set consecutive streaks based on current level (important for mid-game difficulty adjustments)
-  consecutiveCorrect = currentLevel === "mastery" ? masterySuccessStreak : challengeSuccessStreak;
-  consecutiveIncorrect = currentLevel === "mastery" ? masteryFailureStreak : challengeFailureStreak;
-  
-  // Log streak values for debugging
-  console.log("Loaded streak values:", {
-    masterySuccess: masterySuccessStreak, 
-    masteryFailure: masteryFailureStreak,
-    challengeSuccess: challengeSuccessStreak,
-    challengeFailure: challengeFailureStreak,
-    currentLevel: currentLevel,
-    consecutive: { correct: consecutiveCorrect, incorrect: consecutiveIncorrect }
-  });
-  
-  // Set the current n-level based on the adaptive progression settings
-  if (enableAdaptiveN) {
-    nLevelInputHandler(null, currentLevel === "mastery" ? masteryLevel : challengeLevel);
-  } else if (enableAdaptiveD) {
-    // Set stimuli count based on current level
-    const dimensionCount = currentLevel === "mastery" ? masteryDimensions : challengeDimensions;
-    setActiveStimuli(dimensionCount);
-  }
-  
-  // Initialize adaptive progression UI
-  initializeAutoProgressionUI();
 }
 
 function openBindings() {
@@ -1284,8 +1128,7 @@ function toggleStats(_dim) {
   const _history = history[validDim];
   const bars = document.querySelector(".bar-chart-bars");
   bars.innerHTML = "";
-  // Create array to hold difficulty data for line graph
-  let difficultyData = [];
+
   
   // Initialize stats variables
   let avgNLevel = 0;
@@ -1297,10 +1140,7 @@ function toggleStats(_dim) {
   let totalAccuracy = 0;
   let pointsCount = 0;
   
-  // Initialize difficulty metrics
-  let totalDifficulty = 0;
-  let maxDifficulty = 0;
-  let pointsWithDifficulty = 0;
+
   
   // Initialize stimuli totals
   let stimuliTotals = {
@@ -1349,12 +1189,7 @@ function toggleStats(_dim) {
           totalAccuracy += calculateAccuracy(point.right || 0, point.missed || 0, point.wrong || 0);
         }
         
-        // Track difficulty data if available
-        if (point.difficulty) {
-          totalDifficulty += point.difficulty;
-          maxDifficulty = Math.max(maxDifficulty, point.difficulty);
-          pointsWithDifficulty++;
-        }
+        
         
         // Aggregate individual stimuli accuracy data if it exists
         if (point.stimuliData) {
@@ -1369,51 +1204,15 @@ function toggleStats(_dim) {
         }
       }
       
-      // Create bar chart for this date's history data
+// Create bar chart for this date's history data
 if (points.length > 0) {
   _avgNLevel = _avgNLevel / points.length;
   avgNLevel += _avgNLevel;
   
-  // Calculate average difficulty for this date's sessions
-  let dateDifficulty = 0;
-  let difficultyCount = 0;
-  
-  for (const point of points) {
-    if (point.difficulty) {
-      dateDifficulty += point.difficulty;
-      difficultyCount++;
-    }
-  }
-  
-  // Create bar element - always show a bar even if no difficulty data exists yet
-  let barText;
-  let barElement;
-  
-  if (difficultyCount > 0) {
-    // Show difficulty if available
-    const avgDifficulty = dateDifficulty / difficultyCount;
-    barText = toOneDecimal(avgDifficulty);
-    barElement = getBar(barText);
-    
-    // Style the bar based on difficulty value
-    if (avgDifficulty > 15) {
-      barElement.style.backgroundColor = '#d08770'; // Orange for high difficulty
-    } else if (avgDifficulty > 10) {
-      barElement.style.backgroundColor = '#ebcb8b'; // Yellow for medium difficulty
-    } else if (avgDifficulty > 5) {
-      barElement.style.backgroundColor = '#a3be8c'; // Green for normal difficulty
-    } else {
-      barElement.style.backgroundColor = '#81a1c1'; // Blue for low difficulty
-    }
-    
-    // Add tooltip with more information
-    barElement.title = `Date: ${date}\nDifficulty: ${avgDifficulty.toFixed(1)}\nN-Level: ${toOneDecimal(_avgNLevel)}`;
-  } else {
-    // No difficulty data yet, show N-level as fallback
-    barText = toOneDecimal(_avgNLevel);
-    barElement = getBar(barText);
-    barElement.title = `Date: ${date}\nN-Level: ${barText}`;
-  }
+  // Create bar element showing N-level
+  const barText = toOneDecimal(_avgNLevel);
+  const barElement = getBar(barText);
+  barElement.title = `Date: ${date}\nN-Level: ${barText}`;
   
   bars.appendChild(barElement);
 }
@@ -1444,87 +1243,11 @@ if (points.length > 0) {
     }
   }
 
-  // Difficulty data is shown in a separate section instead of as a line overlay
   
   // Update individual stimuli accuracy display
   updateStimuliAccuracyDisplay(stimuliTotals);
-  
-  // Create or update difficulty metrics section
-  let difficultySection = document.querySelector('.difficulty-metrics-section');
-  if (!difficultySection) {
-    difficultySection = document.createElement('div');
-    difficultySection.className = 'stimuli-accuracy-section difficulty-metrics-section';
-    difficultySection.innerHTML = `
-      <h3>Difficulty Metrics</h3>
-      <div class="stats-cards" style="font-size: 1rem; margin: 1rem 0;">
-        <div class="stats-card">
-          <div class="stats-card-title">Average</div>
-          <div id="sc-avg-difficulty" class="stats-card-value">-</div>
-        </div>
-        <div class="stats-card">
-          <div class="stats-card-title">Highest</div>
-          <div id="sc-max-difficulty" class="stats-card-value">-</div>
-        </div>
-      </div>
-    `;
-    
-    // Add to dialog after the bar chart
-    const barChartSection = document.querySelector('.bar-chart-wrap');
-    barChartSection.parentNode.insertBefore(difficultySection, barChartSection.nextSibling);
-  }
-
-  // Add difficulty history chart
-  if (difficultyHistory && difficultyHistory.length > 0) {
-    // Check if the chart already exists and remove it if it does
-    const existingChart = document.querySelector('.difficulty-history-section');
-    if (existingChart) {
-      existingChart.remove();
-    }
-    
-    // Create and add the difficulty history chart
-    const difficultyHistoryChart = createDifficultyHistoryChart();
-    
-    // Add it to the dialog after the difficulty metrics section
-    if (difficultySection && difficultySection.parentNode) {
-      difficultySection.parentNode.insertBefore(difficultyHistoryChart, difficultySection.nextSibling);
-    } else {
-      // Fallback if difficulty section not found
-      const barChartSection = document.querySelector('.bar-chart-wrap');
-      if (barChartSection && barChartSection.parentNode) {
-        barChartSection.parentNode.insertBefore(difficultyHistoryChart, barChartSection.nextSibling);
-      }
-    }
-  }
-  
-  // Update difficulty metrics display
-  const avgDifficultyEl = document.getElementById('sc-avg-difficulty');
-  const maxDifficultyEl = document.getElementById('sc-max-difficulty');
-  
-  if (pointsWithDifficulty > 0) {
-    avgDifficultyEl.textContent = (totalDifficulty / pointsWithDifficulty).toFixed(1);
-    maxDifficultyEl.textContent = maxDifficulty.toFixed(1);
-  } else {
-    avgDifficultyEl.textContent = "-";
-    maxDifficultyEl.textContent = "-";
-  }
-  
-  // Update adaptive progress display if applicable
-  if (typeof updateAdaptiveProgressDisplay === 'function') {
-    updateAdaptiveProgressDisplay();
-  }
-  
   // Store the last displayed dimension
-  localStorage.setItem("last-dim", validDim);
-  
-  // If adaptive mode is enabled, show the adaptive progress
-  if (enableAdaptiveN || enableAdaptiveD) {
-    if (typeof displayAdaptiveContent === 'function') {
-      const container = document.getElementById('adaptive-content-container');
-      if (container) {
-        displayAdaptiveContent(enableAdaptiveN ? 'adaptive-n' : 'adaptive-d', container);
-      }
-    }
-  }
+localStorage.setItem("last-dim", validDim);
 }
 function updateStimuliAccuracyDisplay(totals) {
   // Hide all items first
@@ -2054,6 +1777,7 @@ function getGameCycle(n) {
       document.querySelector(".stop").classList.add("active");
       document.querySelector(".play").classList.remove("active");
 
+
       // Update the recap dialog
       const resDim = document.querySelector("#res-dim");
       const resRight = document.querySelector("#sc-res-right");
@@ -2073,38 +1797,6 @@ function getGameCycle(n) {
         accuracyElement.innerHTML = (accuracy * 100).toFixed(0) + "%";
       }
 
-      // Calculate difficulty score for the session
-currentDifficulty = calculateDifficultyScore(nLevel, targetNumOfStimuli, baseDelay);
-
-// Check if we already have a difficulty element
-let difficultyElement = document.getElementById("sc-res-difficulty");
-if (!difficultyElement) {
-  // Create a new difficulty display element
-  const accuracyContainer = accuracyElement.parentElement;
-  
-  // Create a wrapper for the difficulty score
-  const difficultyWrapper = document.createElement("div");
-  difficultyWrapper.style.textAlign = "center";
-  difficultyWrapper.style.fontSize = "1.5rem";
-  difficultyWrapper.style.marginTop = "1rem";
-  difficultyWrapper.style.marginBottom = "1rem";
-  
-  // Add the content
-  difficultyWrapper.innerHTML = `
-    Difficulty: <span id="sc-res-difficulty">${currentDifficulty.toFixed(1)}</span>
-  `;
-  
-  // Insert after accuracy
-  accuracyContainer.parentNode.insertBefore(difficultyWrapper, accuracyContainer.nextSibling);
-} else {
-  // Update existing element
-  difficultyElement.textContent = currentDifficulty.toFixed(1);
-}
-
-// Update highest difficulty if current is higher
-if (currentDifficulty > highestDifficulty) {
-  highestDifficulty = currentDifficulty;
-}
 
 
 
@@ -2126,10 +1818,7 @@ console.log("Level conditions:", {
 });
 
       localStorage.setItem("last-dim", dimensions);
-      // Calculate difficulty score
-const sessionDifficulty = calculateDifficultyScore(nLevel, targetNumOfStimuli, baseDelay);
-
-// With this code:
+      
 const historyPoint = {
     nLevel,
     right: correctStimuli,
@@ -2137,14 +1826,7 @@ const historyPoint = {
     wrong: mistakes,
     accuracy: accuracy,
     outcome: 0,
-    stimuliData: stimuliData,
-    // Add difficulty information
-    difficulty: currentDifficulty,
-    difficultyParams: {
-      nLevel: nLevel,
-      matches: targetNumOfStimuli,
-      delay: baseDelay
-    }
+    stimuliData: stimuliData
   };
 
       // In getGameCycle function, find the levelUpCond/levelDownCond code block and replace it with this:
@@ -2187,8 +1869,7 @@ const historyPoint = {
       resetPoints();
       resetBlock();
 
-      // Evaluate session for adaptive progression
-evaluateSession();
+      
       return;
     }
     
@@ -2257,85 +1938,18 @@ function play() {
     return;
   }
 
-  console.log("PLAY function START - Game settings:", {
-    currentLevel,
-    nLevel, 
-    masteryLevel,
-    challengeLevel,
-    baseDelay
-  });
-  
-  document.querySelectorAll("dialog").forEach(d => d.close());
-  closeOptions();
+document.querySelectorAll("dialog").forEach(d => d.close());
+closeOptions();
 
-  // Apply the correct settings based on current mode
-  if (enableAdaptiveN || enableAdaptiveD) {
-    if (currentLevel === "mastery") {
-      // Use mastery-specific settings
-      baseDelay = masteryDelay;
-      targetNumOfStimuli = masteryTargetStimuli;
-      // For adaptive N mode, ensure correct n-level
-      if (enableAdaptiveN) {
-        nLevelInputHandler(null, masteryLevel);
-      }
-    } else {
-      // Use challenge-specific settings
-      baseDelay = challengeDelay;
-      targetNumOfStimuli = challengeTargetStimuli;
-      // For adaptive N mode, ensure correct n-level
-      if (enableAdaptiveN) {
-        nLevelInputHandler(null, challengeLevel);
-      }
-    }
-    
-    // Update the UI to reflect the current settings
-    baseDelayInputHandler(null, baseDelay);
-    targetStimuliInputHandler(null, targetNumOfStimuli);
-    
-    console.log("Applied mode-specific settings:", {
-      mode: currentLevel,
-      baseDelay,
-      targetNumOfStimuli,
-      nLevel
-    });
-  }
-  
-  // Check if randomize is enabled, if so select random stimuli
-  if (randomizeEnabled) {
-    selectRandomStimuli(numStimuliSelect);
-  }
-  
-  // Reset game state before starting
-  resetPoints();
-  resetBlock();
-  resetIntervals();
-  
-  // Reset session response tracking for a fresh start
-  sessionResponses = [];
-  
-  // FIXED: DO NOT OVERRIDE THE N-LEVEL HERE
-  // Simply ensure we're using the current n-level without changing it
-  console.log("Current N-level:", nLevel);
-  console.log("Current mode:", currentLevel);
-  
-  // Only set dimensions for adaptive-D mode, don't touch N-level for adaptive-N
-  if (enableAdaptiveD) {
-    // Set dimensions based on current mode
-    const dimensionCount = currentLevel === "mastery" ? masteryDimensions : challengeDimensions;
-    setActiveStimuli(dimensionCount);
-  }
-  
-  // Set consecutive counters based on current level
-  consecutiveCorrect = currentLevel === "mastery" ? masterySuccessStreak : challengeSuccessStreak;
-  consecutiveIncorrect = currentLevel === "mastery" ? masteryFailureStreak : challengeFailureStreak;
-  
-  console.log("PLAY function END - Game settings:", {
-    currentLevel,
-    nLevel, 
-    masteryLevel,
-    challengeLevel,
-    baseDelay
-  });
+// Check if randomize is enabled, if so select random stimuli
+if (randomizeEnabled) {
+  selectRandomStimuli(numStimuliSelect);
+}
+
+// Reset game state before starting
+resetPoints();
+resetBlock();
+resetIntervals();
   
   isRunning = true;
   
@@ -2343,11 +1957,6 @@ function play() {
   document.querySelector(".stop").classList.remove("active");
   document.querySelector(".play").classList.add("active");
 
-  try {
-    updateDifficultyDisplay();
-  } catch (e) {
-    console.error("Error updating difficulty display:", e);
-  }
 
   intervals.push(
     setInterval(getGameCycle(nLevel), baseDelay)
@@ -2359,53 +1968,17 @@ function stop() {
     return;
   }
   
-  // Save current state before resetting
-  const wasRunning = isRunning;
-  const hadResponses = sessionResponses.length > 0;
-  
-  // Log info about stopping the game
-  console.log("Stopping game with:", {
-    responses: sessionResponses.length,
-    masterySuccess: masterySuccessStreak, 
-    masteryFailure: masteryFailureStreak,
-    challengeSuccess: challengeSuccessStreak,
-    challengeFailure: challengeFailureStreak
-  });
-  
-  // Reset game UI and timers
-  resetPoints();
-  resetBlock();
-  resetIntervals();
-  
-  // Stop the game
-  isRunning = false;
-  
-  speak("Stop.");
-  document.querySelector(".stop").classList.add("active");
-  document.querySelector(".play").classList.remove("active");
+// Reset game UI and timers
+resetPoints();
+resetBlock();
+resetIntervals();
 
-  // If we had a partially completed session with responses,
-  // we should preserve those responses for the next game
-  if (hadResponses) {
-    console.log(`Preserved ${sessionResponses.length} responses for next game`);
-  } else {
-    // If no responses were made, we can safely reset
-    sessionResponses = [];
-  }
-  
-  // Make sure the difficulty display stays visible but shows the paused state
-  const difficultyDisplay = document.getElementById('difficulty-display');
-  if (difficultyDisplay) {
-    // Keep showing the difficulty but indicate game is stopped
-    if (currentLevel === "mastery") {
-      difficultyDisplay.innerHTML = `<span style="color:#a3be8c;">Mastery</span> - Paused`;
-    } else {
-      difficultyDisplay.innerHTML = `<span style="color:#d08770;">Challenge</span> - Paused`;
-    }
-  }
-  
-  // Save settings to preserve streak counters
-  saveSettings();
+// Stop the game
+isRunning = false;
+
+speak("Stop.");
+document.querySelector(".stop").classList.add("active");
+document.querySelector(".play").classList.remove("active");
 }
 
 function checkHandler(stimulus) {
@@ -2498,11 +2071,11 @@ function checkHandler(stimulus) {
       if (curr.isMatching) {
         rightWalls++;
         button.classList.add("right");
-         recordResponse(true);
+         
       } else {
         wrongWalls++;
         button.classList.add("wrong");
-        recordResponse(false);
+        
       }
       break;
     }
@@ -2511,11 +2084,11 @@ function checkHandler(stimulus) {
       if (curr.isMatching) {
         rightCamera++;
         button.classList.add("right");
-         recordResponse(true);
+         
       } else {
         wrongCamera++;
         button.classList.add("wrong");
-        recordResponse(false);
+        
       }
       break;
     }
@@ -2524,11 +2097,11 @@ function checkHandler(stimulus) {
       if (curr.isMatching) {
         rightFace++;
         button.classList.add("right");
-         recordResponse(true);
+         
       } else {
         wrongFace++;
         button.classList.add("wrong");
-        recordResponse(false);
+        
       }
       break;
     }
@@ -2537,11 +2110,11 @@ function checkHandler(stimulus) {
       if (curr.isMatching) {
         rightPosition++;
         button.classList.add("right");
-         recordResponse(true);
+         
       } else {
         wrongPosition++;
         button.classList.add("wrong");
-        recordResponse(false);
+        
       }
       break;
     }
@@ -2550,11 +2123,11 @@ function checkHandler(stimulus) {
       if (curr.isMatching) {
         rightWord++;
         button.classList.add("right");
-         recordResponse(true);
+         
       } else {
         wrongWord++;
         button.classList.add("wrong");
-        recordResponse(false);
+        
       }
       break;
     }
@@ -2563,11 +2136,11 @@ function checkHandler(stimulus) {
       if (curr.isMatching) {
         rightShape++;
         button.classList.add("right");
-         recordResponse(true);
+         
       } else {
         wrongShape++;
         button.classList.add("wrong");
-        recordResponse(false);
+        
       }
       break;
     }
@@ -2576,11 +2149,11 @@ function checkHandler(stimulus) {
       if (curr.isMatching) {
         rightCorner++;
         button.classList.add("right");
-         recordResponse(true);
+         
       } else {
         wrongCorner++;
         button.classList.add("wrong");
-        recordResponse(false);
+        
       }
       break;
     }
@@ -2589,11 +2162,11 @@ function checkHandler(stimulus) {
       if (curr.isMatching) {
         rightSound++;
         button.classList.add("right");
-         recordResponse(true);
+         
       } else {
         wrongSound++;
         button.classList.add("wrong");
-        recordResponse(false);
+        
       }
       break;
     }
@@ -2602,486 +2175,17 @@ function checkHandler(stimulus) {
       if (curr.isMatching) {
         rightColor++;
         button.classList.add("right");
-         recordResponse(true);
+         
       } else {
         wrongColor++;
         button.classList.add("wrong");
-        recordResponse(false);
+        
       }
       break;
     }
   }
 }
 
-function recordResponse(isCorrect) {
-  if (!enableAdaptiveN && !enableAdaptiveD) return;
-  
-  // Only record the response without incrementing streaks
-  sessionResponses.push(isCorrect);
-  
-  // We'll update streaks only at the end of a complete round in evaluateSession()
-  
-  // Still apply adaptive difficulty changes for individual responses
-  updateDifficulty();
-}
-
-
-function updateDifficulty() {
-  // Calculate current difficulty
-  currentDifficulty = calculateDifficultyScore(nLevel, targetNumOfStimuli, baseDelay);
-  
-  // Update the UI
-  updateDifficultyDisplay();
-  
-  return currentDifficulty;
-}
-
-/**
- * Calculates a difficulty score based on n-back level, match count, and delay
- * 
- * Difficulty = [1 + (M==1 ? 1 : 3.5 + 0.6*(M-2))] × (N^1.6) × [(6000/delay)^0.8]
- * 
- * @param {number} nLevel - Current n-back level
- * @param {number} matches - Number of target matches
- * @param {number} delay - Delay between stimuli in milliseconds
- * @return {number} - Calculated difficulty score
- */
-function calculateDifficultyScore(nLevel, matches, delay) {
-  // Ensure inputs are valid numbers and at least 1
-  nLevel = Math.max(1, nLevel);
-  matches = Math.max(1, matches);
-  delay = Math.max(1, delay);
-  
-  // Calculate each component of the formula using the new equation:
-  // Difficulty = [1 + (M==1 ? 1 : 3.5 + 0.6*(M-2))] × (N^1.6) × [(6000/delay)^0.8]
-  const matchFactor = 1 + (matches === 1 ? 1 : 3.5 + 0.6 * (matches - 2));
-  const nFactor = Math.pow(nLevel, 1.6);
-  const speedFactor = Math.pow(6000 / delay, 0.8);
-  
-  // Calculate total difficulty
-  const difficulty = matchFactor * nFactor * speedFactor;
-  
-  // Round to 2 decimal places for readability
-  return Math.round(difficulty * 100) / 100;
-}
-
-/**
- * Updates the difficulty display during gameplay
- */
-// Replace the entire updateDifficultyDisplay function with this:
-    function updateDifficultyDisplay() {
-    try {
-      // Calculate current difficulty
-      const currentScore = calculateDifficultyScore(nLevel, targetNumOfStimuli, baseDelay);
-      
-      // Check if difficulty display exists, create if not
-      let difficultyDisplay = document.getElementById('difficulty-display');
-      if (!difficultyDisplay) {
-        // Create the difficulty display element
-        const nBackElement = document.querySelector('.n-back');
-        if (!nBackElement) {
-          console.error("Cannot find n-back element");
-          return;
-        }
-        
-        difficultyDisplay = document.createElement('div');
-        difficultyDisplay.id = 'difficulty-display';
-        difficultyDisplay.style.position = 'absolute';
-        difficultyDisplay.style.top = '2.5em';
-        difficultyDisplay.style.color = '#ffff';
-        difficultyDisplay.style.transform = 'translateZ(1em)';
-        difficultyDisplay.style.fontSize = '0.8em';
-        difficultyDisplay.style.opacity = '0.8';
-        
-        // Insert after n-back display
-        nBackElement.parentNode.insertBefore(difficultyDisplay, nBackElement.nextSibling);
-      }
-      
-      // Update the display
-      difficultyDisplay.textContent = `Difficulty: ${currentScore.toFixed(1)}`;
-      
-      // Update the global tracking variable
-      currentDifficulty = currentScore;
-    } catch (e) {
-      console.error("Error in updateDifficultyDisplay:", e);
-    }
-  }
-
-  function evaluateSession() {
-    // Calculate accuracy for the entire round
-    const correctResponses = sessionResponses.filter(r => r).length;
-    const accuracy = sessionResponses.length > 0 ? correctResponses / sessionResponses.length : 0;
-    
-    console.log("Session accuracy:", accuracy, "Responses:", sessionResponses.length);
-    
-    // Calculate current difficulty score
-    currentDifficulty = calculateDifficultyScore(nLevel, targetNumOfStimuli, baseDelay);
-    
-    // Update highest difficulty if current is higher
-    if (currentDifficulty > highestDifficulty) {
-      highestDifficulty = currentDifficulty;
-    }
-    
-    // Add to difficulty history with more detailed data (keep last 15 sessions)
-    difficultyHistory.push({
-      timestamp: Date.now(),
-      difficulty: currentDifficulty,
-      accuracy: accuracy,
-      nLevel: nLevel,
-      matches: targetNumOfStimuli,
-      delay: baseDelay
-    });
-    
-    // Keep the history at a reasonable size (last 15 sessions)
-    if (difficultyHistory.length > 15) {
-      difficultyHistory.shift(); // Remove oldest entry
-    }
-    
-    // Log difficulty progression
-    console.log("Difficulty history updated:", difficultyHistory);
-    console.log("Current difficulty:", currentDifficulty, "Highest:", highestDifficulty);
-    
-    // Reset session responses for next round
-    sessionResponses = [];
-    
-    // Save settings
-    saveSettings();
-  }
-
-/**
- * Calculates optimal delay time to achieve target difficulty
- * @param {number} nLevel - Current n-back level
- * @param {number} matches - Target number of matches
- * @return {number} - Optimal delay in milliseconds
- */
-function calculateOptimalDelay(nLevel, matches) {
-  // Target difficulty based on n-level
-  let targetDifficulty;
-  
-  if (nLevel <= 2) {
-    targetDifficulty = 4; // Easier targets for beginners
-  } else if (nLevel <= 4) {
-    targetDifficulty = 7; // Medium difficulty
-  } else {
-    targetDifficulty = 10; // Harder difficulty for higher levels
-  }
-  
-  // Work backward from the difficulty formula to solve for delay
-  // Difficulty = (N^1.4) × [1 + ln(Matches) × 1.5] × [(6000/delay)^0.8]
-  const nFactor = Math.pow(nLevel, 1.4);
-  const matchFactor = 1 + (Math.log(matches) * 1.5);
-  
-  // Solve for speedFactor
-  const speedFactor = targetDifficulty / (nFactor * matchFactor);
-  
-  // Solve for delay
-  // speedFactor = (6000/delay)^0.8
-  // (speedFactor)^(1/0.8) = 6000/delay
-  // delay = 6000 / (speedFactor)^(1/0.8)
-  const delay = 6000 / Math.pow(speedFactor, 1/0.8);
-  
-  // Constrain to reasonable limits
-  return Math.min(8000, Math.max(2000, Math.round(delay)));
-}
-
-/**
- * Calculates a difficulty score based on n-back level, match count, and delay
- * 
- * Difficulty = (N^1.4) × [1 + ln(Matches) × 1.5] × [(6000/delay)^0.8]
- * 
- * @param {number} nLevel - Current n-back level
- * @param {number} matches - Number of target matches
- * @param {number} delay - Delay between stimuli in milliseconds
- * @return {number} - Calculated difficulty score
- */
-function calculateDifficultyScore(nLevel, matches, delay) {
-    // Ensure inputs are valid numbers and at least 1
-    nLevel = Math.max(1, nLevel);
-    matches = Math.max(1, matches);
-    delay = Math.max(1, delay);
-    
-    // Calculate each component of the formula
-    const nFactor = Math.pow(nLevel, 1.4);
-    const matchFactor = 1 + (Math.log(matches) * 1.5);
-    const speedFactor = Math.pow(6000 / delay, 0.8);
-    
-    // Calculate total difficulty
-    const difficulty = nFactor * matchFactor * speedFactor;
-    
-    // Round to 2 decimal places for readability
-    return Math.round(difficulty * 100) / 100;
-  }
-
-/**
- * Finds optimal parameter combination to achieve a target difficulty
- * @param {number} targetDifficulty - The desired difficulty score to achieve
- * @param {Object} constraints - Constraints on parameter values
- * @return {Object} - Optimal parameter combination
- */
-function findOptimalParameters(targetDifficulty, constraints = {}) {
-  // Default constraints
-  const defaults = {
-    minN: 1,
-    maxN: 9,
-    minMatches: 1,
-    maxMatches: 5,
-    minDelay: 2000,
-    maxDelay: 8000,
-    currentN: nLevel,
-    currentMatches: targetNumOfStimuli,
-    currentDelay: baseDelay
-  };
-  
-  // Merge provided constraints with defaults
-  const options = { ...defaults, ...constraints };
-  
-  // Start with current values
-  let bestParams = {
-    n: options.currentN,
-    matches: options.currentMatches,
-    delay: options.currentDelay
-  };
-  
-  // Calculate current difficulty
-  let currentDiff = calculateDifficultyScore(
-    bestParams.n, 
-    bestParams.matches, 
-    bestParams.delay
-  );
-  
-  // Score how close we are to target
-  let bestScore = Math.abs(targetDifficulty - currentDiff);
-  
-  console.log(`Target difficulty: ${targetDifficulty}, Current: ${currentDiff} (Score: ${bestScore})`);
-  
-  // Try adjusting delay first (least disruptive)
-  for (let delay = options.minDelay; delay <= options.maxDelay; delay += 500) {
-    const diff = calculateDifficultyScore(bestParams.n, bestParams.matches, delay);
-    const score = Math.abs(targetDifficulty - diff);
-    
-    if (score < bestScore) {
-      bestScore = score;
-      bestParams.delay = delay;
-      currentDiff = diff;
-    }
-  }
-  
-  // If we're still not close enough, try adjusting matches
-  if (bestScore > 0.5) {
-    for (let matches = options.minMatches; matches <= options.maxMatches; matches++) {
-      const diff = calculateDifficultyScore(bestParams.n, matches, bestParams.delay);
-      const score = Math.abs(targetDifficulty - diff);
-      
-      if (score < bestScore) {
-        bestScore = score;
-        bestParams.matches = matches;
-        currentDiff = diff;
-      }
-    }
-  }
-  
-  // If we're still not close enough, try adjusting N-level (most disruptive)
-  if (bestScore > 0.5) {
-    // Avoid changing N-level too drastically
-    const nRange = 2;
-    const minN = Math.max(options.minN, options.currentN - nRange);
-    const maxN = Math.min(options.maxN, options.currentN + nRange);
-    
-    for (let n = minN; n <= maxN; n++) {
-      const diff = calculateDifficultyScore(n, bestParams.matches, bestParams.delay);
-      const score = Math.abs(targetDifficulty - diff);
-      
-      if (score < bestScore) {
-        bestScore = score;
-        bestParams.n = n;
-        currentDiff = diff;
-      }
-    }
-  }
-  
-  console.log(`Found optimal parameters: N=${bestParams.n}, Matches=${bestParams.matches}, Delay=${bestParams.delay} → Difficulty: ${currentDiff}`);
-  
-  return bestParams;
-}
-
-
-// Helper function for retrieving latest values
-function getLastValueForLevel(levelChanges, levelType) {
-  // Find the last change that contains values for the specified level type
-  for (let i = levelChanges.length - 1; i >= 0; i--) {
-    const change = levelChanges[i];
-    if (change.currentLevel === levelType) {
-      return {
-        baseDelay: change.baseDelay,
-        targetNumOfStimuli: change.targetNumOfStimuli
-      };
-    }
-  }
-  return null;
-}
-
-
-
-
-
-/**
- * Updates the difficulty display during gameplay
- */
-function updateDifficultyDisplay() {
-  try {
-    // Calculate current difficulty
-    const currentScore = calculateDifficultyScore(nLevel, targetNumOfStimuli, baseDelay);
-    
-    // Check if difficulty display exists, create if not
-    let difficultyDisplay = document.getElementById('difficulty-display');
-    if (!difficultyDisplay) {
-      // Create the difficulty display element
-      const nBackElement = document.querySelector('.n-back');
-      if (!nBackElement) {
-        console.error("Cannot find n-back element");
-        return;
-      }
-      
-      difficultyDisplay = document.createElement('div');
-      difficultyDisplay.id = 'difficulty-display';
-      difficultyDisplay.style.position = 'absolute';
-      difficultyDisplay.style.top = '2.5em';
-      difficultyDisplay.style.color = '#ffff';
-      difficultyDisplay.style.transform = 'translateZ(1em)';
-      difficultyDisplay.style.fontSize = '0.8em';
-      difficultyDisplay.style.opacity = '0.8';
-      
-      // Insert after n-back display
-      nBackElement.parentNode.insertBefore(difficultyDisplay, nBackElement.nextSibling);
-    }
-    
-    // Determine level type and color
-    const levelType = currentLevel === "mastery" ? "Mastery" : "Challenge";
-    const levelColor = currentLevel === "mastery" ? "#a3be8c" : "#d08770"; // Green for mastery, orange for challenge
-    
-    // Update the display with level type and color
-    difficultyDisplay.innerHTML = `<span style="color:${levelColor};">${levelType}</span> Difficulty: ${currentScore.toFixed(1)}`;
-    
-    // Add a tooltip with more information
-    if (enableAdaptiveN) {
-      difficultyDisplay.title = `${levelType} Level: ${currentLevel === "mastery" ? masteryLevel : challengeLevel}\nDelay: ${baseDelay}ms\nMatches: ${targetNumOfStimuli}`;
-    } else if (enableAdaptiveD) {
-      difficultyDisplay.title = `${levelType} Dimensions: ${currentLevel === "mastery" ? masteryDimensions : challengeDimensions}\nDelay: ${baseDelay}ms\nMatches: ${targetNumOfStimuli}`;
-    } else {
-      difficultyDisplay.title = `Delay: ${baseDelay}ms\nMatches: ${targetNumOfStimuli}`;
-    }
-    
-    // Update the global tracking variable
-    currentDifficulty = currentScore;
-  } catch (e) {
-    console.error("Error in updateDifficultyDisplay:", e);
-  }
-}
-
-// Function to create a visual representation of difficulty history
-function createDifficultyHistoryChart() {
-  // Create container for the chart
-  const chartContainer = document.createElement('div');
-  chartContainer.className = 'difficulty-history-section';
-  chartContainer.innerHTML = `
-    <h3>Difficulty Over Time</h3>
-    <div class="bar-chart-wrap difficulty-chart-wrap">
-      <div class="bar-chart difficulty-chart">
-        <div class="difficulty-axis">
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-        </div>
-        <div class="difficulty-bar-chart-bars"></div>
-      </div>
-      <div class="bar-chart-title">Difficulty progression (recent sessions)</div>
-    </div>
-  `;
-  
-  // Get the bars container
-  const barsContainer = chartContainer.querySelector('.difficulty-bar-chart-bars');
-  
-  // Add bars for each history entry
-  if (difficultyHistory && difficultyHistory.length > 0) {
-    // Find max difficulty for scaling
-    const maxDifficulty = Math.max(...difficultyHistory.map(entry => entry.difficulty), highestDifficulty);
-    const maxHeight = 15; // Maximum bar height in rem
-    
-    // Update y-axis labels
-    const axisLabels = chartContainer.querySelectorAll('.difficulty-axis div');
-    for (let i = 0; i < axisLabels.length; i++) {
-      const value = Math.round((maxDifficulty / 4) * (4 - i));
-      axisLabels[i].textContent = value;
-    }
-    
-    // Add bars for each entry
-    difficultyHistory.forEach((entry, index) => {
-      // Calculate height based on difficulty value
-      const height = Math.max(1, (entry.difficulty / maxDifficulty) * maxHeight);
-      
-      // Format date from timestamp
-      const date = new Date(entry.timestamp);
-      const dateStr = date.toLocaleDateString();
-      const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      
-      // Create bar with difficulty value
-      const bar = document.createElement('div');
-      bar.className = 'bar-chart-bar difficulty-bar';
-      bar.style.height = `${height}rem`;
-      bar.innerHTML = `<div>${entry.difficulty.toFixed(1)}</div>`;
-      
-      // Create detailed tooltip
-      let tooltipContent = `
-        <strong>Date:</strong> ${dateStr} ${timeStr}<br>
-        <strong>Difficulty:</strong> ${entry.difficulty.toFixed(1)}<br>
-        <strong>Accuracy:</strong> ${(entry.accuracy * 100).toFixed(0)}%<br>
-        <strong>N-Level:</strong> ${entry.nLevel || 'N/A'}<br>
-        <strong>Matches:</strong> ${entry.matches || 'N/A'}<br>
-        <strong>Delay:</strong> ${entry.delay || 'N/A'}ms<br>
-        <strong>Mode:</strong> ${entry.mode || 'N/A'}
-      `;
-      
-      // Add dimensions info if available
-      if (entry.dimensions) {
-        tooltipContent += `<br><strong>Dimensions:</strong> ${entry.dimensions}`;
-      }
-      
-      bar.title = tooltipContent;
-      
-      // Color based on accuracy and mode
-      if (entry.mode === "challenge") {
-        // Challenge mode: Purple for high accuracy, pink for low
-        bar.style.backgroundColor = entry.accuracy >= 0.75 ? '#b48ead' : '#d08770';
-      } else {
-        // Mastery mode: Green for high accuracy, yellow for medium, red for low
-        if (entry.accuracy >= 0.8) {
-          bar.style.backgroundColor = '#a3be8c'; // Green for high accuracy
-        } else if (entry.accuracy >= 0.6) {
-          bar.style.backgroundColor = '#ebcb8b'; // Yellow for medium accuracy
-        } else {
-          bar.style.backgroundColor = '#bf616a'; // Red for low accuracy
-        }
-      }
-      
-      // Add index attribute for hover effects
-      bar.dataset.index = index;
-      
-      barsContainer.appendChild(bar);
-    });
-  } else {
-    // If no history, show message
-    const message = document.createElement('div');
-    message.style.padding = '1rem';
-    message.style.textAlign = 'center';
-    message.style.color = 'rgba(255, 255, 255, 0.6)';
-    message.textContent = 'No difficulty data available yet';
-    barsContainer.appendChild(message);
-  }
-  
-  return chartContainer;
-}
 
 // Function to calculate accuracy based on correct, missed, and wrong responses
 function calculateAccuracy(correct, missed, wrong) {
