@@ -433,6 +433,19 @@ function getMicroLevelComponents(microLevel) {
   return { nLevel, microProgress };
 }
 
+// Function to get speed target based on micro-level and base delay
+function getSpeedTarget(microLevel) {
+  // Speed target scales from baseDelay (100%) down to 50% of baseDelay
+  const startTarget = baseDelay;  // e.g., 5000ms at level 1
+  const endTarget = baseDelay * 0.5;  // e.g., 2500ms at level 9
+  
+  // Linear scaling across levels 1-9
+  const levelProgress = (Math.min(microLevel, 9) - 1) / 8;
+  const target = startTarget - ((startTarget - endTarget) * levelProgress);
+  
+  return Math.round(target);
+}
+
 // Function to format micro-level for display
 function formatMicroLevel(microLevel) {
   return microLevel.toFixed(2); // Always show 2 decimal places
@@ -2508,6 +2521,13 @@ historyPoint.outcome = newLevel > originalLevel ? 1 : (newLevel < originalLevel 
     document.querySelector(".lvl-after").innerHTML = newLevel;
     // Update nLevel for game state
     nLevelInputHandler(null, newMicroLevel);
+// Restart game with new speed if currently running
+if (isRunning) {
+  resetIntervals();
+  intervals.push(
+    setInterval(getGameCycle(nLevel), getSpeedTarget(newMicroLevel))
+  );
+}
   } else if (newLevel < originalLevel) {
     // Level down
     document.querySelector(".lvl-res-move").style.display = "block";
@@ -2515,6 +2535,13 @@ historyPoint.outcome = newLevel > originalLevel ? 1 : (newLevel < originalLevel 
     document.querySelector(".lvl-after").innerHTML = newLevel;
     // Update nLevel for game state
     nLevelInputHandler(null, newMicroLevel);
+// Restart game with new speed if currently running
+if (isRunning) {
+  resetIntervals();
+  intervals.push(
+    setInterval(getGameCycle(nLevel), getSpeedTarget(newMicroLevel))
+  );
+}
   }
 } else {
   // Level stays the same (micro-level may have changed)
@@ -2522,6 +2549,13 @@ historyPoint.outcome = newLevel > originalLevel ? 1 : (newLevel < originalLevel 
   document.querySelector(".lvl-stays").innerHTML = originalLevel;
   // Update nLevel for game state (to reflect micro-level changes)
   nLevelInputHandler(null, newMicroLevel);
+        // Restart game with new speed if currently running
+if (isRunning) {
+  resetIntervals();
+  intervals.push(
+    setInterval(getGameCycle(nLevel), getSpeedTarget(newMicroLevel))
+  );
+}
 }
       
       // Save history and show results
@@ -2765,25 +2799,33 @@ resetIntervals();
   isRunning = true;
 
   // Reset session metrics
-sessionMetrics = {
-  hits: 0,
-  misses: 0, 
-  falseAlarms: 0,
-  correctRejections: 0,
-  dPrime: 0,
-  responseBias: 0,
-  microLevel: currentMicroLevel,
-  n1LureEncounters: 0,
-  n1LureCorrectRejections: 0,
-  n1LureFalseAlarms: 0,
-  n1LureResistance: 0,
-  nPlusLureEncounters: 0,
-  nPlusLureCorrectRejections: 0,
-  nPlusLureFalseAlarms: 0,
-  nPlusLureResistance: 0,
-  postLureTrials: [],
-  postLurePerformance: 0
-};
+  sessionMetrics = {
+    hits: 0,
+    misses: 0, 
+    falseAlarms: 0,
+    correctRejections: 0,
+    dPrime: 0,
+    responseBias: 0,
+    microLevel: currentMicroLevel,
+    n1LureEncounters: 0,
+    n1LureCorrectRejections: 0,
+    n1LureFalseAlarms: 0,
+    n1LureResistance: 0,
+    nPlusLureEncounters: 0,
+    nPlusLureCorrectRejections: 0,
+    nPlusLureFalseAlarms: 0,
+    nPlusLureResistance: 0,
+    postLureTrials: [],
+    postLurePerformance: 0,
+    // New speed tracking
+    responseTimes: [],
+    meanRT: 0,
+    medianRT: 0,
+    hitRT: 0,
+    correctRejectionRT: 0,
+    speedScore: 0,
+    rtImprovement: 0
+  };
   
   speak("Start.");
   document.querySelector(".stop").classList.remove("active");
@@ -2791,8 +2833,8 @@ sessionMetrics = {
 
 
   intervals.push(
-    setInterval(getGameCycle(nLevel), baseDelay)
-  );
+  setInterval(getGameCycle(nLevel), getSpeedTarget(currentMicroLevel))
+);
 }
 
 function stop() {
