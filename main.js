@@ -2882,16 +2882,24 @@ if (totalLureEncounters > 0) {
 // Update excellence dashboard
 const dPrimeTarget = 2.0; // Target is d' > 2.0
 const lureResistanceTarget = 0.85; // Target is 85% resistance
+const accuracyTarget = 0.90; // Target is 90% accuracy
 
 // Calculate progress percentages
+const accuracyProgress = Math.min(100, Math.max(0, (accuracy / accuracyTarget) * 100));
 const dPrimeProgress = Math.min(100, Math.max(0, (sessionMetrics.dPrime / dPrimeTarget) * 100));
 const lureResistanceProgress = sessionMetrics.totalLureResistance ? 
   Math.min(100, Math.max(0, (sessionMetrics.totalLureResistance / lureResistanceTarget) * 100)) : 0;
 
+// Update accuracy progress display
+document.getElementById('accuracy-progress-value').textContent = `${Math.round(accuracyProgress)}%`;
+document.getElementById('accuracy-progress-bar').style.width = `${accuracyProgress}%`;
+
 // Calculate overall excellence (weighted average)
 let overallProgress = 0;
 let weightSum = 0;
-
+// Add accuracy to overall score (weight: 2 - high importance)
+overallProgress += accuracyProgress * 2;
+weightSum += 2;
 // Add d-prime to overall score (weight: 2)
 overallProgress += dPrimeProgress * 2;
 weightSum += 2;
