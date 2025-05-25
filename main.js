@@ -1288,7 +1288,12 @@ function closeOptions() {
 }
 
 function getBar(n) {
-  const html = `<div class="bar-chart-bar" style="height: ${n*2}rem;"><div>${n}</div></div>`;
+  // Parse the value to ensure it's a number
+  const numValue = parseFloat(n);
+  const displayValue = isNaN(numValue) ? n : numValue.toFixed(2);
+  const height = isNaN(numValue) ? 2 : numValue * 2;
+  
+  const html = `<div class="bar-chart-bar" style="height: ${height}rem;"><div>${displayValue}</div></div>`;
   const wrap = document.createElement("DIV");
   wrap.innerHTML = html;
   return wrap.firstChild;
@@ -1397,10 +1402,20 @@ if (points.length > 0) {
   _avgNLevel = _avgNLevel / points.length;
   avgNLevel += _avgNLevel;
   
-  // Create bar element showing N-level
-  const barText = toOneDecimal(_avgNLevel);
-  const barElement = getBar(barText);
-  barElement.title = `Date: ${date}\nN-Level: ${barText}`;
+  // Calculate average micro-level for this date
+  let _avgMicroLevel = 0;
+  let microCount = 0;
+  for (const point of points) {
+    if (point.microLevel !== undefined) {
+      _avgMicroLevel += point.microLevel;
+      microCount++;
+    }
+  }
+  
+  // Use micro-level if available, otherwise fall back to regular level
+  const displayLevel = microCount > 0 ? (_avgMicroLevel / microCount).toFixed(2) : toOneDecimal(_avgNLevel);
+  const barElement = getBar(displayLevel);
+  barElement.title = `Date: ${date}\nμ-Level: ${displayLevel}`;
   
   bars.appendChild(barElement);
 }
@@ -1416,6 +1431,7 @@ if (points.length > 0) {
   document.querySelector("#sc-avg").innerHTML = entries.length > 0 ? toOneDecimal(avgNLevel) : "-";
   document.querySelector("#sc-min").innerHTML = (minNLevel === 10) ? "-" : minNLevel;
   document.querySelector("#sc-max").innerHTML = maxNLevel || "-";
+  document.querySelector("#sc-micro-level").innerHTML = formatMicroLevel(currentMicroLevel);
   document.querySelector("#sc-right").innerHTML = right || "-";
   document.querySelector("#sc-missed").innerHTML = missed || "-";
   document.querySelector("#sc-wrong").innerHTML = wrong || "-";
