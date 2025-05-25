@@ -279,7 +279,15 @@ let sessionMetrics = {
   correctRejections: 0,
   dPrime: 0,
   responseBias: 0,
-  microLevel: 0.00
+  microLevel: 0.00,
+  n1LureEncounters: 0,
+  n1LureCorrectRejections: 0,
+  n1LureFalseAlarms: 0,
+  n1LureResistance: 0,
+  nPlusLureEncounters: 0,
+  nPlusLureCorrectRejections: 0,
+  nPlusLureFalseAlarms: 0,
+  nPlusLureResistance: 0
 };
 
 // Session history for baseline calculation
@@ -1584,7 +1592,7 @@ function createBlocks(symbols, n) {
 }
 
 // Create blocks with fixed match density
-function createBlocksWithFixedDensity(symbols, n, matchDensity = 0.23) {
+function createBlocksWithFixedDensity(symbols, n, matchDensity = 0.25) {
   // Calculate total trials needed based on target matches and desired density
   const targetMatches = targetNumOfStimuli;
   const totalTrials = Math.ceil(targetMatches / matchDensity);
@@ -1618,33 +1626,39 @@ function createBlocksWithFixedDensity(symbols, n, matchDensity = 0.23) {
       placedMatches++;
     }
   }
+  }
+  
+  // Log lure placement stats
+  console.log(`Created fixed-density blocks with ${blocks.filter(b => b.isMatching).length} matches (${((blocks.filter(b => b.isMatching).length)/blocks.length*100).toFixed(1)}% of trials)`);
+  
+  return blocks;
+}
 
-  // Function to place N-1 lures in the stimulus sequence
+// Function to place both N-1 and N+1 lures in the stimulus sequence
 function placeLures(blocks, n, lureFrequency = 0.10) {
-  // Calculate how many lures to place based on desired frequency
-  const numLures = Math.floor(blocks.length * lureFrequency);
-  let placedLures = 0;
+  // Split the lure frequency between N-1 and N+1 lures (more weight to N-1)
+  const n1LureFreq = lureFrequency * 0.65; // 65% of lures are N-1 
+  const nPlusLureFreq = lureFrequency * 0.35; // 35% of lures are N+1
   
-  // Make a copy of blocks to avoid modifying during iteration
-  const lureBlocks = [...blocks];
+  // Calculate how many lures of each type to place
+  const numN1Lures = Math.floor(blocks.length * n1LureFreq);
+  const numNPlusLures = Math.floor(blocks.length * nPlusLureFreq);
   
-  // Place N-1 lures (most important for interference training)
-  while (placedLures < numLures) {
+  console.log(`Planning to place ${numN1Lures} N-1 lures and ${numNPlusLures} N+1 lures`);
+  
+  // First place N-1 lures (higher priority)
+  let placedN1Lures = 0;
+  let attempts = 0;
+  const maxAttempts = blocks.length * 2; // Prevent infinite loops
+  
+  while (placedN1Lures < numN1Lures && attempts < maxAttempts) {
+    attempts++;
+    
     // Find a position that can have an N-1 lure (must be at least 1 position from start)
     let rnd = Math.floor(Math.random() * (blocks.length - 1)) + 1;
     
-    // Skip if this position already has a stimulus
-    if (blocks[rnd] && blocks[rnd].isLure) {
-      continue;
-    }
-    
-    // Skip if this would create a match (already has a matching item at n-back)
-    if (blocks[rnd] && blocks[rnd].isMatching) {
-      continue;
-    }
-    
-    // Skip if adding a lure here would interfere with existing matches
-    if (blocks[rnd + n] && blocks[rnd].symbol === blocks[rnd + n].symbol) {
+    // Skip if this position already has something special
+    if (!blocks[rnd] || blocks[rnd].isLure || blocks[rnd].isMatching) {
       continue;
     }
     
@@ -1653,26 +1667,54 @@ function placeLures(blocks, n, lureFrequency = 0.10) {
     
     // Only place lure if there's a valid previous symbol
     if (prevSymbol) {
-      // Either replace an existing non-match or add to an empty spot
+      // Place the N-1 lure
       blocks[rnd] = {
         isMatching: false, // It's NOT a match but looks like it should be
-        isLure: true,      // Mark as a lure for tracking
+        isLure: true,      // Mark as a lure
         lureType: 'n-1',   // Specify the lure type
         symbol: prevSymbol  // Use the symbol from n-1 position
       };
       
-      placedLures++;
+      placedN1Lures++;
     }
   }
   
-  // Log lure placement stats
-  console.log(`Placed ${placedLures} N-1 lures (${(placedLures/blocks.length*100).toFixed(1)}% of trials)`);
+  // Now place N+1 lures
+  let placedNPlusLures = 0;
+  attempts = 0;
+  
+  while (placedNPlusLures < numNPlusLures && attempts < maxAttempts) {
+    attempts++;
+    
+    // Find a position that can have an N+1 lure (must not be too close to end)
+    let rnd = Math.floor(Math.random() * (blocks.length - 2));
+    
+    // Skip if this position already has something special
+    if (!blocks[rnd] || blocks[rnd].isLure || blocks[rnd].isMatching || !blocks[rnd + 1]) {
+      continue;
+    }
+    
+    // Get the symbol from the next position (N+1)
+    const nextSymbol = blocks[rnd + 1].symbol;
+    
+    // Place the N+1 lure
+    blocks[rnd] = {
+      isMatching: false, // It's NOT a match but looks like it should be
+      isLure: true,      // Mark as a lure
+      lureType: 'n+1',   // Specify the lure type
+      symbol: nextSymbol  // Use the symbol from n+1 position
+    };
+    
+    placedNPlusLures++;
+  }
+  
+  console.log(`Placed ${placedN1Lures} N-1 lures and ${placedNPlusLures} N+1 lures (total ${placedN1Lures + placedNPlusLures} lures)`);
   
   return blocks;
 }
 
 // Function to create blocks with both fixed density and lures
-function createBlocksWithLures(symbols, n, matchDensity = 0.23, lureFrequency = 0.10) {
+function createBlocksWithLures(symbols, n, matchDensity = 0.25, lureFrequency = 0.10) {
   // First create blocks with fixed match density
   let blocks = createBlocksWithFixedDensity(symbols, n, matchDensity);
   
@@ -1811,12 +1853,20 @@ function trackMissedStimuli() {
     sessionMetrics.correctRejections++;
     
     // Track lure correct rejections
-    if (currWalls.isLure && currWalls.lureType === 'n-1') {
-      sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
-      sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
-      
-      sessionMetrics.n1LureEncounters++;
-      sessionMetrics.n1LureCorrectRejections++;
+    if (currWalls.isLure) {
+      if (currWalls.lureType === 'n-1') {
+        sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
+        sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
+        
+        sessionMetrics.n1LureEncounters++;
+        sessionMetrics.n1LureCorrectRejections++;
+      } else if (currWalls.lureType === 'n+1') {
+        sessionMetrics.nPlusLureEncounters = sessionMetrics.nPlusLureEncounters || 0;
+        sessionMetrics.nPlusLureCorrectRejections = sessionMetrics.nPlusLureCorrectRejections || 0;
+        
+        sessionMetrics.nPlusLureEncounters++;
+        sessionMetrics.nPlusLureCorrectRejections++;
+      }
     }
   }
   
@@ -1825,12 +1875,20 @@ function trackMissedStimuli() {
     sessionMetrics.misses++;
   } else if (currCamera && !currCamera.isMatching && enableCameraCheck) {
     sessionMetrics.correctRejections++;
-    if (currCamera.isLure && currCamera.lureType === 'n-1') {
-      sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
-      sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
-      
-      sessionMetrics.n1LureEncounters++;
-      sessionMetrics.n1LureCorrectRejections++;
+    if (currCamera.isLure) {
+      if (currCamera.lureType === 'n-1') {
+        sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
+        sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
+        
+        sessionMetrics.n1LureEncounters++;
+        sessionMetrics.n1LureCorrectRejections++;
+      } else if (currCamera.lureType === 'n+1') {
+        sessionMetrics.nPlusLureEncounters = sessionMetrics.nPlusLureEncounters || 0;
+        sessionMetrics.nPlusLureCorrectRejections = sessionMetrics.nPlusLureCorrectRejections || 0;
+        
+        sessionMetrics.nPlusLureEncounters++;
+        sessionMetrics.nPlusLureCorrectRejections++;
+      }
     }
   }
   
@@ -1839,12 +1897,20 @@ function trackMissedStimuli() {
     sessionMetrics.misses++;
   } else if (currFace && !currFace.isMatching && enableFaceCheck) {
     sessionMetrics.correctRejections++;
-    if (currFace.isLure && currFace.lureType === 'n-1') {
-      sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
-      sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
-      
-      sessionMetrics.n1LureEncounters++;
-      sessionMetrics.n1LureCorrectRejections++;
+    if (currFace.isLure) {
+      if (currFace.lureType === 'n-1') {
+        sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
+        sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
+        
+        sessionMetrics.n1LureEncounters++;
+        sessionMetrics.n1LureCorrectRejections++;
+      } else if (currFace.lureType === 'n+1') {
+        sessionMetrics.nPlusLureEncounters = sessionMetrics.nPlusLureEncounters || 0;
+        sessionMetrics.nPlusLureCorrectRejections = sessionMetrics.nPlusLureCorrectRejections || 0;
+        
+        sessionMetrics.nPlusLureEncounters++;
+        sessionMetrics.nPlusLureCorrectRejections++;
+      }
     }
   }
   
@@ -1853,12 +1919,20 @@ function trackMissedStimuli() {
     sessionMetrics.misses++;
   } else if (currPosition && !currPosition.isMatching && enablePositionCheck) {
     sessionMetrics.correctRejections++;
-    if (currPosition.isLure && currPosition.lureType === 'n-1') {
-      sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
-      sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
-      
-      sessionMetrics.n1LureEncounters++;
-      sessionMetrics.n1LureCorrectRejections++;
+    if (currPosition.isLure) {
+      if (currPosition.lureType === 'n-1') {
+        sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
+        sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
+        
+        sessionMetrics.n1LureEncounters++;
+        sessionMetrics.n1LureCorrectRejections++;
+      } else if (currPosition.lureType === 'n+1') {
+        sessionMetrics.nPlusLureEncounters = sessionMetrics.nPlusLureEncounters || 0;
+        sessionMetrics.nPlusLureCorrectRejections = sessionMetrics.nPlusLureCorrectRejections || 0;
+        
+        sessionMetrics.nPlusLureEncounters++;
+        sessionMetrics.nPlusLureCorrectRejections++;
+      }
     }
   }
   
@@ -1867,12 +1941,20 @@ function trackMissedStimuli() {
     sessionMetrics.misses++;
   } else if (currWord && !currWord.isMatching && enableWordCheck) {
     sessionMetrics.correctRejections++;
-    if (currWord.isLure && currWord.lureType === 'n-1') {
-      sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
-      sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
-      
-      sessionMetrics.n1LureEncounters++;
-      sessionMetrics.n1LureCorrectRejections++;
+    if (currWord.isLure) {
+      if (currWord.lureType === 'n-1') {
+        sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
+        sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
+        
+        sessionMetrics.n1LureEncounters++;
+        sessionMetrics.n1LureCorrectRejections++;
+      } else if (currWord.lureType === 'n+1') {
+        sessionMetrics.nPlusLureEncounters = sessionMetrics.nPlusLureEncounters || 0;
+        sessionMetrics.nPlusLureCorrectRejections = sessionMetrics.nPlusLureCorrectRejections || 0;
+        
+        sessionMetrics.nPlusLureEncounters++;
+        sessionMetrics.nPlusLureCorrectRejections++;
+      }
     }
   }
   
@@ -1881,12 +1963,20 @@ function trackMissedStimuli() {
     sessionMetrics.misses++;
   } else if (currShape && !currShape.isMatching && enableShapeCheck) {
     sessionMetrics.correctRejections++;
-    if (currShape.isLure && currShape.lureType === 'n-1') {
-      sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
-      sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
-      
-      sessionMetrics.n1LureEncounters++;
-      sessionMetrics.n1LureCorrectRejections++;
+    if (currShape.isLure) {
+      if (currShape.lureType === 'n-1') {
+        sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
+        sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
+        
+        sessionMetrics.n1LureEncounters++;
+        sessionMetrics.n1LureCorrectRejections++;
+      } else if (currShape.lureType === 'n+1') {
+        sessionMetrics.nPlusLureEncounters = sessionMetrics.nPlusLureEncounters || 0;
+        sessionMetrics.nPlusLureCorrectRejections = sessionMetrics.nPlusLureCorrectRejections || 0;
+        
+        sessionMetrics.nPlusLureEncounters++;
+        sessionMetrics.nPlusLureCorrectRejections++;
+      }
     }
   }
   
@@ -1895,12 +1985,20 @@ function trackMissedStimuli() {
     sessionMetrics.misses++;
   } else if (currCorner && !currCorner.isMatching && enableCornerCheck) {
     sessionMetrics.correctRejections++;
-    if (currCorner.isLure && currCorner.lureType === 'n-1') {
-      sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
-      sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
-      
-      sessionMetrics.n1LureEncounters++;
-      sessionMetrics.n1LureCorrectRejections++;
+    if (currCorner.isLure) {
+      if (currCorner.lureType === 'n-1') {
+        sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
+        sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
+        
+        sessionMetrics.n1LureEncounters++;
+        sessionMetrics.n1LureCorrectRejections++;
+      } else if (currCorner.lureType === 'n+1') {
+        sessionMetrics.nPlusLureEncounters = sessionMetrics.nPlusLureEncounters || 0;
+        sessionMetrics.nPlusLureCorrectRejections = sessionMetrics.nPlusLureCorrectRejections || 0;
+        
+        sessionMetrics.nPlusLureEncounters++;
+        sessionMetrics.nPlusLureCorrectRejections++;
+      }
     }
   }
   
@@ -1909,12 +2007,20 @@ function trackMissedStimuli() {
     sessionMetrics.misses++;
   } else if (currSound && !currSound.isMatching && enableSoundCheck) {
     sessionMetrics.correctRejections++;
-    if (currSound.isLure && currSound.lureType === 'n-1') {
-      sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
-      sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
-      
-      sessionMetrics.n1LureEncounters++;
-      sessionMetrics.n1LureCorrectRejections++;
+    if (currSound.isLure) {
+      if (currSound.lureType === 'n-1') {
+        sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
+        sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
+        
+        sessionMetrics.n1LureEncounters++;
+        sessionMetrics.n1LureCorrectRejections++;
+      } else if (currSound.lureType === 'n+1') {
+        sessionMetrics.nPlusLureEncounters = sessionMetrics.nPlusLureEncounters || 0;
+        sessionMetrics.nPlusLureCorrectRejections = sessionMetrics.nPlusLureCorrectRejections || 0;
+        
+        sessionMetrics.nPlusLureEncounters++;
+        sessionMetrics.nPlusLureCorrectRejections++;
+      }
     }
   }
   
@@ -1923,12 +2029,20 @@ function trackMissedStimuli() {
     sessionMetrics.misses++;
   } else if (currColor && !currColor.isMatching && enableColorCheck) {
     sessionMetrics.correctRejections++;
-    if (currColor.isLure && currColor.lureType === 'n-1') {
-      sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
-      sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
-      
-      sessionMetrics.n1LureEncounters++;
-      sessionMetrics.n1LureCorrectRejections++;
+    if (currColor.isLure) {
+      if (currColor.lureType === 'n-1') {
+        sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
+        sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
+        
+        sessionMetrics.n1LureEncounters++;
+        sessionMetrics.n1LureCorrectRejections++;
+      } else if (currColor.lureType === 'n+1') {
+        sessionMetrics.nPlusLureEncounters = sessionMetrics.nPlusLureEncounters || 0;
+        sessionMetrics.nPlusLureCorrectRejections = sessionMetrics.nPlusLureCorrectRejections || 0;
+        
+        sessionMetrics.nPlusLureEncounters++;
+        sessionMetrics.nPlusLureCorrectRejections++;
+      }
     }
   }
 }
@@ -2070,48 +2184,48 @@ function getGameCycle(n) {
   
   let walls;
   if (wallsEnabled) {
-    walls = createBlocksWithLures(wallColorsList, n, 0.23, lureFrequency);
+    walls = createBlocksWithLures(wallColorsList, n, 0.25, lureFrequency);
     matchingWalls = walls.filter(block => block && block.isMatching).length;
   }
   let cameras;
   if (cameraEnabled) {
-    cameras = createBlocksWithLures(points, n, 0.23, lureFrequency);
+    cameras = createBlocksWithLures(points, n, 0.25, lureFrequency);
     matchingCamera = cameras.filter(block => block && block.isMatching).length;
   }
   let faces;
   if (faceEnabled) {
-    faces = createBlocksWithLures(numbers, n, 0.23, lureFrequency);
+    faces = createBlocksWithLures(numbers, n, 0.25, lureFrequency);
     matchingFace = faces.filter(block => block && block.isMatching).length;
   }
   let positions;
   if (positionEnabled) {
-    positions = createBlocksWithLures(moves, n, 0.23, lureFrequency);
+    positions = createBlocksWithLures(moves, n, 0.25, lureFrequency);
     matchingPosition = positions.filter(block => block && block.isMatching).length;
   }
   
   let words;
   if (wordEnabled) {
-    words = createBlocksWithLures(wordsList, n, 0.23, lureFrequency);
+    words = createBlocksWithLures(wordsList, n, 0.25, lureFrequency);
     matchingWord = words.filter(block => block && block.isMatching).length;
   }
   let shapes;
   if (shapeEnabled) {
-    shapes = createBlocksWithLures(shapeClasses, n, 0.23, lureFrequency);
+    shapes = createBlocksWithLures(shapeClasses, n, 0.25, lureFrequency);
     matchingShape = shapes.filter(block => block && block.isMatching).length;
   }
   let corners;
   if (cornerEnabled) {
-    corners = createBlocksWithLures(cornersList, n, 0.23, lureFrequency);
+    corners = createBlocksWithLures(cornersList, n, 0.25, lureFrequency);
     matchingCorner = corners.filter(block => block && block.isMatching).length;
   }
   let sounds;
   if (soundEnabled) {
-    sounds = createBlocksWithLures(letters, n, 0.23, lureFrequency);
+    sounds = createBlocksWithLures(letters, n, 0.25, lureFrequency);
     matchingSound = sounds.filter(block => block && block.isMatching).length;
   }
   let colors;
   if (colorEnabled) {
-    colors = createBlocksWithLures(colorClasses, n, 0.23, lureFrequency);
+    colors = createBlocksWithLures(colorClasses, n, 0.25, lureFrequency);
     matchingColor = colors.filter(block => block && block.isMatching).length;
   }
   
@@ -2318,14 +2432,7 @@ const levelChanged = newLevel !== originalLevel;
 // Update micro-level
 currentMicroLevel = newMicroLevel;
 
-// Save the updated history point with d-prime info
-historyPoint.dPrime = sessionMetrics.dPrime;
-historyPoint.microLevel = newMicroLevel;
-historyPoint.outcome = newLevel > originalLevel ? 1 : (newLevel < originalLevel ? -1 : 0);
-
-      localStorage.setItem("last-dim", dimensions);
-      
-const historyPoint = {
+      const historyPoint = {
     nLevel,
     microLevel: currentMicroLevel,  // Store micro-level
     right: correctStimuli,
@@ -2344,6 +2451,14 @@ const historyPoint = {
     outcome: 0,  // -1 for level down, 0 for stay, 1 for level up
     stimuliData: stimuliData
   };
+
+// Save the updated history point with d-prime info
+historyPoint.dPrime = sessionMetrics.dPrime;
+historyPoint.microLevel = newMicroLevel;
+historyPoint.outcome = newLevel > originalLevel ? 1 : (newLevel < originalLevel ? -1 : 0);
+
+      localStorage.setItem("last-dim", dimensions);
+      
 
       if (levelChanged) {
   if (newLevel > originalLevel) {
@@ -2395,12 +2510,73 @@ sessionMetrics.responseBias = calculateResponseBias(
   sessionMetrics.correctRejections
 );
 
-// Calculate lure resistance if there were any lures
+// Calculate lure resistances if there were any lures
 if (sessionMetrics.n1LureEncounters && sessionMetrics.n1LureEncounters > 0) {
   sessionMetrics.n1LureResistance = sessionMetrics.n1LureCorrectRejections / sessionMetrics.n1LureEncounters;
 } else {
   sessionMetrics.n1LureResistance = 1.0; // Default if no lures encountered
 }
+
+if (sessionMetrics.nPlusLureEncounters && sessionMetrics.nPlusLureEncounters > 0) {
+  sessionMetrics.nPlusLureResistance = sessionMetrics.nPlusLureCorrectRejections / sessionMetrics.nPlusLureEncounters;
+} else {
+  sessionMetrics.nPlusLureResistance = 1.0; // Default if no lures encountered
+}
+
+// Calculate combined lure resistance (weighted average)
+const totalLureEncounters = (sessionMetrics.n1LureEncounters || 0) + (sessionMetrics.nPlusLureEncounters || 0);
+if (totalLureEncounters > 0) {
+  sessionMetrics.totalLureResistance = 
+    ((sessionMetrics.n1LureResistance * (sessionMetrics.n1LureEncounters || 0)) + 
+     (sessionMetrics.nPlusLureResistance * (sessionMetrics.nPlusLureEncounters || 0))) / totalLureEncounters;
+} else {
+  sessionMetrics.totalLureResistance = 1.0;
+}
+// Update excellence dashboard
+const dPrimeTarget = 2.0; // Target is d' > 2.0
+const lureResistanceTarget = 0.85; // Target is 85% resistance
+
+// Calculate progress percentages
+const dPrimeProgress = Math.min(100, Math.max(0, (sessionMetrics.dPrime / dPrimeTarget) * 100));
+const lureResistanceProgress = sessionMetrics.totalLureResistance ? 
+  Math.min(100, Math.max(0, (sessionMetrics.totalLureResistance / lureResistanceTarget) * 100)) : 0;
+
+// Calculate overall excellence (weighted average)
+let overallProgress = 0;
+let weightSum = 0;
+
+// Add d-prime to overall score (weight: 2)
+overallProgress += dPrimeProgress * 2;
+weightSum += 2;
+
+// Add lure resistance to overall score if applicable (weight: 1)
+if (sessionMetrics.n1LureResistance) {
+  overallProgress += lureResistanceProgress;
+  weightSum += 1;
+  
+  // Show lure progress section
+  document.getElementById('lure-progress-container').style.display = 'block';
+  document.getElementById('lure-progress-value').textContent = `${Math.round(lureResistanceProgress)}%`;
+  document.getElementById('lure-progress-bar').style.width = `${lureResistanceProgress}%`;
+} else {
+  document.getElementById('lure-progress-container').style.display = 'none';
+}
+
+// Calculate final overall progress
+const finalOverallProgress = overallProgress / weightSum;
+
+// Update excellence progress displays
+document.getElementById('dprime-progress-value').textContent = `${Math.round(dPrimeProgress)}%`;
+document.getElementById('overall-progress-value').textContent = `${Math.round(finalOverallProgress)}%`;
+document.getElementById('dprime-progress-bar').style.width = `${dPrimeProgress}%`;
+document.getElementById('overall-progress-bar').style.width = `${finalOverallProgress}%`;
+
+// Add excellence metrics to historyPoint
+historyPoint.excellenceMetrics = {
+  dPrimeProgress: dPrimeProgress / 100,
+  lureResistanceProgress: lureResistanceProgress / 100,
+  overallProgress: finalOverallProgress / 100
+};
 
 console.log("Session Metrics:", sessionMetrics);
 
@@ -2425,13 +2601,25 @@ document.querySelector(".lvl-stays").innerHTML = formatMicroLevel(newMicroLevel)
 document.getElementById("sc-res-dprime").textContent = sessionMetrics.dPrime.toFixed(2);
 document.getElementById("sc-res-bias").textContent = sessionMetrics.responseBias.toFixed(2);
 
-// Show lure resistance section if lures were encountered
-if (sessionMetrics.n1LureEncounters && sessionMetrics.n1LureEncounters > 0) {
+// Show lure resistance section if any lures were encountered
+const totalLureEncounters = (sessionMetrics.n1LureEncounters || 0) + (sessionMetrics.nPlusLureEncounters || 0);
+if (totalLureEncounters > 0) {
   document.getElementById("lure-resistance-section").style.display = "block";
+  
+  // Display combined lure resistance
   document.getElementById("sc-res-lure-resistance").textContent = 
-    `${(sessionMetrics.n1LureResistance * 100).toFixed(0)}%`;
-  document.getElementById("sc-res-lure-count").textContent = 
-    sessionMetrics.n1LureEncounters;
+    `${(sessionMetrics.totalLureResistance * 100).toFixed(0)}%`;
+  
+  // Display total lure count
+  document.getElementById("sc-res-lure-count").textContent = totalLureEncounters;
+  
+  // Optional: Add detailed breakdown if you want
+  const lureDetailsElement = document.getElementById("sc-res-lure-details");
+  if (lureDetailsElement) {
+    lureDetailsElement.textContent = 
+      `N-1: ${(sessionMetrics.n1LureResistance * 100).toFixed(0)}% (${sessionMetrics.n1LureEncounters || 0}), ` +
+      `N+1: ${(sessionMetrics.nPlusLureResistance * 100).toFixed(0)}% (${sessionMetrics.nPlusLureEncounters || 0})`;
+  }
 } else {
   document.getElementById("lure-resistance-section").style.display = "none";
 }
@@ -2535,6 +2723,27 @@ resetBlock();
 resetIntervals();
   
   isRunning = true;
+
+  // Reset session metrics
+sessionMetrics = {
+  hits: 0,
+  misses: 0, 
+  falseAlarms: 0,
+  correctRejections: 0,
+  dPrime: 0,
+  responseBias: 0,
+  microLevel: currentMicroLevel,
+  n1LureEncounters: 0,
+  n1LureCorrectRejections: 0,
+  n1LureFalseAlarms: 0,
+  n1LureResistance: 0,
+  nPlusLureEncounters: 0,
+  nPlusLureCorrectRejections: 0,
+  nPlusLureFalseAlarms: 0,
+  nPlusLureResistance: 0,
+  postLureTrials: [],
+  postLurePerformance: 0
+};
   
   speak("Start.");
   document.querySelector(".stop").classList.remove("active");
@@ -2646,26 +2855,43 @@ function checkHandler(stimulus) {
     return;
   }
 
-// Update signal detection metrics
-  if (curr.isMatching) {
-    // Hit: User correctly identified a match
-    sessionMetrics.hits++;
-  } else {
-    // False Alarm: User incorrectly claimed a match
-    sessionMetrics.falseAlarms++;
-    
-    // Check if this was a lure (for interference measurement)
-    if (curr.isLure && curr.lureType === 'n-1') {
-      // Track N-1 lure response (fell for the lure)
+  console.log(stimulus, curr, button, enable);
+  
+ // Update signal detection metrics based on response
+if (curr.isMatching) {
+  // Hit: User correctly identified a match
+  sessionMetrics.hits++;
+} else {
+  // False Alarm: User incorrectly claimed a match
+  sessionMetrics.falseAlarms++;
+  
+  // Check if this was a lure (for interference measurement)
+  if (curr.isLure) {
+    if (curr.lureType === 'n-1') {
+      // Initialize counters if needed
       sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
       sessionMetrics.n1LureFalseAlarms = sessionMetrics.n1LureFalseAlarms || 0;
       
+      // Track N-1 lure response (fell for the lure)
       sessionMetrics.n1LureEncounters++;
       sessionMetrics.n1LureFalseAlarms++;
+      
+      console.log("User fell for N-1 lure", stimulus);
+    } else if (curr.lureType === 'n+1') {
+      // Initialize counters if needed
+      sessionMetrics.nPlusLureEncounters = sessionMetrics.nPlusLureEncounters || 0;
+      sessionMetrics.nPlusLureFalseAlarms = sessionMetrics.nPlusLureFalseAlarms || 0;
+      
+      // Track N+1 lure response (fell for the lure)
+      sessionMetrics.nPlusLureEncounters++;
+      sessionMetrics.nPlusLureFalseAlarms++;
+      
+      console.log("User fell for N+1 lure", stimulus);
     }
   }
+}
   
-  // Original switch case continues below for tracking specific stimulus responses
+  // Original stimulus-specific handling
   switch (stimulus) {
     case "walls": {
       enableWallsCheck = false;
@@ -2675,23 +2901,6 @@ function checkHandler(stimulus) {
       } else {
         wrongWalls++;
         button.classList.add("wrong");
-      }
-      break;
-    }
-  
-  console.log(stimulus, curr, button, enable);
-  
-  switch (stimulus) {
-    case "walls": {
-      enableWallsCheck = false;
-      if (curr.isMatching) {
-        rightWalls++;
-        button.classList.add("right");
-         
-      } else {
-        wrongWalls++;
-        button.classList.add("wrong");
-        
       }
       break;
     }
@@ -2700,11 +2909,9 @@ function checkHandler(stimulus) {
       if (curr.isMatching) {
         rightCamera++;
         button.classList.add("right");
-         
       } else {
         wrongCamera++;
         button.classList.add("wrong");
-        
       }
       break;
     }
@@ -2713,11 +2920,9 @@ function checkHandler(stimulus) {
       if (curr.isMatching) {
         rightFace++;
         button.classList.add("right");
-         
       } else {
         wrongFace++;
         button.classList.add("wrong");
-        
       }
       break;
     }
@@ -2726,11 +2931,9 @@ function checkHandler(stimulus) {
       if (curr.isMatching) {
         rightPosition++;
         button.classList.add("right");
-         
       } else {
         wrongPosition++;
         button.classList.add("wrong");
-        
       }
       break;
     }
@@ -2739,11 +2942,9 @@ function checkHandler(stimulus) {
       if (curr.isMatching) {
         rightWord++;
         button.classList.add("right");
-         
       } else {
         wrongWord++;
         button.classList.add("wrong");
-        
       }
       break;
     }
@@ -2752,11 +2953,9 @@ function checkHandler(stimulus) {
       if (curr.isMatching) {
         rightShape++;
         button.classList.add("right");
-         
       } else {
         wrongShape++;
         button.classList.add("wrong");
-        
       }
       break;
     }
@@ -2765,11 +2964,9 @@ function checkHandler(stimulus) {
       if (curr.isMatching) {
         rightCorner++;
         button.classList.add("right");
-         
       } else {
         wrongCorner++;
         button.classList.add("wrong");
-        
       }
       break;
     }
@@ -2778,11 +2975,9 @@ function checkHandler(stimulus) {
       if (curr.isMatching) {
         rightSound++;
         button.classList.add("right");
-         
       } else {
         wrongSound++;
         button.classList.add("wrong");
-        
       }
       break;
     }
@@ -2791,11 +2986,9 @@ function checkHandler(stimulus) {
       if (curr.isMatching) {
         rightColor++;
         button.classList.add("right");
-         
       } else {
         wrongColor++;
         button.classList.add("wrong");
-        
       }
       break;
     }
