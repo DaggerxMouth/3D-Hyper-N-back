@@ -412,10 +412,17 @@ function checkMicroLevelAdvancement(sessionMetrics, sessionHistory) {
   const dPrimeThreshold = Math.max(0.5, baseline.avgDPrime);
   const lureResistanceThreshold = Math.max(0.5, baseline.n1LureResistance);
   
-  // Criteria for advancement
-  const goodDPrime = sessionMetrics.dPrime > dPrimeThreshold;
-  const goodLureResistance = sessionMetrics.n1LureResistance >= lureResistanceThreshold;
-  const lowBias = Math.abs(sessionMetrics.responseBias) < 0.5; // Not too biased toward yes or no
+  // Calculate raw accuracy
+const totalTrials = sessionMetrics.hits + sessionMetrics.misses + 
+                   sessionMetrics.falseAlarms + sessionMetrics.correctRejections;
+const correctResponses = sessionMetrics.hits + sessionMetrics.correctRejections;
+const accuracy = totalTrials > 0 ? correctResponses / totalTrials : 0;
+
+// Criteria for advancement
+const goodDPrime = sessionMetrics.dPrime > dPrimeThreshold;
+const goodLureResistance = sessionMetrics.n1LureResistance >= lureResistanceThreshold;
+const lowBias = Math.abs(sessionMetrics.responseBias) < 0.5; // Not too biased toward yes or no
+const goodAccuracy = accuracy >= 0.90; // Minimum 90% accuracy required
   
   // Get current level components
   const { nLevel, microProgress } = getMicroLevelComponents(currentMicroLevel);
@@ -427,13 +434,16 @@ function checkMicroLevelAdvancement(sessionMetrics, sessionHistory) {
   const increment = baseIncrement + (performanceRatio * (maxIncrement - baseIncrement));
   
   // Determine new micro-level
-  let newMicroLevel = currentMicroLevel;
-  
-  if (goodDPrime && lowBias) {
-    // Advance micro-level
-    newMicroLevel = Math.min(9.99, currentMicroLevel + increment);
-    console.log(`Advancing micro-level by +${increment.toFixed(2)} (good d-prime: ${sessionMetrics.dPrime.toFixed(2)})`);
-  } else if (sessionMetrics.dPrime < dPrimeThreshold * 0.7) {
+let newMicroLevel = currentMicroLevel;
+
+if (goodDPrime && lowBias && goodAccuracy) {
+  // Advance micro-level
+  newMicroLevel = Math.min(9.99, currentMicroLevel + increment);
+  console.log(`Advancing micro-level by +${increment.toFixed(2)} (d'=${sessionMetrics.dPrime.toFixed(2)}, acc=${(accuracy * 100).toFixed(0)}%)`);
+} else if (!goodAccuracy) {
+  // No advancement if accuracy too low
+  console.log(`No advancement: accuracy ${(accuracy * 100).toFixed(0)}% below 90% threshold`);
+} else if (sessionMetrics.dPrime < dPrimeThreshold * 0.7) {
   // Regression in micro-level for poor performance
   const decrement = 0.05;
   newMicroLevel = Math.max(2.0, currentMicroLevel - decrement);
@@ -533,6 +543,12 @@ function updateMicroLevelForConfig() {
   if (speedDisplay) {
     speedDisplay.innerHTML = getSpeedTarget(currentMicroLevel);
   }
+  // Update config display
+const configDisplay = document.querySelector("#config-display");
+if (configDisplay) {
+  const activeCount = getCurrentConfigKey();
+  configDisplay.innerHTML = activeCount + "D";
+}
 }
 
 
@@ -1435,11 +1451,45 @@ function toggleStats(_dim) {
   // Ensure dim is within range and update radio button
   const validDim = Math.min(Math.max(1, dim), 9);
   radios[validDim - 1].checked = true;
+
+  // Update radio buttons to show which configs have data
+radios.forEach((radio, index) => {
+  const dimension = index + 1;
+  const hasHistory = history[dimension] && Object.keys(history[dimension]).length > 0;
+  const hasConfig = microLevelsByConfig[dimension] && microLevelsByConfig[dimension] > 2.00;
+  
+  const label = radio.parentElement.querySelector('div');
+  if (label) {
+    // Reset styles
+    label.style.fontWeight = 'normal';
+    label.style.opacity = '1';
+    
+    // Highlight configs with data
+    if (hasHistory || hasConfig) {
+      label.style.fontWeight = 'bold';
+    } else {
+      label.style.opacity = '0.5';
+    }
+    
+    // Mark current active config
+    if (dimension === getCurrentConfigKey()) {
+      label.style.textDecoration = 'underline';
+    } else {
+      label.style.textDecoration = 'none';
+    }
+  }
+});
   
   // Get history for the selected dimension
-  const _history = history[validDim];
-  const bars = document.querySelector(".bar-chart-bars");
-  bars.innerHTML = "";
+const _history = history[validDim];
+const bars = document.querySelector(".bar-chart-bars");
+bars.innerHTML = "";
+
+// Override dimension with current config if viewing current stats
+if (validDim === getCurrentConfigKey()) {
+  // Use config-specific session history for baseline calculation
+  sessionHistory = sessionHistoriesByConfig[validDim] || [];
+}
 
   
   // Initialize stats variables
@@ -1477,10 +1527,18 @@ function toggleStats(_dim) {
     };
   
   // Check if the history exists and has entries
-  const entries = _history ? Object.entries(_history) : [];
-  
-  // Process history entries if they exist
-  if (entries.length > 0) {
+const entries = _history ? Object.entries(_history) : [];
+
+// Show message if no data for this configuration
+if (entries.length === 0) {
+  const noDataMsg = document.createElement('div');
+  noDataMsg.style = "text-align: center; font-size: 1.5rem; margin: 2rem; opacity: 0.7;";
+  noDataMsg.innerHTML = `No data yet for ${validDim}D configuration.<br>Play some sessions to see stats!`;
+  bars.appendChild(noDataMsg);
+}
+
+// Process history entries if they exist
+if (entries.length > 0) {
     for (const [date, points] of entries) {
       if (!Array.isArray(points) || points.length === 0) continue;
       
@@ -1574,7 +1632,9 @@ barElement.title = `Date: ${date}\nμ-Level: ${displayLevel}${speedInfo}`;
   document.querySelector("#sc-avg").innerHTML = entries.length > 0 ? toOneDecimal(avgNLevel) : "-";
   document.querySelector("#sc-min").innerHTML = (minNLevel === 10) ? "-" : minNLevel;
   document.querySelector("#sc-max").innerHTML = maxNLevel || "-";
-  document.querySelector("#sc-micro-level").innerHTML = formatMicroLevel(currentMicroLevel);
+  // Show micro-level for the selected configuration
+const selectedConfigLevel = microLevelsByConfig[validDim] || 2.00;
+document.querySelector("#sc-micro-level").innerHTML = formatMicroLevel(selectedConfigLevel);
   // Display current speed target
 const currentSpeedElement = document.createElement('div');
 currentSpeedElement.style = "text-align: center; font-size: 1rem; margin-top: 0.5rem; opacity: 0.8;";
@@ -1673,7 +1733,8 @@ if (avgLureElement) {
 }
 
 // Calculate and display baseline metrics
-const baseline = calculateBaseline(sessionHistory);
+const configHistory = sessionHistoriesByConfig[validDim] || [];
+const baseline = calculateBaseline(configHistory);
 
 const baselineDPrimeElement = document.querySelector("#sc-baseline-dprime");
 if (baselineDPrimeElement) {
@@ -2643,7 +2704,7 @@ function getGameCycle(n) {
         }
       }
 
-      resDim.innerHTML = dimensions + "D";
+      resDim.innerHTML = getCurrentConfigKey() + "D";
       resRight.innerHTML = correctStimuli;
       resMissed.innerHTML = missed;
       resWrong.innerHTML = mistakes;
@@ -2749,15 +2810,25 @@ if (isRunning) {
   // Level stays the same (micro-level may have changed)
   document.querySelector(".lvl-res-stay").style.display = "block";
   document.querySelector(".lvl-stays").innerHTML = originalLevel;
+  
+  // Show reason if accuracy blocked advancement
+  if (!goodAccuracy && goodDPrime) {
+    const accuracyMsg = document.createElement('div');
+    accuracyMsg.style = "text-align: center; font-size: 1.2rem; margin-top: 1rem; color: #FF9800;";
+    accuracyMsg.innerHTML = `Advancement blocked: ${(accuracy * 100).toFixed(0)}% accuracy (need 90%)`;
+    document.querySelector(".lvl-res-stay").appendChild(accuracyMsg);
+  }
+  
   // Update nLevel for game state (to reflect micro-level changes)
   nLevelInputHandler(null, newMicroLevel);
-        // Restart game with new speed if currently running
+}
+
+// Restart game with new speed if currently running (applies to all cases)
 if (isRunning) {
   resetIntervals();
   intervals.push(
     setInterval(getGameCycle(nLevel), getSpeedTarget(newMicroLevel))
   );
-}
 }
       
       // Save history and show results
@@ -2867,11 +2938,15 @@ if (!sessionHistoriesByConfig[currentConfig]) {
   sessionHistoriesByConfig[currentConfig] = [];
 }
 
+// Add accuracy to session metrics
+sessionMetrics.accuracy = accuracy;
+
 sessionHistoriesByConfig[currentConfig].push({
   ...sessionMetrics, 
   nLevel: nLevel, 
   microLevel: currentMicroLevel, 
-  date: new Date()
+  date: new Date(),
+  accuracy: accuracy
 });
 
 if (sessionHistoriesByConfig[currentConfig].length > 20) {
@@ -2999,9 +3074,9 @@ function play() {
 document.querySelectorAll("dialog").forEach(d => d.close());
 closeOptions();
 
-// Check if randomize is enabled, if so select random stimuli
+// Update micro-level for the new random configuration
 if (randomizeEnabled) {
-  selectRandomStimuli(numStimuliSelect);
+  updateMicroLevelForConfig();
 }
 
 // Reset game state before starting
@@ -3350,4 +3425,10 @@ loadHistory();
 const speedDisplay = document.querySelector("#speed-display");
 if (speedDisplay) {
   speedDisplay.innerHTML = getSpeedTarget(currentMicroLevel);
+}
+// Initialize config display
+const configDisplay = document.querySelector("#config-display");
+if (configDisplay) {
+  const activeCount = getCurrentConfigKey();
+  configDisplay.innerHTML = activeCount + "D";
 }
