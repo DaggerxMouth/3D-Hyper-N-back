@@ -1495,6 +1495,20 @@ if (avgLureElement) {
     ((totalLureResistance / lureResistanceCount) * 100).toFixed(0) + "%" : "-";
 }
 }
+
+// Calculate and display baseline metrics
+const baseline = calculateBaseline(sessionHistory);
+
+const baselineDPrimeElement = document.querySelector("#sc-baseline-dprime");
+if (baselineDPrimeElement) {
+  baselineDPrimeElement.innerHTML = baseline.avgDPrime.toFixed(2);
+}
+
+const baselineLureElement = document.querySelector("#sc-baseline-lure");
+if (baselineLureElement) {
+  baselineLureElement.innerHTML = (baseline.n1LureResistance * 100).toFixed(0) + "%";
+}
+
 function updateStimuliAccuracyDisplay(totals) {
   // Hide all items first
   document.querySelectorAll('.stimuli-accuracy-item').forEach(item => {
