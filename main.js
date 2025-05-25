@@ -1428,6 +1428,47 @@ if (points.length > 0) {
   updateStimuliAccuracyDisplay(stimuliTotals);
   // Store the last displayed dimension
 localStorage.setItem("last-dim", validDim);
+// Update individual stimuli accuracy display
+updateStimuliAccuracyDisplay(stimuliTotals);
+// Store the last displayed dimension
+localStorage.setItem("last-dim", validDim);
+
+// Also add d-prime average to stats if available
+let totalDPrime = 0;
+let dPrimeCount = 0;
+for (const [date, points] of entries) {
+  if (!Array.isArray(points) || points.length === 0) continue;
+  
+  for (const point of points) {
+    if (point.dPrime !== undefined && !isNaN(point.dPrime)) {
+      totalDPrime += point.dPrime;
+      dPrimeCount++;
+    }
+  }
+}
+const dPrimeElement = document.querySelector("#sc-dprime");
+if (dPrimeElement) {
+  // Element exists, update it
+  if (dPrimeCount > 0) {
+    dPrimeElement.innerHTML = (totalDPrime / dPrimeCount).toFixed(2);
+  } else {
+    dPrimeElement.innerHTML = "-";
+  }
+} else {
+  // Element doesn't exist, create it
+  const dPrimeCard = document.createElement('div');
+  dPrimeCard.className = 'stats-card';
+  dPrimeCard.innerHTML = `
+    <div class="stats-card-title">Avg d'</div>
+    <div id="sc-dprime" class="stats-card-value">${dPrimeCount > 0 ? (totalDPrime / dPrimeCount).toFixed(2) : '-'}</div>
+  `;
+  
+  // Find the accuracy element's container to insert after it
+  const accuracyElement = document.querySelector("#sc-accuracy");
+  if (accuracyElement && accuracyElement.parentElement) {
+    accuracyElement.parentElement.after(dPrimeCard);
+  }
+}
 }
 function updateStimuliAccuracyDisplay(totals) {
   // Hide all items first
@@ -2286,11 +2327,21 @@ historyPoint.outcome = newLevel > originalLevel ? 1 : (newLevel < originalLevel 
       
 const historyPoint = {
     nLevel,
+    microLevel: currentMicroLevel,  // Store micro-level
     right: correctStimuli,
     missed,
     wrong: mistakes,
     accuracy: accuracy,
-    outcome: 0,
+    // Signal detection metrics
+    dPrime: 0,  // Will be set after calculation
+    responseBias: 0,  // Will be set after calculation
+    n1LureResistance: 0,  // Will be set if lures present
+    // Lure metrics
+    n1LureEncounters: sessionMetrics.n1LureEncounters || 0,
+    n1LureCorrectRejections: sessionMetrics.n1LureCorrectRejections || 0,
+    n1LureFalseAlarms: sessionMetrics.n1LureFalseAlarms || 0,
+    // Overall result
+    outcome: 0,  // -1 for level down, 0 for stay, 1 for level up
     stimuliData: stimuliData
   };
 
@@ -2363,7 +2414,37 @@ sessionHistory.push({...sessionMetrics, nLevel: nLevel, microLevel: currentMicro
 if (sessionHistory.length > 20) {
   sessionHistory.shift(); // Remove oldest session if more than 20
 }
-      
+
+
+      // Update the recap dialog with d-prime and micro-level information
+document.querySelector(".lvl-before").innerHTML = formatMicroLevel(historyPoint.microLevel);
+document.querySelector(".lvl-after").innerHTML = formatMicroLevel(newMicroLevel);
+document.querySelector(".lvl-stays").innerHTML = formatMicroLevel(newMicroLevel);
+
+// Update signal detection metrics in the recap dialog
+document.getElementById("sc-res-dprime").textContent = sessionMetrics.dPrime.toFixed(2);
+document.getElementById("sc-res-bias").textContent = sessionMetrics.responseBias.toFixed(2);
+
+// Show lure resistance section if lures were encountered
+if (sessionMetrics.n1LureEncounters && sessionMetrics.n1LureEncounters > 0) {
+  document.getElementById("lure-resistance-section").style.display = "block";
+  document.getElementById("sc-res-lure-resistance").textContent = 
+    `${(sessionMetrics.n1LureResistance * 100).toFixed(0)}%`;
+  document.getElementById("sc-res-lure-count").textContent = 
+    sessionMetrics.n1LureEncounters;
+} else {
+  document.getElementById("lure-resistance-section").style.display = "none";
+}
+
+// Remove the previously added dynamic elements if they exist
+const oldDPrimeElement = document.querySelector(".dynamic-dprime-element");
+if (oldDPrimeElement) {
+  oldDPrimeElement.remove();
+}
+const oldLureElement = document.querySelector(".dynamic-lure-element");
+if (oldLureElement) {
+  oldLureElement.remove();
+}
       // Show the recap dialog
       recapDialogContent.parentElement.show();
       
