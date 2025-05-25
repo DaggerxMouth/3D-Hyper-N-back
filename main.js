@@ -170,7 +170,7 @@ const defVal_colorEnabled = true;
 const defVal_randomizeEnabled = false; // Default value for randomize stimuli toggle
 const defVal_tileAHexColor = "#111";
 const defVal_tileBHexColor = "#888";
-const defVal_nLevel = 1;
+const defVal_nLevel = 2;
 const defVal_sceneDimmer = 0.5;
 const defVal_zoom = 0.7;
 const defVal_perspective = 15;
@@ -294,7 +294,31 @@ let sessionMetrics = {
 let sessionHistory = []; // Store last 20 sessions for baseline calculation
 
 // Current micro-level (N.DD format)
-let currentMicroLevel = 1.00;
+let currentMicroLevel = 2.00;
+
+// Store micro-levels for different stimulus configurations
+let microLevelsByConfig = {
+  2: 2.00,  // Dual n-back
+  3: 2.00,  // Triple n-back
+  4: 2.00,  // Quad n-back
+  5: 2.00,  // etc...
+  6: 2.00,
+  7: 2.00,
+  8: 2.00,
+  9: 2.00
+};
+
+// Session histories by configuration
+let sessionHistoriesByConfig = {
+  2: [],
+  3: [],
+  4: [],
+  5: [],
+  6: [],
+  7: [],
+  8: [],
+  9: []
+};
 
 // Functions for signal detection calculations
 function calculateDPrime(hits, misses, falseAlarms, correctRejections) {
@@ -410,11 +434,11 @@ function checkMicroLevelAdvancement(sessionMetrics, sessionHistory) {
     newMicroLevel = Math.min(9.99, currentMicroLevel + increment);
     console.log(`Advancing micro-level by +${increment.toFixed(2)} (good d-prime: ${sessionMetrics.dPrime.toFixed(2)})`);
   } else if (sessionMetrics.dPrime < dPrimeThreshold * 0.7) {
-    // Regression in micro-level for poor performance
-    const decrement = 0.05;
-    newMicroLevel = Math.max(nLevel * 1.0, currentMicroLevel - decrement);
-    console.log(`Decreasing micro-level by -${decrement.toFixed(2)} (poor d-prime: ${sessionMetrics.dPrime.toFixed(2)})`);
-  }
+  // Regression in micro-level for poor performance
+  const decrement = 0.05;
+  newMicroLevel = Math.max(2.0, currentMicroLevel - decrement);
+  console.log(`Decreasing micro-level by -${decrement.toFixed(2)} (poor d-prime: ${sessionMetrics.dPrime.toFixed(2)})`);
+}
   
   // Integer level transitions
   if (Math.floor(newMicroLevel) > nLevel) {
@@ -435,13 +459,15 @@ function getMicroLevelComponents(microLevel) {
 
 // Function to get speed target based on micro-level and base delay
 function getSpeedTarget(microLevel) {
-  // Speed target scales from baseDelay (100%) down to 50% of baseDelay
-  const startTarget = baseDelay;  // e.g., 5000ms at level 1
-  const endTarget = baseDelay * 0.5;  // e.g., 2500ms at level 9
+  const { nLevel, microProgress } = getMicroLevelComponents(microLevel);
   
-  // Linear scaling across levels 1-9
-  const levelProgress = (Math.min(microLevel, 9) - 1) / 8;
-  const target = startTarget - ((startTarget - endTarget) * levelProgress);
+  // Within each N-level, speed scales from 100% to 50% of baseDelay
+const levelStartSpeed = baseDelay;  // e.g., 5000ms at x.00
+const levelEndSpeed = baseDelay * 0.5;  // e.g., 2500ms at x.99
+  
+  // Speed decreases as decimal increases (0.00 to 0.99)
+  const speedRange = levelStartSpeed - levelEndSpeed;
+  const target = levelStartSpeed - (speedRange * microProgress);
   
   return Math.round(target);
 }
@@ -449,6 +475,26 @@ function getSpeedTarget(microLevel) {
 // Function to format micro-level for display
 function formatMicroLevel(microLevel) {
   return microLevel.toFixed(2); // Always show 2 decimal places
+}
+
+// Function to count currently active stimuli
+function getActiveStimuliCount() {
+  let count = 0;
+  if (wallsEnabled) count++;
+  if (cameraEnabled) count++;
+  if (faceEnabled) count++;
+  if (positionEnabled) count++;
+  if (wordEnabled) count++;
+  if (shapeEnabled) count++;
+  if (cornerEnabled) count++;
+  if (soundEnabled) count++;
+  if (colorEnabled) count++;
+  return count;
+}
+
+// Function to get current configuration key
+function getCurrentConfigKey() {
+  return getActiveStimuliCount();
 }
 
 // Handler function for randomize stimuli toggle
@@ -462,6 +508,33 @@ function randomizeEnableTrigHandler(evt, defVal) {
   }
 }
 
+// Function to update micro-level when configuration changes
+function updateMicroLevelForConfig() {
+  const configKey = getCurrentConfigKey();
+  
+  // Save current micro-level for previous config
+  const prevConfigKey = Object.keys(microLevelsByConfig).find(key => 
+    microLevelsByConfig[key] === currentMicroLevel
+  ) || configKey;
+  
+  if (prevConfigKey) {
+    microLevelsByConfig[prevConfigKey] = currentMicroLevel;
+  }
+  
+  // Load micro-level for new config
+  currentMicroLevel = microLevelsByConfig[configKey] || 2.00;
+  nLevel = Math.floor(currentMicroLevel);
+  
+  // Update displays
+  nLevelInput.value = formatMicroLevel(currentMicroLevel);
+  nBackDisplay.innerHTML = formatMicroLevel(currentMicroLevel);
+  
+  const speedDisplay = document.querySelector("#speed-display");
+  if (speedDisplay) {
+    speedDisplay.innerHTML = getSpeedTarget(currentMicroLevel);
+  }
+}
+
 
 
 // Handler functions for enabling/disabling stimuli
@@ -472,6 +545,7 @@ function wallsEnableTrigHandler(evt, defVal) {
   } else {
     wallsEnabled = !wallsEnabled;
     saveSettings();
+updateMicroLevelForConfig();
   }
 
   if (!wallsEnabled) {
@@ -490,6 +564,7 @@ function cameraEnableTrigHandler(evt, defVal) {
   } else {
     cameraEnabled = !cameraEnabled;
     saveSettings();
+updateMicroLevelForConfig();
   }
 
   if (!cameraEnabled) {
@@ -508,6 +583,7 @@ function faceEnableTrigHandler(evt, defVal) {
   } else {
     faceEnabled = !faceEnabled;
     saveSettings();
+updateMicroLevelForConfig();
   }
 
   if (!faceEnabled) {
@@ -526,6 +602,7 @@ function positionEnableTrigHandler(evt, defVal) {
   } else {
     positionEnabled = !positionEnabled;
     saveSettings();
+updateMicroLevelForConfig();
   }
 
   if (!positionEnabled) {
@@ -544,6 +621,7 @@ function wordEnableTrigHandler(evt, defVal) {
   } else {
     wordEnabled = !wordEnabled;
     saveSettings();
+updateMicroLevelForConfig();
   }
 
   if (!wordEnabled) {
@@ -562,6 +640,7 @@ function shapeEnableTrigHandler(evt, defVal) {
   } else {
     shapeEnabled = !shapeEnabled;
     saveSettings();
+updateMicroLevelForConfig();
   }
 
   if (!shapeEnabled) {
@@ -580,6 +659,7 @@ function cornerEnableTrigHandler(evt, defVal) {
   } else {
     cornerEnabled = !cornerEnabled;
     saveSettings();
+updateMicroLevelForConfig();
   }
   
   if (!cornerEnabled) {
@@ -607,6 +687,7 @@ function soundEnableTrigHandler(evt, defVal) {
   } else {
     soundEnabled = !soundEnabled;
     saveSettings();
+updateMicroLevelForConfig();
   }
 
   if (!soundEnabled) {
@@ -625,6 +706,7 @@ function colorEnableTrigHandler(evt, defVal) {
   } else {
     colorEnabled = !colorEnabled;
     saveSettings();
+updateMicroLevelForConfig();
   }
 
   if (!colorEnabled) {
@@ -653,15 +735,15 @@ function nLevelInputHandler(evt, defVal) {
     const inputValue = parseFloat(nLevelInput.value);
     
     // Validate the input
-    if (isNaN(inputValue) || inputValue < 1 || inputValue > 9.99) {
-      nLevelInput.classList.add("input-incorrect");
-      return; // Don't update if invalid
-    } else {
-      nLevelInput.classList.remove("input-incorrect");
-    }
-    
-    // Update the micro-level and standard nLevel
-    currentMicroLevel = Math.min(Math.max(inputValue, 1), 9.99);
+if (isNaN(inputValue) || inputValue < 2 || inputValue > 9.99) {
+  nLevelInput.classList.add("input-incorrect");
+  return; // Don't update if invalid
+} else {
+  nLevelInput.classList.remove("input-incorrect");
+}
+
+// Update the micro-level and standard nLevel
+currentMicroLevel = Math.min(Math.max(inputValue, 2), 9.99);
     nLevel = Math.floor(currentMicroLevel);
     saveSettings();
   }
@@ -1245,6 +1327,8 @@ function saveSettings() {
     randomizeEnabled, 
     nLevel,
     currentMicroLevel,
+    microLevelsByConfig,  // Save all config levels
+    sessionHistoriesByConfig,  // Save all session histories
     sceneDimmer,
     zoom,
     perspective,
@@ -1264,6 +1348,14 @@ function loadSettings() {
   if (!settings) {
     settings = saveSettings();
   }
+  
+  // Restore multi-config data if available
+  if (settings.microLevelsByConfig) {
+    microLevelsByConfig = settings.microLevelsByConfig;
+  }
+  if (settings.sessionHistoriesByConfig) {
+    sessionHistoriesByConfig = settings.sessionHistoriesByConfig;
+  }
 
   wallsEnableTrigHandler(null, settings.wallsEnabled);
   cameraEnableTrigHandler(null, settings.cameraEnabled);
@@ -1277,11 +1369,15 @@ function loadSettings() {
   randomizeEnableTrigHandler(null, settings.randomizeEnabled || defVal_randomizeEnabled);
   
   // Load micro-level if available, otherwise use nLevel
-  if (settings.currentMicroLevel !== undefined) {
-    nLevelInputHandler(null, settings.currentMicroLevel);
-  } else {
-    nLevelInputHandler(null, settings.nLevel);
-  }
+if (settings.currentMicroLevel !== undefined) {
+  // Upgrade level 1 saves to level 2
+  const upgradeLevel = settings.currentMicroLevel < 2 ? 2.0 : settings.currentMicroLevel;
+  nLevelInputHandler(null, upgradeLevel);
+} else {
+  // Upgrade level 1 saves to level 2
+  const upgradeLevel = (settings.nLevel < 2) ? 2 : settings.nLevel;
+  nLevelInputHandler(null, upgradeLevel);
+}
   
   sceneDimmerInputHandler(null, settings.sceneDimmer);
   zoomInputHandler(null, settings.zoom);
@@ -1509,10 +1605,17 @@ if (microLevelCard && !microLevelCard.querySelector('.speed-info')) {
   updateStimuliAccuracyDisplay(stimuliTotals);
   // Store the last displayed dimension
 localStorage.setItem("last-dim", validDim);
-// Update individual stimuli accuracy display
-updateStimuliAccuracyDisplay(stimuliTotals);
-// Store the last displayed dimension
-localStorage.setItem("last-dim", validDim);
+
+  // Update speed range display
+const speedRangeStart = document.querySelector("#speed-range-start");
+const speedRangeEnd = document.querySelector("#speed-range-end");
+
+if (speedRangeStart) {
+  speedRangeStart.innerHTML = baseDelay + "ms";
+}
+if (speedRangeEnd) {
+  speedRangeEnd.innerHTML = Math.round(baseDelay * 0.5) + "ms";
+}
 
 // Also add d-prime average to stats if available
 let totalDPrime = 0;
@@ -2293,10 +2396,12 @@ function getGameCycle(n) {
   // Calculate lure frequency based on micro-level progress
   const { nLevel, microProgress } = getMicroLevelComponents(currentMicroLevel);
   
-  // Scale lure frequency based on micro-level progress (5% at .00, up to 25% at .99)
-  const baseLureFreq = 0.10;
-  const maxLureFreq = 0.25; 
-  const lureFrequency = baseLureFreq + (microProgress * (maxLureFreq - baseLureFreq));
+  // Scale lure frequency based on micro-level progress (10% at .00, up to 25% at .50, stays at 25% after)
+  const baseLureFreq = 0.05;
+  const maxLureFreq = 0.25;
+  // Cap progress at 0.5 so lures max out at x.50
+  const cappedProgress = Math.min(microProgress, 0.5);
+  const lureFrequency = baseLureFreq + (cappedProgress * 2 * (maxLureFreq - baseLureFreq));
   
   console.log(`Current micro-level: ${formatMicroLevel(currentMicroLevel)}, Lure frequency: ${(lureFrequency * 100).toFixed(1)}%`);
   
@@ -2567,7 +2672,9 @@ if (sessionMetrics.n1LureEncounters && sessionMetrics.n1LureEncounters > 0) {
 
 
 // Calculate new micro-level based on d-prime and lure resistance
-const newMicroLevel = checkMicroLevelAdvancement(sessionMetrics, sessionHistory);
+const currentConfig = getCurrentConfigKey();
+const configHistory = sessionHistoriesByConfig[currentConfig] || [];
+const newMicroLevel = checkMicroLevelAdvancement(sessionMetrics, configHistory);
 
 // Check if there's a change in integer level for UI display
 const originalLevel = nLevel;
@@ -2754,10 +2861,21 @@ historyPoint.dPrime = sessionMetrics.dPrime;
 historyPoint.responseBias = sessionMetrics.responseBias;
 historyPoint.n1LureResistance = sessionMetrics.n1LureResistance;
 
-// Store session in session history (limited to last 20)
-sessionHistory.push({...sessionMetrics, nLevel: nLevel, microLevel: currentMicroLevel, date: new Date()});
-if (sessionHistory.length > 20) {
-  sessionHistory.shift(); // Remove oldest session if more than 20
+// Store session in config-specific history (limited to last 20)
+const currentConfig = getCurrentConfigKey();
+if (!sessionHistoriesByConfig[currentConfig]) {
+  sessionHistoriesByConfig[currentConfig] = [];
+}
+
+sessionHistoriesByConfig[currentConfig].push({
+  ...sessionMetrics, 
+  nLevel: nLevel, 
+  microLevel: currentMicroLevel, 
+  date: new Date()
+});
+
+if (sessionHistoriesByConfig[currentConfig].length > 20) {
+  sessionHistoriesByConfig[currentConfig].shift(); // Remove oldest session if more than 20
 }
 
 
@@ -2893,6 +3011,10 @@ resetIntervals();
   
   isRunning = true;
 
+// Get current configuration
+const currentConfig = getCurrentConfigKey();
+const sessionHistory = sessionHistoriesByConfig[currentConfig] || [];
+  
   // Reset session metrics
   sessionMetrics = {
     hits: 0,
