@@ -1494,6 +1494,7 @@ if (avgLureElement) {
   avgLureElement.innerHTML = lureResistanceCount > 0 ? 
     ((totalLureResistance / lureResistanceCount) * 100).toFixed(0) + "%" : "-";
 }
+}
 function updateStimuliAccuracyDisplay(totals) {
   // Hide all items first
   document.querySelectorAll('.stimuli-accuracy-item').forEach(item => {
