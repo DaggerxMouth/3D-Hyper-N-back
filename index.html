@@ -42,85 +42,86 @@
 			</div>
 
 			<div style="text-align: center; font-size: 2.5rem;">
-    <div class="lvl-res-move">N = <span class="lvl-before">1.00</span> <i class="bi bi-arrow-right"> </i><span class="lvl-after" style="font-size: 4rem;">2.00</span></div>
-    <div class="lvl-res-stay">N = <span class="lvl-stays">1.00</span></div>
-</div>
+                <div class="lvl-res-move">N = <span class="lvl-before">1.00</span> <i class="bi bi-arrow-right"> </i><span class="lvl-after" style="font-size: 4rem;">2.00</span></div>
+                <div class="lvl-res-stay">N = <span class="lvl-stays">1.00</span></div>
+            </div>
 
-<!-- Signal Detection Metrics Section -->
-<div class="signal-detection-metrics">
-    <div style="text-align: center; font-size: 1.5rem; margin-top: 1.5rem; font-weight: bold;">
-        Signal Detection Metrics
-    </div>
-    <div class="stats-cards" style="font-size: 1.5rem; margin: 1rem 0;">
-        <div class="stats-card">
-            <div class="stats-card-title">d'-Prime</div>
-            <div id="sc-res-dprime" class="stats-card-value">0.00</div>
-        </div>
-        <div class="stats-card">
-            <div class="stats-card-title">Bias</div>
-            <div id="sc-res-bias" class="stats-card-value">0.00</div>
-        </div>
-    </div>
+			<!-- Signal Detection Metrics Section -->
+            <div class="signal-detection-metrics">
+                <div style="text-align: center; font-size: 1.5rem; margin-top: 1.5rem; font-weight: bold;">
+                    Signal Detection Metrics
+                </div>
+                <div class="stats-cards" style="font-size: 1.5rem; margin: 1rem 0;">
+                    <div class="stats-card">
+                        <div class="stats-card-title">d'-Prime</div>
+                        <div id="sc-res-dprime" class="stats-card-value">0.00</div>
+                    </div>
+                    <div class="stats-card">
+                        <div class="stats-card-title">Bias</div>
+                        <div id="sc-res-bias" class="stats-card-value">0.00</div>
+                    </div>
+                </div>
+            
+                <!-- Lure Resistance Section (only shown when lures are present) -->
+                <div id="lure-resistance-section" style="display: none;">
+                    <div style="text-align: center; font-size: 1.3rem; margin-top: 0.5rem; font-weight: bold;">
+                        Interference Control
+                    </div>
+                    <div class="stats-cards" style="font-size: 1.25rem; margin: 0.5rem 0 1rem 0;">
+                        <div class="stats-card">
+                            <div class="stats-card-title">Lure Resistance</div>
+                            <div id="sc-res-lure-resistance" class="stats-card-value">0%</div>
+                        </div>
+                        <div class="stats-card">
+                            <div class="stats-card-title">Lures Encountered</div>
+                            <div id="sc-res-lure-count" class="stats-card-value">0</div>
+                        </div>
+                    </div>
+                    <div id="sc-res-lure-details" style="font-size: 1rem; text-align: center;"></div>
+                </div>
+            </div>
 
-	<!-- Excellence Dashboard Section -->
-<div class="excellence-dashboard" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.2);">
-    <div style="text-align: center; font-size: 1.5rem; font-weight: bold;">
-        Excellence Progress
-    </div>
-    
-    <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
-        <!-- d'-Prime Excellence Progress -->
-        <div>
-            <div style="display: flex; justify-content: space-between; font-size: 1rem;">
-                <span>d'-Prime Excellence</span>
-                <span id="dprime-progress-value">0%</span>
+			<!-- Excellence Dashboard Section -->
+            <div class="excellence-dashboard" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.2);">
+                <div style="text-align: center; font-size: 1.5rem; font-weight: bold;">
+                    Excellence Progress
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
+                    <!-- d'-Prime Excellence Progress -->
+                    <div>
+                        <div style="display: flex; justify-content: space-between; font-size: 1rem;">
+                            <span>d'-Prime Excellence</span>
+                            <span id="dprime-progress-value">0%</span>
+                        </div>
+                        <div style="background: rgba(255, 255, 255, 0.2); height: 0.5rem; border-radius: 0.25rem; margin-top: 0.25rem; overflow: hidden;">
+                            <div id="dprime-progress-bar" style="background: #4CAF50; height: 100%; width: 0%;"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Lure Resistance Progress -->
+                    <div id="lure-progress-container" style="display: none;">
+                        <div style="display: flex; justify-content: space-between; font-size: 1rem;">
+                            <span>Interference Control</span>
+                            <span id="lure-progress-value">0%</span>
+                        </div>
+                        <div style="background: rgba(255, 255, 255, 0.2); height: 0.5rem; border-radius: 0.25rem; margin-top: 0.25rem; overflow: hidden;">
+                            <div id="lure-progress-bar" style="background: #2196F3; height: 100%; width: 0%;"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Overall Excellence Score -->
+                    <div>
+                        <div style="display: flex; justify-content: space-between; font-size: 1rem;">
+                            <span>Overall Excellence</span>
+                            <span id="overall-progress-value">0%</span>
+                        </div>
+                        <div style="background: rgba(255, 255, 255, 0.2); height: 0.75rem; border-radius: 0.25rem; margin-top: 0.25rem; overflow: hidden;">
+                            <div id="overall-progress-bar" style="background: linear-gradient(90deg, #4CAF50, #2196F3); height: 100%; width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div style="background: rgba(255, 255, 255, 0.2); height: 0.5rem; border-radius: 0.25rem; margin-top: 0.25rem; overflow: hidden;">
-                <div id="dprime-progress-bar" style="background: #4CAF50; height: 100%; width: 0%;"></div>
-            </div>
-        </div>
-        
-        <!-- Lure Resistance Progress -->
-        <div id="lure-progress-container" style="display: none;">
-            <div style="display: flex; justify-content: space-between; font-size: 1rem;">
-                <span>Interference Control</span>
-                <span id="lure-progress-value">0%</span>
-            </div>
-            <div style="background: rgba(255, 255, 255, 0.2); height: 0.5rem; border-radius: 0.25rem; margin-top: 0.25rem; overflow: hidden;">
-                <div id="lure-progress-bar" style="background: #2196F3; height: 100%; width: 0%;"></div>
-            </div>
-        </div>
-        
-        <!-- Overall Excellence Score -->
-        <div>
-            <div style="display: flex; justify-content: space-between; font-size: 1rem;">
-                <span>Overall Excellence</span>
-                <span id="overall-progress-value">0%</span>
-            </div>
-            <div style="background: rgba(255, 255, 255, 0.2); height: 0.75rem; border-radius: 0.25rem; margin-top: 0.25rem; overflow: hidden;">
-                <div id="overall-progress-bar" style="background: linear-gradient(90deg, #4CAF50, #2196F3); height: 100%; width: 0%;"></div>
-            </div>
-        </div>
-    </div>
-</div>
-    
-    <!-- Lure Resistance Section (only shown when lures are present) -->
-    <div id="lure-resistance-section" style="display: none;">
-        <div style="text-align: center; font-size: 1.3rem; margin-top: 0.5rem; font-weight: bold;">
-            Interference Control
-        </div>
-        <div class="stats-cards" style="font-size: 1.25rem; margin: 0.5rem 0 1rem 0;">
-            <div class="stats-card">
-                <div class="stats-card-title">Lure Resistance</div>
-                <div id="sc-res-lure-resistance" class="stats-card-value">0%</div>
-            </div>
-            <div class="stats-card">
-                <div class="stats-card-title">Lures Encountered</div>
-                <div id="sc-res-lure-count" class="stats-card-value">0</div>
-            </div>
-        </div>
-    </div>
-</div>
 		</div>
 	</dialog>
 
@@ -196,6 +197,10 @@
 				<div class="stats-card">
 					<div class="stats-card-title">Wrong</div>
 					<div id="sc-wrong" class="stats-card-value">-</div>
+				</div>
+				<div class="stats-card">
+					<div class="stats-card-title">Avg d'</div>
+					<div id="sc-dprime" class="stats-card-value">-</div>
 				</div>
 			</div>
 			
