@@ -271,6 +271,165 @@ let matchingCorner = 0;
 let matchingSound = 0;
 let matchingColor = 0;
 
+// Signal detection metrics for d'-prime calculation
+let sessionMetrics = {
+  hits: 0,
+  misses: 0, 
+  falseAlarms: 0,
+  correctRejections: 0,
+  dPrime: 0,
+  responseBias: 0,
+  microLevel: 0.00
+};
+
+// Session history for baseline calculation
+let sessionHistory = []; // Store last 20 sessions for baseline calculation
+
+// Current micro-level (N.DD format)
+let currentMicroLevel = 1.00;
+
+// Functions for signal detection calculations
+function calculateDPrime(hits, misses, falseAlarms, correctRejections) {
+  const hitRate = hits / (hits + misses);
+  const faRate = falseAlarms / (falseAlarms + correctRejections);
+  
+  // Handle edge cases (avoid 0% and 100%)
+  const adjustedHitRate = Math.max(0.01, Math.min(0.99, hitRate));
+  const adjustedFARate = Math.max(0.01, Math.min(0.99, faRate));
+  
+  // Z-score conversion (inverse normal distribution)
+  const zHit = gaussianInverse(adjustedHitRate);
+  const zFA = gaussianInverse(adjustedFARate);
+  
+  return zHit - zFA;
+}
+
+function calculateResponseBias(hits, misses, falseAlarms, correctRejections) {
+  const hitRate = hits / (hits + misses);
+  const faRate = falseAlarms / (falseAlarms + correctRejections);
+  
+  const adjustedHitRate = Math.max(0.01, Math.min(0.99, hitRate));
+  const adjustedFARate = Math.max(0.01, Math.min(0.99, faRate));
+  
+  const zHit = gaussianInverse(adjustedHitRate);
+  const zFA = gaussianInverse(adjustedFARate);
+  
+  return -0.5 * (zHit + zFA);
+}
+
+// Z-score approximation function
+function gaussianInverse(p) {
+  // Simplified approximation for the inverse normal distribution
+  if (p < 0.5) {
+    return -Math.sqrt(-2 * Math.log(p));
+  } else {
+    return Math.sqrt(-2 * Math.log(1 - p));
+  }
+}
+
+// Calculate baseline performance from session history
+function calculateBaseline(sessionHistory) {
+  if (!sessionHistory || sessionHistory.length === 0) {
+    // Return default values if no history
+    return { 
+      avgDPrime: 0.5, 
+      stdDPrime: 0.1,
+      n1LureResistance: 0.5
+    };
+  }
+  
+  // Extract d-prime values
+  const dPrimes = sessionHistory.map(s => s.dPrime).filter(d => !isNaN(d));
+  
+  // Extract lure resistance values, if any
+  const lureResistances = sessionHistory
+    .map(s => s.n1LureResistance)
+    .filter(r => r !== undefined && !isNaN(r));
+    
+  // Calculate average d-prime
+  const avgDPrime = dPrimes.length > 0 
+    ? dPrimes.reduce((a, b) => a + b, 0) / dPrimes.length 
+    : 0.5;
+    
+  // Calculate standard deviation of d-prime
+  const stdDPrime = dPrimes.length > 0 
+    ? Math.sqrt(
+        dPrimes.map(x => Math.pow(x - avgDPrime, 2))
+              .reduce((a, b) => a + b, 0) / dPrimes.length
+      )
+    : 0.1;
+    
+  // Calculate average lure resistance
+  const avgLureResistance = lureResistances.length > 0
+    ? lureResistances.reduce((a, b) => a + b, 0) / lureResistances.length
+    : 0.5;
+    
+  return {
+    avgDPrime,
+    stdDPrime,
+    n1LureResistance: avgLureResistance
+  };
+}
+
+// Function to check if user should advance in micro-level
+function checkMicroLevelAdvancement(sessionMetrics, sessionHistory) {
+  // Get personal baseline
+  const baseline = calculateBaseline(sessionHistory);
+  
+  // Calculate thresholds based on current level and personal baseline
+  const dPrimeThreshold = Math.max(0.5, baseline.avgDPrime);
+  const lureResistanceThreshold = Math.max(0.5, baseline.n1LureResistance);
+  
+  // Criteria for advancement
+  const goodDPrime = sessionMetrics.dPrime > dPrimeThreshold;
+  const goodLureResistance = sessionMetrics.n1LureResistance >= lureResistanceThreshold;
+  const lowBias = Math.abs(sessionMetrics.responseBias) < 0.5; // Not too biased toward yes or no
+  
+  // Get current level components
+  const { nLevel, microProgress } = getMicroLevelComponents(currentMicroLevel);
+  
+  // Advancement size (0.01 to 0.05 based on performance)
+  const baseIncrement = 0.01;
+  const maxIncrement = 0.05;
+  const performanceRatio = Math.min(1, (sessionMetrics.dPrime - dPrimeThreshold) / 1.0);
+  const increment = baseIncrement + (performanceRatio * (maxIncrement - baseIncrement));
+  
+  // Determine new micro-level
+  let newMicroLevel = currentMicroLevel;
+  
+  if (goodDPrime && lowBias) {
+    // Advance micro-level
+    newMicroLevel = Math.min(9.99, currentMicroLevel + increment);
+    console.log(`Advancing micro-level by +${increment.toFixed(2)} (good d-prime: ${sessionMetrics.dPrime.toFixed(2)})`);
+  } else if (sessionMetrics.dPrime < dPrimeThreshold * 0.7) {
+    // Regression in micro-level for poor performance
+    const decrement = 0.05;
+    newMicroLevel = Math.max(nLevel * 1.0, currentMicroLevel - decrement);
+    console.log(`Decreasing micro-level by -${decrement.toFixed(2)} (poor d-prime: ${sessionMetrics.dPrime.toFixed(2)})`);
+  }
+  
+  // Integer level transitions
+  if (Math.floor(newMicroLevel) > nLevel) {
+    console.log(`LEVEL UP! ${nLevel} -> ${Math.floor(newMicroLevel)}`);
+  } else if (Math.floor(newMicroLevel) < nLevel) {
+    console.log(`LEVEL DOWN! ${nLevel} -> ${Math.floor(newMicroLevel)}`);
+  }
+  
+  return newMicroLevel;
+}
+
+// Function to get micro-level components
+function getMicroLevelComponents(microLevel) {
+  const nLevel = Math.floor(microLevel);
+  const microProgress = microLevel - nLevel; // 0.00 to 0.99
+  return { nLevel, microProgress };
+}
+
+// Function to format micro-level for display
+function formatMicroLevel(microLevel) {
+  return microLevel.toFixed(2); // Always show 2 decimal places
+}
+
 // Handler function for randomize stimuli toggle
 function randomizeEnableTrigHandler(evt, defVal) {
   if (defVal != null) {
@@ -456,22 +615,38 @@ function colorEnableTrigHandler(evt, defVal) {
   checkColorBtn.style.animationDelay = "0s"
 }
 
-// Handler functions for input fields
 function nLevelInputHandler(evt, defVal) {
   if (defVal != null) {
-    nLevelInput.value = defVal;
-    nLevel = defVal;
+    // For backward compatibility, if an integer is passed
+    if (Number.isInteger(defVal)) {
+      currentMicroLevel = defVal * 1.0;
+      nLevelInput.value = defVal;
+    } else {
+      currentMicroLevel = defVal;
+      nLevelInput.value = formatMicroLevel(defVal);
+    }
+    // Set the traditional nLevel to the integer part
+    nLevel = Math.floor(currentMicroLevel);
   } else {
-    nLevel = Math.min(Math.max(+nLevelInput.value, 1), 9);
+    // Parse the input value as a float
+    const inputValue = parseFloat(nLevelInput.value);
+    
+    // Validate the input
+    if (isNaN(inputValue) || inputValue < 1 || inputValue > 9.99) {
+      nLevelInput.classList.add("input-incorrect");
+      return; // Don't update if invalid
+    } else {
+      nLevelInput.classList.remove("input-incorrect");
+    }
+    
+    // Update the micro-level and standard nLevel
+    currentMicroLevel = Math.min(Math.max(inputValue, 1), 9.99);
+    nLevel = Math.floor(currentMicroLevel);
     saveSettings();
   }
 
-  if (+nLevelInput.value < 1 || +nLevelInput.value > 9) {
-    nLevelInput.classList.add("input-incorrect");
-  } else {
-    nLevelInput.classList.remove("input-incorrect");
-    nBackDisplay.innerHTML = nLevel;
-  }
+  // Always update the display to show the micro-level format
+  nBackDisplay.innerHTML = formatMicroLevel(currentMicroLevel);
 }
 
 function sceneDimmerInputHandler(evt, defVal) {
@@ -1036,9 +1211,9 @@ function saveSettings() {
     cornerEnabled,
     soundEnabled,
     colorEnabled,
-    randomizeEnabled, // Added randomize stimuli setting
-    //
+    randomizeEnabled, 
     nLevel,
+    currentMicroLevel,
     sceneDimmer,
     zoom,
     perspective,
@@ -1070,7 +1245,13 @@ function loadSettings() {
   colorEnableTrigHandler(null, settings.colorEnabled);
   randomizeEnableTrigHandler(null, settings.randomizeEnabled || defVal_randomizeEnabled);
   
-  nLevelInputHandler(null, settings.nLevel);
+  // Load micro-level if available, otherwise use nLevel
+  if (settings.currentMicroLevel !== undefined) {
+    nLevelInputHandler(null, settings.currentMicroLevel);
+  } else {
+    nLevelInputHandler(null, settings.nLevel);
+  }
+  
   sceneDimmerInputHandler(null, settings.sceneDimmer);
   zoomInputHandler(null, settings.zoom);
   perspectiveInputHandler(null, settings.perspective);
@@ -1080,7 +1261,6 @@ function loadSettings() {
   previousLevelThresholdInputHandler(null, settings.prevLevelThreshold);
   nextLevelThresholdInputHandler(null, settings.nextLevelThreshold);
   numStimuliSelectInputHandler(null, settings.numStimuliSelect);
-  
 }
 
 function openBindings() {
@@ -1362,6 +1542,140 @@ function createBlocks(symbols, n) {
   return blocks;
 }
 
+// Create blocks with fixed match density
+function createBlocksWithFixedDensity(symbols, n, matchDensity = 0.23) {
+  // Calculate total trials needed based on target matches and desired density
+  const targetMatches = targetNumOfStimuli;
+  const totalTrials = Math.ceil(targetMatches / matchDensity);
+  
+  // Initialize blocks array
+  let blocks = Array(totalTrials).fill(null);
+  let placedMatches = 0;
+  
+  // First phase: place target matches with n-back spacing
+  while (placedMatches < targetMatches) {
+    // Find a position that can have a match (must be at least n positions from the end)
+    let rnd = Math.floor(Math.random() * (blocks.length - n));
+    
+    // Ensure both positions are available
+    if (!blocks[rnd] && !blocks[rnd + n]) {
+      // Select a random symbol
+      const symbol = random(symbols);
+      
+      // Place the first occurrence (not a match)
+      blocks[rnd] = {
+        isMatching: false,
+        symbol: symbol
+      };
+      
+      // Place the second occurrence (is a match, n positions later)
+      blocks[rnd + n] = {
+        isMatching: true,
+        symbol: symbol
+      };
+      
+      placedMatches++;
+    }
+  }
+
+  // Function to place N-1 lures in the stimulus sequence
+function placeLures(blocks, n, lureFrequency = 0.10) {
+  // Calculate how many lures to place based on desired frequency
+  const numLures = Math.floor(blocks.length * lureFrequency);
+  let placedLures = 0;
+  
+  // Make a copy of blocks to avoid modifying during iteration
+  const lureBlocks = [...blocks];
+  
+  // Place N-1 lures (most important for interference training)
+  while (placedLures < numLures) {
+    // Find a position that can have an N-1 lure (must be at least 1 position from start)
+    let rnd = Math.floor(Math.random() * (blocks.length - 1)) + 1;
+    
+    // Skip if this position already has a stimulus
+    if (blocks[rnd] && blocks[rnd].isLure) {
+      continue;
+    }
+    
+    // Skip if this would create a match (already has a matching item at n-back)
+    if (blocks[rnd] && blocks[rnd].isMatching) {
+      continue;
+    }
+    
+    // Skip if adding a lure here would interfere with existing matches
+    if (blocks[rnd + n] && blocks[rnd].symbol === blocks[rnd + n].symbol) {
+      continue;
+    }
+    
+    // Get the symbol from the previous position (N-1)
+    const prevSymbol = blocks[rnd - 1] ? blocks[rnd - 1].symbol : null;
+    
+    // Only place lure if there's a valid previous symbol
+    if (prevSymbol) {
+      // Either replace an existing non-match or add to an empty spot
+      blocks[rnd] = {
+        isMatching: false, // It's NOT a match but looks like it should be
+        isLure: true,      // Mark as a lure for tracking
+        lureType: 'n-1',   // Specify the lure type
+        symbol: prevSymbol  // Use the symbol from n-1 position
+      };
+      
+      placedLures++;
+    }
+  }
+  
+  // Log lure placement stats
+  console.log(`Placed ${placedLures} N-1 lures (${(placedLures/blocks.length*100).toFixed(1)}% of trials)`);
+  
+  return blocks;
+}
+
+// Function to create blocks with both fixed density and lures
+function createBlocksWithLures(symbols, n, matchDensity = 0.23, lureFrequency = 0.10) {
+  // First create blocks with fixed match density
+  let blocks = createBlocksWithFixedDensity(symbols, n, matchDensity);
+  
+  // Then add systematic lures
+  blocks = placeLures(blocks, n, lureFrequency);
+  
+  return blocks;
+}
+  
+  // Second phase: fill remaining positions with non-matching stimuli
+  for (let i = 0; i < blocks.length; i++) {
+    if (!blocks[i]) {
+      let symbol = random(symbols);
+      
+      // Ensure we don't accidentally create matches
+      if (i >= n && blocks[i - n]) {
+        // Avoid creating n-back matches
+        while (blocks[i - n].symbol === symbol) {
+          symbol = random(symbols);
+        }
+      }
+      
+      if (i + n < blocks.length && blocks[i + n]) {
+        // Avoid creating forward matches that would make a future position match
+        while (blocks[i + n].symbol === symbol) {
+          symbol = random(symbols);
+        }
+      }
+      
+      blocks[i] = {
+        isMatching: false,
+        symbol: symbol
+      };
+    }
+  }
+  
+  // Calculate actual match density for logging
+  const actualMatches = blocks.filter(b => b.isMatching).length;
+  const actualDensity = actualMatches / blocks.length;
+  console.log(`Created blocks with ${actualMatches} matches out of ${blocks.length} trials (${(actualDensity * 100).toFixed(1)}%)`);
+  
+  return blocks;
+}
+
 function resetPoints() {
   matchingStimuli = 0;
   
@@ -1444,6 +1758,138 @@ function resetBlock() {
   checkCornerBtn.classList.remove("right", "wrong");
   checkSoundBtn.classList.remove("right", "wrong");
   checkColorBtn.classList.remove("right", "wrong");
+}
+
+// Track misses and correct rejections at the end of each stimulus presentation
+function trackMissedStimuli() {
+  // Check for misses (matching stimuli that weren't responded to)
+  if (currWalls && currWalls.isMatching && enableWallsCheck) {
+    sessionMetrics.misses++;
+  } else if (currWalls && !currWalls.isMatching && enableWallsCheck) {
+    // Correct rejection: non-matching stimulus correctly ignored
+    sessionMetrics.correctRejections++;
+    
+    // Track lure correct rejections
+    if (currWalls.isLure && currWalls.lureType === 'n-1') {
+      sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
+      sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
+      
+      sessionMetrics.n1LureEncounters++;
+      sessionMetrics.n1LureCorrectRejections++;
+    }
+  }
+  
+  // Camera stimulus
+  if (currCamera && currCamera.isMatching && enableCameraCheck) {
+    sessionMetrics.misses++;
+  } else if (currCamera && !currCamera.isMatching && enableCameraCheck) {
+    sessionMetrics.correctRejections++;
+    if (currCamera.isLure && currCamera.lureType === 'n-1') {
+      sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
+      sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
+      
+      sessionMetrics.n1LureEncounters++;
+      sessionMetrics.n1LureCorrectRejections++;
+    }
+  }
+  
+  // Face stimulus
+  if (currFace && currFace.isMatching && enableFaceCheck) {
+    sessionMetrics.misses++;
+  } else if (currFace && !currFace.isMatching && enableFaceCheck) {
+    sessionMetrics.correctRejections++;
+    if (currFace.isLure && currFace.lureType === 'n-1') {
+      sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
+      sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
+      
+      sessionMetrics.n1LureEncounters++;
+      sessionMetrics.n1LureCorrectRejections++;
+    }
+  }
+  
+  // Position stimulus
+  if (currPosition && currPosition.isMatching && enablePositionCheck) {
+    sessionMetrics.misses++;
+  } else if (currPosition && !currPosition.isMatching && enablePositionCheck) {
+    sessionMetrics.correctRejections++;
+    if (currPosition.isLure && currPosition.lureType === 'n-1') {
+      sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
+      sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
+      
+      sessionMetrics.n1LureEncounters++;
+      sessionMetrics.n1LureCorrectRejections++;
+    }
+  }
+  
+  // Word stimulus
+  if (currWord && currWord.isMatching && enableWordCheck) {
+    sessionMetrics.misses++;
+  } else if (currWord && !currWord.isMatching && enableWordCheck) {
+    sessionMetrics.correctRejections++;
+    if (currWord.isLure && currWord.lureType === 'n-1') {
+      sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
+      sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
+      
+      sessionMetrics.n1LureEncounters++;
+      sessionMetrics.n1LureCorrectRejections++;
+    }
+  }
+  
+  // Shape stimulus
+  if (currShape && currShape.isMatching && enableShapeCheck) {
+    sessionMetrics.misses++;
+  } else if (currShape && !currShape.isMatching && enableShapeCheck) {
+    sessionMetrics.correctRejections++;
+    if (currShape.isLure && currShape.lureType === 'n-1') {
+      sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
+      sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
+      
+      sessionMetrics.n1LureEncounters++;
+      sessionMetrics.n1LureCorrectRejections++;
+    }
+  }
+  
+  // Corner stimulus
+  if (currCorner && currCorner.isMatching && enableCornerCheck) {
+    sessionMetrics.misses++;
+  } else if (currCorner && !currCorner.isMatching && enableCornerCheck) {
+    sessionMetrics.correctRejections++;
+    if (currCorner.isLure && currCorner.lureType === 'n-1') {
+      sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
+      sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
+      
+      sessionMetrics.n1LureEncounters++;
+      sessionMetrics.n1LureCorrectRejections++;
+    }
+  }
+  
+  // Sound stimulus
+  if (currSound && currSound.isMatching && enableSoundCheck) {
+    sessionMetrics.misses++;
+  } else if (currSound && !currSound.isMatching && enableSoundCheck) {
+    sessionMetrics.correctRejections++;
+    if (currSound.isLure && currSound.lureType === 'n-1') {
+      sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
+      sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
+      
+      sessionMetrics.n1LureEncounters++;
+      sessionMetrics.n1LureCorrectRejections++;
+    }
+  }
+  
+  // Color stimulus
+  if (currColor && currColor.isMatching && enableColorCheck) {
+    sessionMetrics.misses++;
+  } else if (currColor && !currColor.isMatching && enableColorCheck) {
+    sessionMetrics.correctRejections++;
+    if (currColor.isLure && currColor.lureType === 'n-1') {
+      sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
+      sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
+      
+      sessionMetrics.n1LureEncounters++;
+      sessionMetrics.n1LureCorrectRejections++;
+    }
+  }
 }
 
 function resetIntervals() {
@@ -1571,59 +2017,60 @@ function selectRandomStimuli(numStimuli = 2) {
 }
 
 function getGameCycle(n) {
+  // Calculate lure frequency based on micro-level progress
+  const { nLevel, microProgress } = getMicroLevelComponents(currentMicroLevel);
+  
+  // Scale lure frequency based on micro-level progress (5% at .00, up to 25% at .99)
+  const baseLureFreq = 0.05;
+  const maxLureFreq = 0.25; 
+  const lureFrequency = baseLureFreq + (microProgress * (maxLureFreq - baseLureFreq));
+  
+  console.log(`Current micro-level: ${formatMicroLevel(currentMicroLevel)}, Lure frequency: ${(lureFrequency * 100).toFixed(1)}%`);
+  
   let walls;
   if (wallsEnabled) {
-    walls = createBlocks(wallColorsList, n);
-    // Count matching walls for individual stimulus accuracy
+    walls = createBlocksWithLures(wallColorsList, n, 0.23, lureFrequency);
     matchingWalls = walls.filter(block => block && block.isMatching).length;
   }
   let cameras;
   if (cameraEnabled) {
-    cameras = createBlocks(points, n);
-    // Count matching cameras for individual stimulus accuracy
+    cameras = createBlocksWithLures(points, n, 0.23, lureFrequency);
     matchingCamera = cameras.filter(block => block && block.isMatching).length;
   }
   let faces;
   if (faceEnabled) {
-    faces = createBlocks(numbers, n);
-    // Count matching faces for individual stimulus accuracy
+    faces = createBlocksWithLures(numbers, n, 0.23, lureFrequency);
     matchingFace = faces.filter(block => block && block.isMatching).length;
   }
   let positions;
   if (positionEnabled) {
-    positions = createBlocks(moves, n);
-    // Count matching positions for individual stimulus accuracy
+    positions = createBlocksWithLures(moves, n, 0.23, lureFrequency);
     matchingPosition = positions.filter(block => block && block.isMatching).length;
   }
   
   let words;
   if (wordEnabled) {
-    words = createBlocks(wordsList, n);
-    // Count matching words for individual stimulus accuracy
+    words = createBlocksWithLures(wordsList, n, 0.23, lureFrequency);
     matchingWord = words.filter(block => block && block.isMatching).length;
   }
   let shapes;
   if (shapeEnabled) {
-    shapes = createBlocks(shapeClasses, n);
-    // Count matching shapes for individual stimulus accuracy
+    shapes = createBlocksWithLures(shapeClasses, n, 0.23, lureFrequency);
     matchingShape = shapes.filter(block => block && block.isMatching).length;
   }
   let corners;
   if (cornerEnabled) {
-    corners = createBlocks(cornersList, n);
-    // Count matching corners for individual stimulus accuracy
+    corners = createBlocksWithLures(cornersList, n, 0.23, lureFrequency);
     matchingCorner = corners.filter(block => block && block.isMatching).length;
   }
   let sounds;
   if (soundEnabled) {
-    sounds = createBlocks(letters, n);
-    // Count matching sounds for individual stimulus accuracy
+    sounds = createBlocksWithLures(letters, n, 0.23, lureFrequency);
     matchingSound = sounds.filter(block => block && block.isMatching).length;
   }
   let colors;
   if (colorEnabled) {
-    colors = createBlocks(colorClasses, n);
-    // Count matching colors for individual stimulus accuracy
+    colors = createBlocksWithLures(colorClasses, n, 0.23, lureFrequency);
     matchingColor = colors.filter(block => block && block.isMatching).length;
   }
   
@@ -1633,7 +2080,12 @@ function getGameCycle(n) {
   
   let i = 0;
   return function() {
-    resetBlock();
+  // Add this line right at the beginning of the function
+  if (currWalls || currCamera || currFace || currPosition || currWord || currShape || currCorner || currSound || currColor) {
+    trackMissedStimuli(); // Track any missed stimuli from the previous presentation
+  }
+  
+  resetBlock();
     
     if (!isRunning) {
       return;
@@ -1792,30 +2244,43 @@ function getGameCycle(n) {
       resWrong.innerHTML = mistakes;
       
       // Update accuracy in the recap dialog if the element exists
-      const accuracyElement = document.querySelector("#sc-res-accuracy");
-      if (accuracyElement) {
-        accuracyElement.innerHTML = (accuracy * 100).toFixed(0) + "%";
-      }
+const accuracyElement = document.querySelector("#sc-res-accuracy");
+if (accuracyElement) {
+  accuracyElement.innerHTML = (accuracy * 100).toFixed(0) + "%";
+}
+
+// Add d'-prime display to the recap dialog
+const recapDiv = document.createElement('div');
+recapDiv.style = "text-align: center; font-size: 1.5rem; margin-top: 1rem; margin-bottom: 1rem;";
+recapDiv.innerHTML = `d'-Prime: <span>${sessionMetrics.dPrime.toFixed(2)}</span>`;
+accuracyElement.parentNode.insertAdjacentElement('afterend', recapDiv);
+
+// Add lure resistance display if lures were encountered
+if (sessionMetrics.n1LureEncounters && sessionMetrics.n1LureEncounters > 0) {
+  const lureResistanceDiv = document.createElement('div');
+  lureResistanceDiv.style = "text-align: center; font-size: 1.5rem; margin-bottom: 1rem;";
+  lureResistanceDiv.innerHTML = `Lure Resistance: <span>${(sessionMetrics.n1LureResistance * 100).toFixed(0)}%</span>`;
+  recapDiv.insertAdjacentElement('afterend', lureResistanceDiv);
+}
 
 
 
 
-// Log all decision factors for debugging
-console.log("Level decision values:", {
-  accuracy,
-  nextLevelThreshold,
-  prevLevelThreshold,
-  mistakes,
-  maxAllowedMistakes
-});
+// Calculate new micro-level based on d-prime and lure resistance
+const newMicroLevel = checkMicroLevelAdvancement(sessionMetrics, sessionHistory);
 
-const levelUpCond = (accuracy >= nextLevelThreshold) && (mistakes <= maxAllowedMistakes) && nLevel < 9;
-const levelDownCond = ((accuracy < prevLevelThreshold) || (mistakes > maxAllowedMistakes)) && nLevel > 1;
+// Check if there's a change in integer level for UI display
+const originalLevel = nLevel;
+const newLevel = Math.floor(newMicroLevel);
+const levelChanged = newLevel !== originalLevel;
 
-console.log("Level conditions:", {
-  levelUpCond,
-  levelDownCond
-});
+// Update micro-level
+currentMicroLevel = newMicroLevel;
+
+// Save the updated history point with d-prime info
+historyPoint.dPrime = sessionMetrics.dPrime;
+historyPoint.microLevel = newMicroLevel;
+historyPoint.outcome = newLevel > originalLevel ? 1 : (newLevel < originalLevel ? -1 : 0);
 
       localStorage.setItem("last-dim", dimensions);
       
@@ -1829,29 +2294,29 @@ const historyPoint = {
     stimuliData: stimuliData
   };
 
-      // In getGameCycle function, find the levelUpCond/levelDownCond code block and replace it with this:
-      if (levelUpCond) {
-        historyPoint.outcome = 1;
-        // Store original level before updating
-        const originalLevel = nLevel;
-        // Update the level
-        nLevelInputHandler(null, originalLevel + 1);
-        document.querySelector(".lvl-res-move").style.display = "block";
-        document.querySelector(".lvl-before").innerHTML = originalLevel;
-        document.querySelector(".lvl-after").innerHTML = originalLevel + 1;
-      } else if (levelDownCond) {
-        historyPoint.outcome = -1;
-        // Store original level before updating
-        const originalLevel = nLevel;
-        // Update the level
-        nLevelInputHandler(null, originalLevel - 1);
-        document.querySelector(".lvl-res-move").style.display = "block";
-        document.querySelector(".lvl-before").innerHTML = originalLevel;
-        document.querySelector(".lvl-after").innerHTML = originalLevel - 1;
-      } else {
-        document.querySelector(".lvl-res-stay").style.display = "block";
-        document.querySelector(".lvl-stays").innerHTML = nLevel;
-      }
+      if (levelChanged) {
+  if (newLevel > originalLevel) {
+    // Level up
+    document.querySelector(".lvl-res-move").style.display = "block";
+    document.querySelector(".lvl-before").innerHTML = originalLevel;
+    document.querySelector(".lvl-after").innerHTML = newLevel;
+    // Update nLevel for game state
+    nLevelInputHandler(null, newMicroLevel);
+  } else if (newLevel < originalLevel) {
+    // Level down
+    document.querySelector(".lvl-res-move").style.display = "block";
+    document.querySelector(".lvl-before").innerHTML = originalLevel;
+    document.querySelector(".lvl-after").innerHTML = newLevel;
+    // Update nLevel for game state
+    nLevelInputHandler(null, newMicroLevel);
+  }
+} else {
+  // Level stays the same (micro-level may have changed)
+  document.querySelector(".lvl-res-stay").style.display = "block";
+  document.querySelector(".lvl-stays").innerHTML = originalLevel;
+  // Update nLevel for game state (to reflect micro-level changes)
+  nLevelInputHandler(null, newMicroLevel);
+}
       
       // Save history and show results
       const datestamp = new Date().toLocaleDateString("sv");
@@ -1861,6 +2326,43 @@ const historyPoint = {
       
       saveSettings();
       saveHistory();
+
+
+
+      // Calculate d'-prime and response bias
+sessionMetrics.dPrime = calculateDPrime(
+  sessionMetrics.hits, 
+  sessionMetrics.misses, 
+  sessionMetrics.falseAlarms, 
+  sessionMetrics.correctRejections
+);
+
+sessionMetrics.responseBias = calculateResponseBias(
+  sessionMetrics.hits, 
+  sessionMetrics.misses, 
+  sessionMetrics.falseAlarms, 
+  sessionMetrics.correctRejections
+);
+
+// Calculate lure resistance if there were any lures
+if (sessionMetrics.n1LureEncounters && sessionMetrics.n1LureEncounters > 0) {
+  sessionMetrics.n1LureResistance = sessionMetrics.n1LureCorrectRejections / sessionMetrics.n1LureEncounters;
+} else {
+  sessionMetrics.n1LureResistance = 1.0; // Default if no lures encountered
+}
+
+console.log("Session Metrics:", sessionMetrics);
+
+// Add d'-prime to history point
+historyPoint.dPrime = sessionMetrics.dPrime;
+historyPoint.responseBias = sessionMetrics.responseBias;
+historyPoint.n1LureResistance = sessionMetrics.n1LureResistance;
+
+// Store session in session history (limited to last 20)
+sessionHistory.push({...sessionMetrics, nLevel: nLevel, microLevel: currentMicroLevel, date: new Date()});
+if (sessionHistory.length > 20) {
+  sessionHistory.shift(); // Remove oldest session if more than 20
+}
       
       // Show the recap dialog
       recapDialogContent.parentElement.show();
@@ -2063,6 +2565,39 @@ function checkHandler(stimulus) {
     return;
   }
 
+// Update signal detection metrics
+  if (curr.isMatching) {
+    // Hit: User correctly identified a match
+    sessionMetrics.hits++;
+  } else {
+    // False Alarm: User incorrectly claimed a match
+    sessionMetrics.falseAlarms++;
+    
+    // Check if this was a lure (for interference measurement)
+    if (curr.isLure && curr.lureType === 'n-1') {
+      // Track N-1 lure response (fell for the lure)
+      sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
+      sessionMetrics.n1LureFalseAlarms = sessionMetrics.n1LureFalseAlarms || 0;
+      
+      sessionMetrics.n1LureEncounters++;
+      sessionMetrics.n1LureFalseAlarms++;
+    }
+  }
+  
+  // Original switch case continues below for tracking specific stimulus responses
+  switch (stimulus) {
+    case "walls": {
+      enableWallsCheck = false;
+      if (curr.isMatching) {
+        rightWalls++;
+        button.classList.add("right");
+      } else {
+        wrongWalls++;
+        button.classList.add("wrong");
+      }
+      break;
+    }
+  
   console.log(stimulus, curr, button, enable);
   
   switch (stimulus) {
