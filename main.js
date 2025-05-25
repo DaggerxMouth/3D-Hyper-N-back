@@ -2733,7 +2733,6 @@ if (sessionMetrics.n1LureEncounters && sessionMetrics.n1LureEncounters > 0) {
 
 
 // Calculate new micro-level based on d-prime and lure resistance
-const currentConfig = getCurrentConfigKey();
 const configHistory = sessionHistoriesByConfig[currentConfig] || [];
 const newMicroLevel = checkMicroLevelAdvancement(sessionMetrics, configHistory);
 
@@ -2941,7 +2940,6 @@ historyPoint.responseBias = sessionMetrics.responseBias;
 historyPoint.n1LureResistance = sessionMetrics.n1LureResistance;
 
 // Store session in config-specific history (limited to last 20)
-const currentConfig = getCurrentConfigKey();
 if (!sessionHistoriesByConfig[currentConfig]) {
   sessionHistoriesByConfig[currentConfig] = [];
 }
