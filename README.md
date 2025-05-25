@@ -1,43 +1,34 @@
-# Adaptive Algorithm Explanation
+## Micro-Level Algorithm Summary
 
-## The Difficulty Balance
+The micro-level system provides fine-grained progression tracking (e.g., 2.45 instead of just level 2).
 
-The system calculates how challenging the game is using a formula that considers:
-- How many steps back you need to remember (N-level)
-- How many different types of changes you need to track (dimensions)
-- How quickly the game shows you new stimuli (speed)
+**Core Components:**
 
-These combine into a single "difficulty score" that measures precisely how hard your current session is.
+1. **Format**: Levels range from 1.00 to 9.99 (two decimal places)
+   - Integer part = traditional N-back level
+   - Decimal part = progress toward next level (0-99%)
 
-## Two-Level Training System
+2. **Advancement Criteria**:
+   - **Primary factor**: d'prime score (signal detection sensitivity)
+   - **Secondary factors**: Response bias and lure resistance
+   - **Personal baseline**: Compares against your last 20 sessions
 
-The game uses a two-tier system:
-- **Mastery Level**: Your current comfortable level where you practice
-- **Challenge Level**: A harder level that pushes your limits
+3. **Progression Rules**:
+   - **Advance** (+0.01 to +0.05): When d'prime exceeds baseline AND bias is low
+   - **Stay same**: When performance meets baseline
+   - **Regress** (-0.05): When d'prime < 70% of baseline
 
-It's like having stable ground to stand on (mastery) while reaching for something slightly out of your grasp (challenge).
+4. **Lure Integration**:
+   - Lure frequency scales with micro-progress: 10% at .00 → 25% at .99
+   - Creates "interference" that must be resisted
+   - N-1 lures (80%) and N+1 lures (20%)
 
-## Smart Progression
+5. **Level Transitions**:
+   - Only changes integer level when crossing boundaries (e.g., 2.99 → 3.01)
+   - Micro-progress provides smoother difficulty scaling
+   - More precise skill tracking than integer-only levels
 
-The system tracks your performance using success and failure streaks:
-- After 3 successful sessions at mastery level (≥75% accuracy), you move up to challenge level
-- If you succeed at the challenge level 3 times, it becomes your new mastery level
-- If you struggle at challenge level, you return to mastery to build more foundation
+**Key Innovation**: The system adapts difficulty continuously based on signal detection theory rather than simple accuracy, making progression more nuanced and personalized.
 
-## Intelligent Adjustments
 
-The algorithm makes real-time adjustments during play:
-- When you're doing well, it gradually increases difficulty by speeding up
-- When you're struggling, it decreases difficulty by slowing down
-- It makes the smallest necessary changes first (speed) before more disruptive ones (N-level)
-
-## Dual Progression Paths
-
-You can progress in two different ways:
-- **N-Level Progression**: Remember more steps back (1-back → 2-back → 3-back, etc.)
-- **Dimension Progression**: Track more types of changes simultaneously (colors + sounds + positions, etc.)
-
-This system dynamically adjusts to keep you in the "flow zone" - challenged enough to stay engaged but not so much that you get frustrated and give up.
-
-# Bug/to-do list
-- 
+d'prime - https://pmc.ncbi.nlm.nih.gov/articles/PMC4597481/
