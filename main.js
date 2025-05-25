@@ -1444,6 +1444,11 @@ localStorage.setItem("last-dim", validDim);
 // Also add d-prime average to stats if available
 let totalDPrime = 0;
 let dPrimeCount = 0;
+let totalBias = 0;
+let biasCount = 0;
+let totalLureResistance = 0;
+let lureResistanceCount = 0;
+
 for (const [date, points] of entries) {
   if (!Array.isArray(points) || points.length === 0) continue;
   
@@ -1452,31 +1457,42 @@ for (const [date, points] of entries) {
       totalDPrime += point.dPrime;
       dPrimeCount++;
     }
+    if (point.responseBias !== undefined && !isNaN(point.responseBias)) {
+      totalBias += point.responseBias;
+      biasCount++;
+    }
+    if (point.n1LureResistance !== undefined && !isNaN(point.n1LureResistance)) {
+      totalLureResistance += point.n1LureResistance;
+      lureResistanceCount++;
+    }
   }
 }
+
+// Update average d'prime
 const dPrimeElement = document.querySelector("#sc-dprime");
 if (dPrimeElement) {
-  // Element exists, update it
   if (dPrimeCount > 0) {
     dPrimeElement.innerHTML = (totalDPrime / dPrimeCount).toFixed(2);
   } else {
     dPrimeElement.innerHTML = "-";
   }
-} else {
-  // Element doesn't exist, create it
-  const dPrimeCard = document.createElement('div');
-  dPrimeCard.className = 'stats-card';
-  dPrimeCard.innerHTML = `
-    <div class="stats-card-title">Avg d'</div>
-    <div id="sc-dprime" class="stats-card-value">${dPrimeCount > 0 ? (totalDPrime / dPrimeCount).toFixed(2) : '-'}</div>
-  `;
-  
-  // Find the accuracy element's container to insert after it
-  const accuracyElement = document.querySelector("#sc-accuracy");
-  if (accuracyElement && accuracyElement.parentElement) {
-    accuracyElement.parentElement.after(dPrimeCard);
-  }
 }
+
+// Update signal detection metrics section
+const avgDPrimeElement = document.querySelector("#sc-avg-dprime");
+if (avgDPrimeElement) {
+  avgDPrimeElement.innerHTML = dPrimeCount > 0 ? (totalDPrime / dPrimeCount).toFixed(2) : "-";
+}
+
+const avgBiasElement = document.querySelector("#sc-avg-bias");
+if (avgBiasElement) {
+  avgBiasElement.innerHTML = biasCount > 0 ? (totalBias / biasCount).toFixed(2) : "-";
+}
+
+const avgLureElement = document.querySelector("#sc-avg-lure");
+if (avgLureElement) {
+  avgLureElement.innerHTML = lureResistanceCount > 0 ? 
+    ((totalLureResistance / lureResistanceCount) * 100).toFixed(0) + "%" : "-";
 }
 function updateStimuliAccuracyDisplay(totals) {
   // Hide all items first
