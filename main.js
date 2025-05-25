@@ -1626,10 +1626,38 @@ function createBlocksWithFixedDensity(symbols, n, matchDensity = 0.25) {
       placedMatches++;
     }
   }
+  
+  // Second phase: fill remaining positions with non-matching stimuli
+  for (let i = 0; i < blocks.length; i++) {
+    if (!blocks[i]) {
+      let symbol = random(symbols);
+      
+      // Ensure we don't accidentally create matches
+      if (i >= n && blocks[i - n]) {
+        // Avoid creating n-back matches
+        while (blocks[i - n].symbol === symbol) {
+          symbol = random(symbols);
+        }
+      }
+      
+      if (i + n < blocks.length && blocks[i + n]) {
+        // Avoid creating forward matches that would make a future position match
+        while (blocks[i + n].symbol === symbol) {
+          symbol = random(symbols);
+        }
+      }
+      
+      blocks[i] = {
+        isMatching: false,
+        symbol: symbol
+      };
+    }
   }
   
-  // Log lure placement stats
-  console.log(`Created fixed-density blocks with ${blocks.filter(b => b.isMatching).length} matches (${((blocks.filter(b => b.isMatching).length)/blocks.length*100).toFixed(1)}% of trials)`);
+  // Calculate actual match density for logging
+  const actualMatches = blocks.filter(b => b.isMatching).length;
+  const actualDensity = actualMatches / blocks.length;
+  console.log(`Created blocks with ${actualMatches} matches out of ${blocks.length} trials (${(actualDensity * 100).toFixed(1)}%)`);
   
   return blocks;
 }
@@ -1714,47 +1742,12 @@ function placeLures(blocks, n, lureFrequency = 0.10) {
 }
 
 // Function to create blocks with both fixed density and lures
-function createBlocksWithLures(symbols, n, matchDensity = 0.25, lureFrequency = 0.10) {
+function createBlocksWithLures(symbols, n, matchDensity = 0.23, lureFrequency = 0.10) {
   // First create blocks with fixed match density
   let blocks = createBlocksWithFixedDensity(symbols, n, matchDensity);
   
   // Then add systematic lures
   blocks = placeLures(blocks, n, lureFrequency);
-  
-  return blocks;
-}
-  
-  // Second phase: fill remaining positions with non-matching stimuli
-  for (let i = 0; i < blocks.length; i++) {
-    if (!blocks[i]) {
-      let symbol = random(symbols);
-      
-      // Ensure we don't accidentally create matches
-      if (i >= n && blocks[i - n]) {
-        // Avoid creating n-back matches
-        while (blocks[i - n].symbol === symbol) {
-          symbol = random(symbols);
-        }
-      }
-      
-      if (i + n < blocks.length && blocks[i + n]) {
-        // Avoid creating forward matches that would make a future position match
-        while (blocks[i + n].symbol === symbol) {
-          symbol = random(symbols);
-        }
-      }
-      
-      blocks[i] = {
-        isMatching: false,
-        symbol: symbol
-      };
-    }
-  }
-  
-  // Calculate actual match density for logging
-  const actualMatches = blocks.filter(b => b.isMatching).length;
-  const actualDensity = actualMatches / blocks.length;
-  console.log(`Created blocks with ${actualMatches} matches out of ${blocks.length} trials (${(actualDensity * 100).toFixed(1)}%)`);
   
   return blocks;
 }
