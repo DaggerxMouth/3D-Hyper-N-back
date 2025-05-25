@@ -668,6 +668,11 @@ function nLevelInputHandler(evt, defVal) {
 
   // Always update the display to show the micro-level format
   nBackDisplay.innerHTML = formatMicroLevel(currentMicroLevel);
+  // Update speed display
+const speedDisplay = document.querySelector("#speed-display");
+if (speedDisplay) {
+  speedDisplay.innerHTML = getSpeedTarget(currentMicroLevel);
+}
 }
 
 function sceneDimmerInputHandler(evt, defVal) {
@@ -734,6 +739,11 @@ function baseDelayInputHandler(evt, defVal) {
   } else {
     baseDelay = Math.min(Math.max(+baseDelayInput.value, 2000), 20000);
     saveSettings();
+    // Update speed display with new base delay
+    const speedDisplay = document.querySelector("#speed-display");
+    if (speedDisplay) {
+      speedDisplay.innerHTML = getSpeedTarget(currentMicroLevel);
+    }
   }
 
   if (+baseDelayInput.value < 2000 || +baseDelayInput.value > 20000) {
@@ -1360,6 +1370,15 @@ function toggleStats(_dim) {
     sound: { right: 0, wrong: 0, matching: 0, present: false },
     color: { right: 0, wrong: 0, matching: 0, present: false }
   };
+
+  // Initialize speed tracking
+    let speedProgression = {
+      minSpeed: 10000,
+      maxSpeed: 0,
+      avgSpeed: 0,
+      speedCount: 0,
+      speedImprovement: 0
+    };
   
   // Check if the history exists and has entries
   const entries = _history ? Object.entries(_history) : [];
@@ -1424,11 +1443,26 @@ if (points.length > 0) {
       microCount++;
     }
   }
+
+  // Track speed progression
+if (point.speedTarget !== undefined) {
+  speedProgression.minSpeed = Math.min(speedProgression.minSpeed, point.speedTarget);
+  speedProgression.maxSpeed = Math.max(speedProgression.maxSpeed, point.speedTarget);
+  speedProgression.avgSpeed += point.speedTarget;
+  speedProgression.speedCount++;
+}
   
-  // Use micro-level if available, otherwise fall back to regular level
-  const displayLevel = microCount > 0 ? (_avgMicroLevel / microCount).toFixed(2) : toOneDecimal(_avgNLevel);
-  const barElement = getBar(displayLevel);
-  barElement.title = `Date: ${date}\nμ-Level: ${displayLevel}`;
+  // Create bar element showing N-level
+const displayLevel = microCount > 0 ? (_avgMicroLevel / microCount).toFixed(2) : toOneDecimal(_avgNLevel);
+const barElement = getBar(displayLevel);
+
+// Add speed info to tooltip if available
+let speedInfo = "";
+if (points[0] && points[0].speedTarget) {
+  speedInfo = `\nSpeed: ${points[0].speedTarget}ms`;
+}
+
+barElement.title = `Date: ${date}\nμ-Level: ${displayLevel}${speedInfo}`;
   
   bars.appendChild(barElement);
 }
@@ -1445,6 +1479,16 @@ if (points.length > 0) {
   document.querySelector("#sc-min").innerHTML = (minNLevel === 10) ? "-" : minNLevel;
   document.querySelector("#sc-max").innerHTML = maxNLevel || "-";
   document.querySelector("#sc-micro-level").innerHTML = formatMicroLevel(currentMicroLevel);
+  // Display current speed target
+const currentSpeedElement = document.createElement('div');
+currentSpeedElement.style = "text-align: center; font-size: 1rem; margin-top: 0.5rem; opacity: 0.8;";
+currentSpeedElement.innerHTML = `Current Speed: ${getSpeedTarget(currentMicroLevel)}ms`;
+
+const microLevelCard = document.querySelector("#sc-micro-level").parentElement;
+if (microLevelCard && !microLevelCard.querySelector('.speed-info')) {
+  currentSpeedElement.className = 'speed-info';
+  microLevelCard.appendChild(currentSpeedElement);
+}
   document.querySelector("#sc-right").innerHTML = right || "-";
   document.querySelector("#sc-missed").innerHTML = missed || "-";
   document.querySelector("#sc-wrong").innerHTML = wrong || "-";
@@ -2446,6 +2490,33 @@ function getGameCycle(n) {
       const lvlRes = document.querySelectorAll("[class^='lvl-res']");
       [...lvlRes].forEach(el => el.style.display = "none");
 
+      // Update speed information in recap
+      const speedTargetElement = document.querySelector("#sc-res-speed-target");
+      const speedChangeElement = document.querySelector("#sc-res-speed-change");
+      
+      if (speedTargetElement) {
+        const currentSpeed = getSpeedTarget(currentMicroLevel);
+        const previousSpeed = getSpeedTarget(historyPoint.microLevel);
+        
+        speedTargetElement.innerHTML = currentSpeed + "ms";
+        
+        // Show speed change if level changed
+        if (newLevel !== originalLevel) {
+          const newSpeed = getSpeedTarget(newMicroLevel);
+          const speedDiff = previousSpeed - newSpeed;
+          
+          if (speedDiff > 0) {
+            speedChangeElement.innerHTML = ` (${speedDiff}ms faster!)`;
+            speedChangeElement.style.color = "#4CAF50";
+          } else if (speedDiff < 0) {
+            speedChangeElement.innerHTML = ` (${Math.abs(speedDiff)}ms slower)`;
+            speedChangeElement.style.color = "#FF9800";
+          }
+        } else {
+          speedChangeElement.innerHTML = "";
+        }
+      }
+
       resDim.innerHTML = dimensions + "D";
       resRight.innerHTML = correctStimuli;
       resMissed.innerHTML = missed;
@@ -2485,25 +2556,28 @@ const levelChanged = newLevel !== originalLevel;
 // Update micro-level
 currentMicroLevel = newMicroLevel;
 
-      const historyPoint = {
-    nLevel,
-    microLevel: currentMicroLevel,  // Store micro-level
-    right: correctStimuli,
-    missed,
-    wrong: mistakes,
-    accuracy: accuracy,
-    // Signal detection metrics
-    dPrime: 0,  // Will be set after calculation
-    responseBias: 0,  // Will be set after calculation
-    n1LureResistance: 0,  // Will be set if lures present
-    // Lure metrics
-    n1LureEncounters: sessionMetrics.n1LureEncounters || 0,
-    n1LureCorrectRejections: sessionMetrics.n1LureCorrectRejections || 0,
-    n1LureFalseAlarms: sessionMetrics.n1LureFalseAlarms || 0,
-    // Overall result
-    outcome: 0,  // -1 for level down, 0 for stay, 1 for level up
-    stimuliData: stimuliData
-  };
+     const historyPoint = {
+  nLevel,
+  microLevel: currentMicroLevel,  // Store micro-level
+  right: correctStimuli,
+  missed,
+  wrong: mistakes,
+  accuracy: accuracy,
+  // Signal detection metrics
+  dPrime: 0,  // Will be set after calculation
+  responseBias: 0,  // Will be set after calculation
+  n1LureResistance: 0,  // Will be set if lures present
+  // Lure metrics
+  n1LureEncounters: sessionMetrics.n1LureEncounters || 0,
+  n1LureCorrectRejections: sessionMetrics.n1LureCorrectRejections || 0,
+  n1LureFalseAlarms: sessionMetrics.n1LureFalseAlarms || 0,
+  // Overall result
+  outcome: 0,  // -1 for level down, 0 for stay, 1 for level up
+  stimuliData: stimuliData,
+  // Speed information
+  speedTarget: getSpeedTarget(currentMicroLevel),
+  baseDelay: baseDelay
+};
 
 // Save the updated history point with d-prime info
 historyPoint.dPrime = sessionMetrics.dPrime;
@@ -3129,3 +3203,8 @@ numStimuliSelectInput.addEventListener("change", numStimuliSelectInputHandler);
 loadBindings();
 loadSettings();
 loadHistory();
+// Initialize speed display
+const speedDisplay = document.querySelector("#speed-display");
+if (speedDisplay) {
+  speedDisplay.innerHTML = getSpeedTarget(currentMicroLevel);
+}
