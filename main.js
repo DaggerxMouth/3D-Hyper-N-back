@@ -1582,6 +1582,27 @@ if (baselineLureElement) {
   baselineLureElement.innerHTML = (baseline.n1LureResistance * 100).toFixed(0) + "%";
 }
 
+// Update speed statistics
+const minSpeedElement = document.querySelector("#sc-min-speed");
+const avgSpeedElement = document.querySelector("#sc-avg-speed");
+const maxSpeedElement = document.querySelector("#sc-max-speed");
+
+if (speedProgression.speedCount > 0) {
+  if (minSpeedElement) {
+    minSpeedElement.innerHTML = speedProgression.minSpeed + "ms";
+  }
+  if (avgSpeedElement) {
+    avgSpeedElement.innerHTML = Math.round(speedProgression.avgSpeed / speedProgression.speedCount) + "ms";
+  }
+  if (maxSpeedElement) {
+    maxSpeedElement.innerHTML = speedProgression.maxSpeed + "ms";
+  }
+} else {
+  if (minSpeedElement) minSpeedElement.innerHTML = "-";
+  if (avgSpeedElement) avgSpeedElement.innerHTML = "-";
+  if (maxSpeedElement) maxSpeedElement.innerHTML = "-";
+}
+
 function updateStimuliAccuracyDisplay(totals) {
   // Hide all items first
   document.querySelectorAll('.stimuli-accuracy-item').forEach(item => {
