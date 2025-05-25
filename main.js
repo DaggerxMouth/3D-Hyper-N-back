@@ -2516,8 +2516,8 @@ if (sessionMetrics.nPlusLureEncounters && sessionMetrics.nPlusLureEncounters > 0
   sessionMetrics.nPlusLureResistance = 1.0; // Default if no lures encountered
 }
 
-// Calculate combined lure resistance (weighted average)
-const totalLureEncounters = (sessionMetrics.n1LureEncounters || 0) + (sessionMetrics.nPlusLureEncounters || 0);
+// Show lure resistance section if any lures were encountered
+totalLureEncounters = (sessionMetrics.n1LureEncounters || 0) + (sessionMetrics.nPlusLureEncounters || 0);
 if (totalLureEncounters > 0) {
   sessionMetrics.totalLureResistance = 
     ((sessionMetrics.n1LureResistance * (sessionMetrics.n1LureEncounters || 0)) + 
