@@ -42,9 +42,43 @@
 			</div>
 
 			<div style="text-align: center; font-size: 2.5rem;">
-				<div class="lvl-res-move">N = <span class="lvl-before">1</span> <i class="bi bi-arrow-right"> </i><span class="lvl-after" style="font-size: 4rem;">2</span></div>
-				<div class="lvl-res-stay">N = <span class="lvl-stays">1</span></div>
-			</div>
+    <div class="lvl-res-move">N = <span class="lvl-before">1.00</span> <i class="bi bi-arrow-right"> </i><span class="lvl-after" style="font-size: 4rem;">2.00</span></div>
+    <div class="lvl-res-stay">N = <span class="lvl-stays">1.00</span></div>
+</div>
+
+<!-- Signal Detection Metrics Section -->
+<div class="signal-detection-metrics">
+    <div style="text-align: center; font-size: 1.5rem; margin-top: 1.5rem; font-weight: bold;">
+        Signal Detection Metrics
+    </div>
+    <div class="stats-cards" style="font-size: 1.5rem; margin: 1rem 0;">
+        <div class="stats-card">
+            <div class="stats-card-title">d'-Prime</div>
+            <div id="sc-res-dprime" class="stats-card-value">0.00</div>
+        </div>
+        <div class="stats-card">
+            <div class="stats-card-title">Bias</div>
+            <div id="sc-res-bias" class="stats-card-value">0.00</div>
+        </div>
+    </div>
+    
+    <!-- Lure Resistance Section (only shown when lures are present) -->
+    <div id="lure-resistance-section" style="display: none;">
+        <div style="text-align: center; font-size: 1.3rem; margin-top: 0.5rem; font-weight: bold;">
+            Interference Control
+        </div>
+        <div class="stats-cards" style="font-size: 1.25rem; margin: 0.5rem 0 1rem 0;">
+            <div class="stats-card">
+                <div class="stats-card-title">Lure Resistance</div>
+                <div id="sc-res-lure-resistance" class="stats-card-value">0%</div>
+            </div>
+            <div class="stats-card">
+                <div class="stats-card-title">Lures Encountered</div>
+                <div id="sc-res-lure-count" class="stats-card-value">0</div>
+            </div>
+        </div>
+    </div>
+</div>
 		</div>
 	</dialog>
 
