@@ -1017,3 +1017,88 @@ dialog .dialog-content {
   display: block;
 }
 
+/* Signal Detection Metrics Section */
+.signal-detection-metrics {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.section-title {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+/* Excellence Dashboard */
+.excellence-dashboard {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.progress-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.progress-item {
+  margin-bottom: 0.5rem;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.progress-bar-container {
+  background: rgba(255, 255, 255, 0.2);
+  height: 0.5rem;
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  transition: width 0.3s ease-in-out;
+}
+
+.progress-bar-dprime {
+  background: #4CAF50;
+}
+
+.progress-bar-lure {
+  background: #2196F3;
+}
+
+.progress-bar-overall {
+  background: linear-gradient(90deg, #4CAF50, #2196F3);
+  height: 0.75rem;
+}
+
+/* Lure Resistance Section */
+.lure-resistance-section {
+  margin-top: 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 576px) {
+  .progress-header {
+    font-size: 0.9rem;
+  }
+  
+  .section-title {
+    font-size: 1.25rem;
+  }
+  
+  .progress-bar-container {
+    height: 0.4rem;
+  }
+}
