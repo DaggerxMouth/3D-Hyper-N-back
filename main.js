@@ -1712,8 +1712,8 @@ function createBlocksWithFixedDensity(symbols, n, matchDensity = 0.25) {
 // Function to place both N-1 and N+1 lures in the stimulus sequence
 function placeLures(blocks, n, lureFrequency = 0.10) {
   // Split the lure frequency between N-1 and N+1 lures (more weight to N-1)
-  const n1LureFreq = lureFrequency * 0.65; // 65% of lures are N-1 
-  const nPlusLureFreq = lureFrequency * 0.35; // 35% of lures are N+1
+  const n1LureFreq = lureFrequency * 0.80; // 80% of lures are N-1 
+  const nPlusLureFreq = lureFrequency * 0.20; // 20% of lures are N+1
   
   // Calculate how many lures of each type to place
   const numN1Lures = Math.floor(blocks.length * n1LureFreq);
@@ -2216,7 +2216,7 @@ function getGameCycle(n) {
   const { nLevel, microProgress } = getMicroLevelComponents(currentMicroLevel);
   
   // Scale lure frequency based on micro-level progress (5% at .00, up to 25% at .99)
-  const baseLureFreq = 0.05;
+  const baseLureFreq = 0.10;
   const maxLureFreq = 0.25; 
   const lureFrequency = baseLureFreq + (microProgress * (maxLureFreq - baseLureFreq));
   
