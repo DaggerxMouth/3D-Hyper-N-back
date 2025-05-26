@@ -1447,6 +1447,7 @@ function toggleStats(_dim) {
   // Get the dimension to display (from parameter, localStorage, or default to 1)
   const dim = _dim || localStorage.getItem("last-dim") || 1;
   const radios = [...document.querySelectorAll("input[name='dimension']")];
+  const validDim = Math.min(Math.max(1, dim), 9);
   
   // Ensure dim is within range and update radio button
   const validDim = Math.min(Math.max(1, dim), 9);
