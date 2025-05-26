@@ -1485,11 +1485,6 @@ const _history = history[validDim];
 const bars = document.querySelector(".bar-chart-bars");
 bars.innerHTML = "";
 
-// Override dimension with current config if viewing current stats
-if (validDim === getCurrentConfigKey()) {
-  // Use config-specific session history for baseline calculation
-  sessionHistory = sessionHistoriesByConfig[validDim] || [];
-}
 
   
   // Initialize stats variables
