@@ -1725,7 +1725,6 @@ if (avgLureElement) {
   avgLureElement.innerHTML = lureResistanceCount > 0 ? 
     ((totalLureResistance / lureResistanceCount) * 100).toFixed(0) + "%" : "-";
 }
-}
 
 // Calculate and display baseline metrics
 const configHistory = sessionHistoriesByConfig[validDim] || [];
