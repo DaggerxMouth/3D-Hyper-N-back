@@ -1481,6 +1481,7 @@ radios.forEach((radio, index) => {
 });
   
   // Get history for the selected dimension
+const validDim = Math.min(Math.max(1, dim), 9);
 const _history = history[validDim];
 const bars = document.querySelector(".bar-chart-bars");
 bars.innerHTML = "";
