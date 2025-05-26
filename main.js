@@ -1450,7 +1450,6 @@ function toggleStats(_dim) {
   const validDim = Math.min(Math.max(1, dim), 9);
   
   // Ensure dim is within range and update radio button
-  const validDim = Math.min(Math.max(1, dim), 9);
   radios[validDim - 1].checked = true;
 
   // Update radio buttons to show which configs have data
