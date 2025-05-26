@@ -1760,6 +1760,7 @@ if (speedProgression.speedCount > 0) {
   if (avgSpeedElement) avgSpeedElement.innerHTML = "-";
   if (maxSpeedElement) maxSpeedElement.innerHTML = "-";
 }
+}
 
 function updateStimuliAccuracyDisplay(totals) {
   // Hide all items first
