@@ -1593,12 +1593,14 @@ if (points.length > 0) {
     }
   }
 
-  // Track speed progression
-if (point.speedTarget !== undefined) {
-  speedProgression.minSpeed = Math.min(speedProgression.minSpeed, point.speedTarget);
-  speedProgression.maxSpeed = Math.max(speedProgression.maxSpeed, point.speedTarget);
-  speedProgression.avgSpeed += point.speedTarget;
-  speedProgression.speedCount++;
+ // Track speed progression
+for (const point of points) {
+  if (point.speedTarget !== undefined) {
+    speedProgression.minSpeed = Math.min(speedProgression.minSpeed, point.speedTarget);
+    speedProgression.maxSpeed = Math.max(speedProgression.maxSpeed, point.speedTarget);
+    speedProgression.avgSpeed += point.speedTarget;
+    speedProgression.speedCount++;
+  }
 }
   
   // Create bar element showing N-level
