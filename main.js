@@ -1728,7 +1728,7 @@ if (avgLureElement) {
 }
 
 // Calculate and display baseline metrics
-const configHistory = sessionHistoriesByConfig[currentConfig] || [];
+const configHistory = sessionHistoriesByConfig[validDim] || [];
 const baseline = calculateBaseline(configHistory);
 
 const baselineDPrimeElement = document.querySelector("#sc-baseline-dprime");
