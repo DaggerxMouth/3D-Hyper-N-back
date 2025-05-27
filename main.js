@@ -3162,7 +3162,7 @@ if (positionEnabled && positions && positions[i]) {
   // Apply the wow animation
   wow(shape, "shape-active", baseDelay - 300);
 }
-      }
+      
     }
     if (soundEnabled && sounds && sounds[i]) {
       currSound = sounds[i];
