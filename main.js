@@ -3029,44 +3029,62 @@ if (oldLureElement) {
       );
     }
     if (cameraEnabled) {
-      currCamera = cameras[i];
-      let [cx, cy] = currCamera.symbol.split("&");
-      rotateCamera(cx, cy);
-    }
+  currCamera = cameras[i];
+  if (currCamera) {
+    let [cx, cy] = currCamera.symbol.split("&");
+    rotateCamera(cx, cy);
+  }
+}
     if (faceEnabled) {
-      currFace = faces[i];
-      if (colorEnabled) {
-        currColor = colors[i];
-        wow(faceEls[currFace.symbol - 1], currColor.symbol, baseDelay - 500);
-      } else {
-        wow(faceEls[currFace.symbol - 1], "col-a", baseDelay - 500);
-      }
-    } else if (colorEnabled) {
+  currFace = faces[i];
+  if (currFace) {
+    if (colorEnabled) {
       currColor = colors[i];
-      wow(faceEls[0], currColor.symbol, baseDelay - 500);
+      if (currColor) {
+        wow(faceEls[currFace.symbol - 1], currColor.symbol, baseDelay - 500);
+      }
+    } else {
+      wow(faceEls[currFace.symbol - 1], "col-a", baseDelay - 500);
     }
+  }
+} else if (colorEnabled) {
+  currColor = colors[i];
+  if (currColor) {
+    wow(faceEls[0], currColor.symbol, baseDelay - 500);
+  }
+}
     if (positionEnabled) {
-      currPosition = positions[i];
-      move(cube, currPosition.symbol);
-    }
+  currPosition = positions[i];
+  if (currPosition) {
+    move(cube, currPosition.symbol);
+  }
+}
     
     if (wordEnabled) {
-      currWord = words[i];
-      writeWord(currWord.symbol);
-    }
+  currWord = words[i];
+  if (currWord) {
+    writeWord(currWord.symbol);
+  }
+}
     if (cornerEnabled) {
-      currCorner = corners[i];
-      move(innerCube, currCorner.symbol);
-      
-      if (shapeEnabled) {
-        currShape = shapes[i];
-        wow(shape, currShape.symbol, baseDelay - 700);
-      }
+  currCorner = corners[i];
+  if (currCorner) {
+    move(innerCube, currCorner.symbol);
+  }
+  
+  if (shapeEnabled) {
+    currShape = shapes[i];
+    if (currShape) {
+      wow(shape, currShape.symbol, baseDelay - 700);
     }
+  }
+}
     if (soundEnabled) {
-      currSound = sounds[i];
-      speak(currSound.symbol);
-    }
+  currSound = sounds[i];
+  if (currSound) {
+    speak(currSound.symbol);
+  }
+}
     
     // Increase block index
     i++;
