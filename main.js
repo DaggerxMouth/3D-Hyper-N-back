@@ -340,17 +340,24 @@ function calculateDPrime(hits, misses, falseAlarms, correctRejections) {
   return dPrime;
 }
 
-function calculateResponseBias(hits, misses, falseAlarms, correctRejections) {
-  const hitRate = hits / (hits + misses);
-  const faRate = falseAlarms / (falseAlarms + correctRejections);
+function calculateDPrime(hits, misses, falseAlarms, correctRejections) {
+  console.log(`calculateDPrime inputs: hits=${hits}, misses=${misses}, FA=${falseAlarms}, CR=${correctRejections}`);
   
-  const adjustedHitRate = Math.max(0.01, Math.min(0.99, hitRate));
-  const adjustedFARate = Math.max(0.01, Math.min(0.99, faRate));
+  const n = hits + misses;
+  const m = falseAlarms + correctRejections;
   
-  const zHit = gaussianInverse(adjustedHitRate);
-  const zFA = gaussianInverse(adjustedFARate);
+  // Use log-linear correction for small samples
+  const hitRate = (hits + 0.5) / (n + 1);
+  const faRate = (falseAlarms + 0.5) / (m + 1);
   
-  return -0.5 * (zHit + zFA);
+  // Z-score conversion (inverse normal distribution)
+  const zHit = gaussianInverse(hitRate);
+  const zFA = gaussianInverse(faRate);
+  
+  const dPrime = zHit - zFA;
+  console.log(`d'prime calculation: hitRate=${hitRate.toFixed(3)}, faRate=${faRate.toFixed(3)}, zHit=${zHit.toFixed(3)}, zFA=${zFA.toFixed(3)}, d'=${dPrime.toFixed(3)}`);
+  
+  return dPrime;
 }
 
 // Z-score approximation function
