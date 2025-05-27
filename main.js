@@ -2483,53 +2483,63 @@ function getGameCycle(n) {
   if (wallsEnabled) {
     walls = createBlocksWithLures(wallColorsList, n, 0.25, lureFrequency);
     matchingWalls = walls.filter(block => block && block.isMatching).length;
+    matchingStimuli += matchingWalls;
   }
   let cameras;
   if (cameraEnabled) {
     cameras = createBlocksWithLures(points, n, 0.25, lureFrequency);
     matchingCamera = cameras.filter(block => block && block.isMatching).length;
+    matchingStimuli += matchingCamera;
   }
   let faces;
   if (faceEnabled) {
     faces = createBlocksWithLures(numbers, n, 0.25, lureFrequency);
     matchingFace = faces.filter(block => block && block.isMatching).length;
+    matchingStimuli += matchingFace;
   }
   let positions;
   if (positionEnabled) {
     positions = createBlocksWithLures(moves, n, 0.25, lureFrequency);
     matchingPosition = positions.filter(block => block && block.isMatching).length;
+    matchingStimuli += matchingPosition;
   }
   
   let words;
   if (wordEnabled) {
     words = createBlocksWithLures(wordsList, n, 0.25, lureFrequency);
     matchingWord = words.filter(block => block && block.isMatching).length;
+    matchingStimuli += matchingWord;
   }
   let shapes;
   if (shapeEnabled) {
     shapes = createBlocksWithLures(shapeClasses, n, 0.25, lureFrequency);
     matchingShape = shapes.filter(block => block && block.isMatching).length;
+    matchingStimuli += matchingShape;
   }
   let corners;
   if (cornerEnabled) {
     corners = createBlocksWithLures(cornersList, n, 0.25, lureFrequency);
     matchingCorner = corners.filter(block => block && block.isMatching).length;
+    matchingStimuli += matchingCorner;
   }
   let sounds;
   if (soundEnabled) {
     sounds = createBlocksWithLures(letters, n, 0.25, lureFrequency);
     matchingSound = sounds.filter(block => block && block.isMatching).length;
+    matchingStimuli += matchingSound;
   }
   let colors;
   if (colorEnabled) {
     colors = createBlocksWithLures(colorClasses, n, 0.25, lureFrequency);
     matchingColor = colors.filter(block => block && block.isMatching).length;
+    matchingStimuli += matchingColor;
   }
   
   console.log(
     walls, cameras, faces, positions, words, shapes, corners, sounds, colors
   );
-  
+
+  matchingStimuli = 0;
   let i = 0;
   return function() {
  // Track missed stimuli from previous presentation, but not on first iteration
