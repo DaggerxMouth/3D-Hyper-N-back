@@ -782,18 +782,14 @@ function sceneDimmerInputHandler(evt, defVal) {
     saveSettings();
   }
 
-if (wallsEnabled) {
-  currWalls = walls[i];
-  if (currWalls) {
-    floors.forEach(floor =>
-      setFloorBackground(
-        floor,
-        sceneDimmer,
-        tileAHexColor,
-        currWalls.symbol
-      )
-    );
-  }
+  floors.forEach(floor =>
+    setFloorBackground(
+      floor,
+      sceneDimmer,
+      tileAHexColor,
+      tileBHexColor
+    )
+  );
 }
 
 function zoomInputHandler(evt, defVal) {
