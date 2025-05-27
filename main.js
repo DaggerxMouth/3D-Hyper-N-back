@@ -2883,17 +2883,18 @@ if (isRunning) {
   // Level stays the same (micro-level may have changed)
   document.querySelector(".lvl-res-stay").style.display = "block";
   document.querySelector(".lvl-stays").innerHTML = originalLevel;
-  
-if (!goodAccuracy && goodDPrime) {
-  // Remove any existing accuracy message first
-  const existingMsg = document.querySelector(".accuracy-blocked-msg");
-  // Calculate accuracy criteria for display
+
+        // Calculate accuracy criteria for display
 const totalTrials = sessionMetrics.hits + sessionMetrics.misses + 
                    sessionMetrics.falseAlarms + sessionMetrics.correctRejections;
 const correctResponses = sessionMetrics.hits + sessionMetrics.correctRejections;
 const sessionAccuracy = totalTrials > 0 ? correctResponses / totalTrials : 0;
 const goodAccuracy = sessionAccuracy >= 0.90;
 const goodDPrime = sessionMetrics.dPrime > 0.5;
+  
+if (!goodAccuracy && goodDPrime) {
+  // Remove any existing accuracy message first
+  const existingMsg = document.querySelector(".accuracy-blocked-msg");
   
   if (existingMsg) {
     existingMsg.remove();
