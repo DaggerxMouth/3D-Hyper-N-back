@@ -2743,7 +2743,7 @@ if (sessionMetrics.n1LureEncounters && sessionMetrics.n1LureEncounters > 0) {
 
 
 // Calculate new micro-level based on d-prime and lure resistance
-const configHistory = sessionHistoriesByConfig[currentConfig] || [];
+const configHistory = sessionHistoriesByConfig[getCurrentConfigKey()] || [];
 const newMicroLevel = checkMicroLevelAdvancement(sessionMetrics, configHistory);
 
 // Check if there's a change in integer level for UI display
