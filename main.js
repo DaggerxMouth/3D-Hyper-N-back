@@ -3150,7 +3150,7 @@ if (positionEnabled && positions && positions[i]) {
       if (shapeEnabled && shapes && shapes[i]) {
         currShape = shapes[i];
         if (currShape) {
-          wow(shape, currShape.symbol, baseDelay - 700);
+          wow(shape, currShape.symbol, baseDelay - 400);
         }
       }
     }
