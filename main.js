@@ -320,25 +320,6 @@ let sessionHistoriesByConfig = {
   9: []
 };
 
-function calculateDPrime(hits, misses, falseAlarms, correctRejections) {
-  console.log(`calculateDPrime inputs: hits=${hits}, misses=${misses}, FA=${falseAlarms}, CR=${correctRejections}`);
-  
-  const hitRate = hits / (hits + misses);
-  const faRate = falseAlarms / (falseAlarms + correctRejections);
-  
-  // Handle edge cases (avoid 0% and 100%)
-  const adjustedHitRate = Math.max(0.01, Math.min(0.99, hitRate));
-  const adjustedFARate = Math.max(0.01, Math.min(0.99, faRate));
-  
-  // Z-score conversion (inverse normal distribution)
-  const zHit = gaussianInverse(adjustedHitRate);
-  const zFA = gaussianInverse(adjustedFARate);
-  
-  const dPrime = zHit - zFA;
-  console.log(`d'prime calculation: hitRate=${hitRate}, faRate=${faRate}, zHit=${zHit}, zFA=${zFA}, d'=${dPrime}`);
-  
-  return dPrime;
-}
 
 function calculateDPrime(hits, misses, falseAlarms, correctRejections) {
   console.log(`calculateDPrime inputs: hits=${hits}, misses=${misses}, FA=${falseAlarms}, CR=${correctRejections}`);
@@ -358,6 +339,25 @@ function calculateDPrime(hits, misses, falseAlarms, correctRejections) {
   console.log(`d'prime calculation: hitRate=${hitRate.toFixed(3)}, faRate=${faRate.toFixed(3)}, zHit=${zHit.toFixed(3)}, zFA=${zFA.toFixed(3)}, d'=${dPrime.toFixed(3)}`);
   
   return dPrime;
+}
+
+function calculateResponseBias(hits, misses, falseAlarms, correctRejections) {
+  const n = hits + misses;
+  const m = falseAlarms + correctRejections;
+  
+  // Use log-linear correction for small samples
+  const hitRate = (hits + 0.5) / (n + 1);
+  const faRate = (falseAlarms + 0.5) / (m + 1);
+  
+  const zHit = gaussianInverse(hitRate);
+  const zFA = gaussianInverse(faRate);
+  
+  // Calculate c (criterion) - negative values = liberal, positive = conservative
+  const c = -0.5 * (zHit + zFA);
+  
+  console.log(`Bias calculation: hits=${hits}/${n}, FA=${falseAlarms}/${m}, c=${c.toFixed(3)}`);
+  
+  return c;
 }
 
 // Z-score approximation function
