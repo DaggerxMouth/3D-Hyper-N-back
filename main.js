@@ -2467,6 +2467,8 @@ function selectRandomStimuli(numStimuli = 2) {
 }
 
 function getGameCycle(n) {
+  // Reset total matching count at the start
+  matchingStimuli = 0;
   // Calculate lure frequency based on micro-level progress
   const { nLevel, microProgress } = getMicroLevelComponents(currentMicroLevel);
   
@@ -2538,8 +2540,9 @@ function getGameCycle(n) {
   console.log(
     walls, cameras, faces, positions, words, shapes, corners, sounds, colors
   );
+   console.log("Total matchingStimuli:", matchingStimuli);
 
-  matchingStimuli = 0;
+  
   let i = 0;
   return function() {
  // Track missed stimuli from previous presentation, but not on first iteration
