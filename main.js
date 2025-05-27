@@ -782,14 +782,18 @@ function sceneDimmerInputHandler(evt, defVal) {
     saveSettings();
   }
 
-  floors.forEach(floor =>
-    setFloorBackground(
-      floor,
-      sceneDimmer,
-      tileAHexColor,
-      tileBHexColor
-    )
-  );
+if (wallsEnabled) {
+  currWalls = walls[i];
+  if (currWalls) {
+    floors.forEach(floor =>
+      setFloorBackground(
+        floor,
+        sceneDimmer,
+        tileAHexColor,
+        currWalls.symbol
+      )
+    );
+  }
 }
 
 function zoomInputHandler(evt, defVal) {
@@ -3079,6 +3083,7 @@ closeOptions();
 
 // Update micro-level for the new random configuration
 if (randomizeEnabled) {
+  selectRandomStimuli(numStimuliSelect);
   updateMicroLevelForConfig();
 }
 
