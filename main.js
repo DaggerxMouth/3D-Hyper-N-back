@@ -2687,37 +2687,18 @@ console.log("Game length:", length, "Actual lengths:", actualLengths);
       const lvlRes = document.querySelectorAll("[class^='lvl-res']");
       [...lvlRes].forEach(el => el.style.display = "none");
 
-      // Update speed information in recap
-      const speedTargetElement = document.querySelector("#sc-res-speed-target");
-      const speedChangeElement = document.querySelector("#sc-res-speed-change");
-      
-      if (speedTargetElement) {
-        const currentSpeed = getSpeedTarget(currentMicroLevel);
-        const previousSpeed = getSpeedTarget(historyPoint.microLevel);
-        
-        speedTargetElement.innerHTML = currentSpeed + "ms";
-        
-        // Show speed change if level changed
-        if (newLevel !== originalLevel) {
-          const newSpeed = getSpeedTarget(newMicroLevel);
-          const speedDiff = previousSpeed - newSpeed;
-          
-          if (speedDiff > 0) {
-            speedChangeElement.innerHTML = ` (${speedDiff}ms faster!)`;
-            speedChangeElement.style.color = "#4CAF50";
-          } else if (speedDiff < 0) {
-            speedChangeElement.innerHTML = ` (${Math.abs(speedDiff)}ms slower)`;
-            speedChangeElement.style.color = "#FF9800";
-          }
-        } else {
-          speedChangeElement.innerHTML = "";
-        }
-      }
+    // Speed information will be updated after historyPoint is created
 
       resDim.innerHTML = getCurrentConfigKey() + "D";
       resRight.innerHTML = correctStimuli;
       resMissed.innerHTML = missed;
       resWrong.innerHTML = mistakes;
+
+// Define level variables early for scope access
+      let originalLevel = nLevel;
+      let newLevel;
+      let newMicroLevel;
+      let levelChanged;
       
       // Update accuracy in the recap dialog if the element exists
 const accuracyElement = document.querySelector("#sc-res-accuracy");
@@ -2744,12 +2725,11 @@ if (sessionMetrics.n1LureEncounters && sessionMetrics.n1LureEncounters > 0) {
 
 // Calculate new micro-level based on d-prime and lure resistance
 const configHistory = sessionHistoriesByConfig[getCurrentConfigKey()] || [];
-const newMicroLevel = checkMicroLevelAdvancement(sessionMetrics, configHistory);
+newMicroLevel = checkMicroLevelAdvancement(sessionMetrics, configHistory);
 
 // Check if there's a change in integer level for UI display
-const originalLevel = nLevel;
-const newLevel = Math.floor(newMicroLevel);
-const levelChanged = newLevel !== originalLevel;
+newLevel = Math.floor(newMicroLevel);
+levelChanged = newLevel !== originalLevel;
 
 // Update micro-level
 currentMicroLevel = newMicroLevel;
@@ -2781,6 +2761,33 @@ currentMicroLevel = newMicroLevel;
 historyPoint.dPrime = sessionMetrics.dPrime;
 historyPoint.microLevel = newMicroLevel;
 historyPoint.outcome = newLevel > originalLevel ? 1 : (newLevel < originalLevel ? -1 : 0);
+
+      // Now update speed information in recap dialog
+      const speedTargetElement = document.querySelector("#sc-res-speed-target");
+      const speedChangeElement = document.querySelector("#sc-res-speed-change");
+      
+      if (speedTargetElement) {
+        const currentSpeed = getSpeedTarget(currentMicroLevel);
+        const previousSpeed = getSpeedTarget(historyPoint.microLevel);
+        
+        speedTargetElement.innerHTML = currentSpeed + "ms";
+        
+        // Show speed change if level changed
+        if (newLevel !== originalLevel) {
+          const newSpeed = getSpeedTarget(newMicroLevel);
+          const speedDiff = previousSpeed - newSpeed;
+          
+          if (speedDiff > 0) {
+            speedChangeElement.innerHTML = ` (${speedDiff}ms faster!)`;
+            speedChangeElement.style.color = "#4CAF50";
+          } else if (speedDiff < 0) {
+            speedChangeElement.innerHTML = ` (${Math.abs(speedDiff)}ms slower)`;
+            speedChangeElement.style.color = "#FF9800";
+          }
+        } else {
+          speedChangeElement.innerHTML = "";
+        }
+      }
 
       localStorage.setItem("last-dim", dimensions);
       
@@ -2820,13 +2827,14 @@ if (isRunning) {
   document.querySelector(".lvl-res-stay").style.display = "block";
   document.querySelector(".lvl-stays").innerHTML = originalLevel;
   
- // Calculate accuracy criteria for display
-const totalTrials = sessionMetrics.hits + sessionMetrics.misses + 
-                   sessionMetrics.falseAlarms + sessionMetrics.correctRejections;
-const correctResponses = sessionMetrics.hits + sessionMetrics.correctRejections;
-const sessionAccuracy = totalTrials > 0 ? correctResponses / totalTrials : 0;
-const goodAccuracy = sessionAccuracy >= 0.90;
-const goodDPrime = sessionMetrics.dPrime > 0.5;
+// Calculate accuracy criteria for display
+  const totalTrials = sessionMetrics.hits + sessionMetrics.misses + 
+                     sessionMetrics.falseAlarms + sessionMetrics.correctRejections;
+  const correctResponses = sessionMetrics.hits + sessionMetrics.correctRejections;
+  const sessionAccuracy = totalTrials > 0 ? correctResponses / totalTrials : 0;
+  const goodAccuracy = sessionAccuracy >= 0.90;
+  const goodDPrime = sessionMetrics.dPrime > 0.5;
+  
   if (!goodAccuracy && goodDPrime) {
     const accuracyMsg = document.createElement('div');
     accuracyMsg.style = "text-align: center; font-size: 1.2rem; margin-top: 1rem; color: #FF9800;";
@@ -2956,14 +2964,15 @@ historyPoint.responseBias = sessionMetrics.responseBias;
 historyPoint.n1LureResistance = sessionMetrics.n1LureResistance;
 
 // Store session in config-specific history (limited to last 20)
-if (!sessionHistoriesByConfig[currentConfig]) {
-  sessionHistoriesByConfig[currentConfig] = [];
+const currentConfigKey = getCurrentConfigKey();
+if (!sessionHistoriesByConfig[currentConfigKey]) {
+  sessionHistoriesByConfig[currentConfigKey] = [];
 }
 
 // Add accuracy to session metrics
 sessionMetrics.accuracy = accuracy;
 
-sessionHistoriesByConfig[currentConfig].push({
+sessionHistoriesByConfig[currentConfigKey].push({
   ...sessionMetrics, 
   nLevel: nLevel, 
   microLevel: currentMicroLevel, 
@@ -2971,8 +2980,8 @@ sessionHistoriesByConfig[currentConfig].push({
   accuracy: accuracy
 });
 
-if (sessionHistoriesByConfig[currentConfig].length > 20) {
-  sessionHistoriesByConfig[currentConfig].shift(); // Remove oldest session if more than 20
+if (sessionHistoriesByConfig[currentConfigKey].length > 20) {
+  sessionHistoriesByConfig[currentConfigKey].shift(); // Remove oldest session if more than 20
 }
 
 
@@ -2986,8 +2995,8 @@ document.getElementById("sc-res-dprime").textContent = sessionMetrics.dPrime.toF
 document.getElementById("sc-res-bias").textContent = sessionMetrics.responseBias.toFixed(2);
 
 // Show lure resistance section if any lures were encountered
-totalLureEncounters = (sessionMetrics.n1LureEncounters || 0) + (sessionMetrics.nPlusLureEncounters || 0);
-if (totalLureEncounters > 0) {
+const totalLureEncounters2 = (sessionMetrics.n1LureEncounters || 0) + (sessionMetrics.nPlusLureEncounters || 0);
+if (totalLureEncounters2 > 0) {
   document.getElementById("lure-resistance-section").style.display = "block";
   
   // Display combined lure resistance
@@ -2995,7 +3004,7 @@ if (totalLureEncounters > 0) {
     `${(sessionMetrics.totalLureResistance * 100).toFixed(0)}%`;
   
   // Display total lure count
-  document.getElementById("sc-res-lure-count").textContent = totalLureEncounters;
+  document.getElementById("sc-res-lure-count").textContent = totalLureEncounters2;
   
   // Optional: Add detailed breakdown if you want
   const lureDetailsElement = document.getElementById("sc-res-lure-details");
@@ -3031,8 +3040,8 @@ if (oldLureElement) {
     // Count stimulus
     stimuliCount++;
     
-    // Animating stimuli
-    if (wallsEnabled) {
+   // Animating stimuli
+    if (wallsEnabled && walls && walls[i]) {
       currWalls = walls[i];
       floors.forEach(floor =>
         setFloorBackground(
@@ -3043,63 +3052,63 @@ if (oldLureElement) {
         )
       );
     }
-    if (cameraEnabled) {
-  currCamera = cameras[i];
-  if (currCamera) {
-    let [cx, cy] = currCamera.symbol.split("&");
-    rotateCamera(cx, cy);
-  }
-}
-    if (faceEnabled) {
-  currFace = faces[i];
-  if (currFace) {
-    if (colorEnabled) {
+    if (cameraEnabled && cameras && cameras[i]) {
+      currCamera = cameras[i];
+      if (currCamera) {
+        let [cx, cy] = currCamera.symbol.split("&");
+        rotateCamera(cx, cy);
+      }
+    }
+if (faceEnabled && faces && faces[i]) {
+      currFace = faces[i];
+      if (currFace) {
+        if (colorEnabled && colors && colors[i]) {
+          currColor = colors[i];
+          if (currColor) {
+            wow(faceEls[currFace.symbol - 1], currColor.symbol, baseDelay - 500);
+          }
+        } else {
+          wow(faceEls[currFace.symbol - 1], "col-a", baseDelay - 500);
+        }
+      }
+    } else if (colorEnabled && colors && colors[i]) {
       currColor = colors[i];
       if (currColor) {
-        wow(faceEls[currFace.symbol - 1], currColor.symbol, baseDelay - 500);
+        wow(faceEls[0], currColor.symbol, baseDelay - 500);
       }
-    } else {
-      wow(faceEls[currFace.symbol - 1], "col-a", baseDelay - 500);
     }
-  }
-} else if (colorEnabled) {
-  currColor = colors[i];
-  if (currColor) {
-    wow(faceEls[0], currColor.symbol, baseDelay - 500);
-  }
-}
-    if (positionEnabled) {
-  currPosition = positions[i];
-  if (currPosition) {
-    move(cube, currPosition.symbol);
-  }
-}
+if (positionEnabled && positions && positions[i]) {
+      currPosition = positions[i];
+      if (currPosition) {
+        move(cube, currPosition.symbol);
+      }
+    }
     
-    if (wordEnabled) {
-  currWord = words[i];
-  if (currWord) {
-    writeWord(currWord.symbol);
-  }
-}
-    if (cornerEnabled) {
-  currCorner = corners[i];
-  if (currCorner) {
-    move(innerCube, currCorner.symbol);
-  }
-  
-  if (shapeEnabled) {
-    currShape = shapes[i];
-    if (currShape) {
-      wow(shape, currShape.symbol, baseDelay - 700);
+    if (wordEnabled && words && words[i]) {
+      currWord = words[i];
+      if (currWord) {
+        writeWord(currWord.symbol);
+      }
     }
-  }
-}
-    if (soundEnabled) {
-  currSound = sounds[i];
-  if (currSound) {
-    speak(currSound.symbol);
-  }
-}
+   if (cornerEnabled && corners && corners[i]) {
+      currCorner = corners[i];
+      if (currCorner) {
+        move(innerCube, currCorner.symbol);
+      }
+      
+      if (shapeEnabled && shapes && shapes[i]) {
+        currShape = shapes[i];
+        if (currShape) {
+          wow(shape, currShape.symbol, baseDelay - 700);
+        }
+      }
+    }
+    if (soundEnabled && sounds && sounds[i]) {
+      currSound = sounds[i];
+      if (currSound) {
+        speak(currSound.symbol);
+      }
+    }
     
     // Increase block index
     i++;
