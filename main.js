@@ -2567,8 +2567,14 @@ function getGameCycle(n) {
   }
   
   console.log(
-    walls, cameras, faces, positions, words, shapes, corners, sounds, colors
-  );
+  walls, cameras, faces, positions, words, shapes, corners, sounds, colors
+);
+if (shapes) {
+  console.log("Shape blocks:", shapes.map((s, i) => `${i}: ${s ? s.symbol : 'null'}`));
+}
+if (corners) {
+  console.log("Corner blocks:", corners.map((c, i) => `${i}: ${c ? c.symbol : 'null'}`));
+}
    console.log("Total matchingStimuli:", matchingStimuli);
 
   
@@ -3150,7 +3156,7 @@ if (positionEnabled && positions && positions[i]) {
       if (shapeEnabled && shapes && shapes[i]) {
         currShape = shapes[i];
         if (currShape) {
-          wow(shape, currShape.symbol, baseDelay - 400);
+          wow(shape, currShape.symbol, baseDelay - 700);
         }
       }
     }
