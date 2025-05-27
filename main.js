@@ -1738,18 +1738,39 @@ if (dPrimeElement) {
 // Update signal detection metrics section
 const avgDPrimeElement = document.querySelector("#sc-avg-dprime");
 if (avgDPrimeElement) {
-  avgDPrimeElement.innerHTML = dPrimeCount > 0 ? (totalDPrime / dPrimeCount).toFixed(2) : "-";
+  const avgDPrime = dPrimeCount > 0 ? (totalDPrime / dPrimeCount) : 0;
+  const dPrimeDescriptor = 
+    avgDPrime >= 3.0 ? "Excellent" :
+    avgDPrime >= 2.0 ? "Great" :
+    avgDPrime >= 1.0 ? "Good" :
+    avgDPrime >= 0.5 ? "Fair" : "Poor";
+  avgDPrimeElement.innerHTML = dPrimeCount > 0 ? 
+    `${avgDPrime.toFixed(2)} (${dPrimeDescriptor})` : "-";
 }
 
 const avgBiasElement = document.querySelector("#sc-avg-bias");
 if (avgBiasElement) {
-  avgBiasElement.innerHTML = biasCount > 0 ? (totalBias / biasCount).toFixed(2) : "-";
+  const avgBias = biasCount > 0 ? (totalBias / biasCount) : 0;
+  const biasDescriptor = 
+    Math.abs(avgBias) <= 0.2 ? "Neutral" :
+    avgBias < -0.5 ? "Very Conservative" :
+    avgBias < 0 ? "Conservative" :
+    avgBias > 0.5 ? "Very Liberal" : "Liberal";
+  avgBiasElement.innerHTML = biasCount > 0 ? 
+    `${avgBias.toFixed(2)} (${biasDescriptor})` : "-";
 }
 
 const avgLureElement = document.querySelector("#sc-avg-lure");
 if (avgLureElement) {
+  const avgLureResistance = lureResistanceCount > 0 ? 
+    (totalLureResistance / lureResistanceCount) : 0;
+  const lureDescriptor = 
+    avgLureResistance >= 0.95 ? "Excellent" :
+    avgLureResistance >= 0.85 ? "Great" :
+    avgLureResistance >= 0.70 ? "Good" :
+    avgLureResistance >= 0.50 ? "Fair" : "Poor";
   avgLureElement.innerHTML = lureResistanceCount > 0 ? 
-    ((totalLureResistance / lureResistanceCount) * 100).toFixed(0) + "%" : "-";
+    `${(avgLureResistance * 100).toFixed(0)}% (${lureDescriptor})` : "-";
 }
 
 // Calculate and display baseline metrics
@@ -2743,20 +2764,6 @@ if (accuracyElement) {
   accuracyElement.innerHTML = (accuracy * 100).toFixed(0) + "%";
 }
 
-// Add d'-prime display to the recap dialog
-const recapDiv = document.createElement('div');
-recapDiv.style = "text-align: center; font-size: 1.5rem; margin-top: 1rem; margin-bottom: 1rem;";
-recapDiv.innerHTML = `d'-Prime: <span>${sessionMetrics.dPrime.toFixed(2)}</span>`;
-accuracyElement.parentNode.insertAdjacentElement('afterend', recapDiv);
-
-// Add lure resistance display if lures were encountered
-if (sessionMetrics.n1LureEncounters && sessionMetrics.n1LureEncounters > 0) {
-  const lureResistanceDiv = document.createElement('div');
-  lureResistanceDiv.style = "text-align: center; font-size: 1.5rem; margin-bottom: 1rem;";
-  lureResistanceDiv.innerHTML = `Lure Resistance: <span>${(sessionMetrics.n1LureResistance * 100).toFixed(0)}%</span>`;
-  recapDiv.insertAdjacentElement('afterend', lureResistanceDiv);
-}
-
 
 // Calculate d'-prime and response bias
 sessionMetrics.dPrime = calculateDPrime(
@@ -2877,20 +2884,19 @@ if (isRunning) {
   document.querySelector(".lvl-res-stay").style.display = "block";
   document.querySelector(".lvl-stays").innerHTML = originalLevel;
   
-// Calculate accuracy criteria for display
-  const totalTrials = sessionMetrics.hits + sessionMetrics.misses + 
-                     sessionMetrics.falseAlarms + sessionMetrics.correctRejections;
-  const correctResponses = sessionMetrics.hits + sessionMetrics.correctRejections;
-  const sessionAccuracy = totalTrials > 0 ? correctResponses / totalTrials : 0;
-  const goodAccuracy = sessionAccuracy >= 0.90;
-  const goodDPrime = sessionMetrics.dPrime > 0.5;
-  
-  if (!goodAccuracy && goodDPrime) {
-    const accuracyMsg = document.createElement('div');
-    accuracyMsg.style = "text-align: center; font-size: 1.2rem; margin-top: 1rem; color: #FF9800;";
-    accuracyMsg.innerHTML = `Advancement blocked: ${(accuracy * 100).toFixed(0)}% accuracy (need 90%)`;
-    document.querySelector(".lvl-res-stay").appendChild(accuracyMsg);
+if (!goodAccuracy && goodDPrime) {
+  // Remove any existing accuracy message first
+  const existingMsg = document.querySelector(".accuracy-blocked-msg");
+  if (existingMsg) {
+    existingMsg.remove();
   }
+  
+  const accuracyMsg = document.createElement('div');
+  accuracyMsg.className = 'accuracy-blocked-msg';
+  accuracyMsg.style = "text-align: center; font-size: 1.2rem; margin-top: 1rem; color: #FF9800;";
+  accuracyMsg.innerHTML = `Advancement blocked: ${(accuracy * 100).toFixed(0)}% accuracy (need 90%)`;
+  document.querySelector(".lvl-res-stay").appendChild(accuracyMsg);
+}
   
   // Update nLevel for game state (to reflect micro-level changes)
   nLevelInputHandler(null, newMicroLevel);
