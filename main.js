@@ -426,6 +426,7 @@ const accuracy = totalTrials > 0 ? correctResponses / totalTrials : 0;
 const goodDPrime = sessionMetrics.dPrime > dPrimeThreshold;
 const goodLureResistance = sessionMetrics.n1LureResistance >= lureResistanceThreshold;
 const lowBias = Math.abs(sessionMetrics.responseBias) < 0.5; // Not too biased toward yes or no
+console.log(`Advancement criteria: dPrime=${sessionMetrics.dPrime.toFixed(2)} (threshold=${dPrimeThreshold}), goodDPrime=${goodDPrime}, lowBias=${lowBias}, responseBias=${sessionMetrics.responseBias.toFixed(2)}`);
   
   // Get current level components
   const { nLevel, microProgress } = getMicroLevelComponents(currentMicroLevel);
