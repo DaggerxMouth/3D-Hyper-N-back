@@ -419,8 +419,8 @@ function checkMicroLevelAdvancement(sessionMetrics, sessionHistory) {
   // Get personal baseline
   const baseline = calculateBaseline(sessionHistory);
   
-  // Calculate thresholds based on current level and personal baseline
-  const dPrimeThreshold = Math.max(0.5, baseline.avgDPrime);
+  // Use personal baseline but cap at 2.0 (excellent performance)
+  const dPrimeThreshold = Math.max(0.5, Math.min(2.0, baseline.avgDPrime));
   const lureResistanceThreshold = Math.max(0.5, baseline.n1LureResistance);
   
   // Calculate raw accuracy
