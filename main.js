@@ -320,8 +320,9 @@ let sessionHistoriesByConfig = {
   9: []
 };
 
-// Functions for signal detection calculations
 function calculateDPrime(hits, misses, falseAlarms, correctRejections) {
+  console.log(`calculateDPrime inputs: hits=${hits}, misses=${misses}, FA=${falseAlarms}, CR=${correctRejections}`);
+  
   const hitRate = hits / (hits + misses);
   const faRate = falseAlarms / (falseAlarms + correctRejections);
   
@@ -333,7 +334,10 @@ function calculateDPrime(hits, misses, falseAlarms, correctRejections) {
   const zHit = gaussianInverse(adjustedHitRate);
   const zFA = gaussianInverse(adjustedFARate);
   
-  return zHit - zFA;
+  const dPrime = zHit - zFA;
+  console.log(`d'prime calculation: hitRate=${hitRate}, faRate=${faRate}, zHit=${zHit}, zFA=${zFA}, d'=${dPrime}`);
+  
+  return dPrime;
 }
 
 function calculateResponseBias(hits, misses, falseAlarms, correctRejections) {
@@ -422,7 +426,6 @@ const accuracy = totalTrials > 0 ? correctResponses / totalTrials : 0;
 const goodDPrime = sessionMetrics.dPrime > dPrimeThreshold;
 const goodLureResistance = sessionMetrics.n1LureResistance >= lureResistanceThreshold;
 const lowBias = Math.abs(sessionMetrics.responseBias) < 0.5; // Not too biased toward yes or no
-const goodAccuracy = accuracy >= 0.90; // Minimum 90% accuracy required
   
   // Get current level components
   const { nLevel, microProgress } = getMicroLevelComponents(currentMicroLevel);
@@ -436,13 +439,26 @@ const goodAccuracy = accuracy >= 0.90; // Minimum 90% accuracy required
   // Determine new micro-level
 let newMicroLevel = currentMicroLevel;
 
-if (goodDPrime && lowBias && goodAccuracy) {
-  // Advance micro-level
-  newMicroLevel = Math.min(9.99, currentMicroLevel + increment);
-  console.log(`Advancing micro-level by +${increment.toFixed(2)} (d'=${sessionMetrics.dPrime.toFixed(2)}, acc=${(accuracy * 100).toFixed(0)}%)`);
-} else if (!goodAccuracy) {
-  // No advancement if accuracy too low
-  console.log(`No advancement: accuracy ${(accuracy * 100).toFixed(0)}% below 90% threshold`);
+if (goodDPrime && lowBias) {
+  // Calculate potential new level
+  const potentialNewLevel = Math.min(9.99, currentMicroLevel + increment);
+  
+  // Check if this would cross an integer boundary
+  if (Math.floor(potentialNewLevel) > Math.floor(currentMicroLevel)) {
+    // Integer level transition - requires 90% accuracy
+    if (accuracy >= 0.90) {
+      newMicroLevel = potentialNewLevel;
+      console.log(`LEVEL UP! Advancing to level ${Math.floor(potentialNewLevel)} with ${(accuracy * 100).toFixed(0)}% accuracy`);
+    } else {
+      // Cap at .99 of current level
+      newMicroLevel = Math.floor(currentMicroLevel) + 0.99;
+      console.log(`Integer transition blocked: ${(accuracy * 100).toFixed(0)}% accuracy (need 90%)`);
+    }
+  } else {
+    // Within same integer level - no accuracy requirement
+    newMicroLevel = potentialNewLevel;
+    console.log(`Micro-progress: +${increment.toFixed(2)} (d'=${sessionMetrics.dPrime.toFixed(2)})`);
+  }
 } else if (sessionMetrics.dPrime < dPrimeThreshold * 0.7) {
   // Regression in micro-level for poor performance
   const decrement = 0.05;
@@ -2516,8 +2532,8 @@ function getGameCycle(n) {
   
   let i = 0;
   return function() {
-  // Add this line right at the beginning of the function
-  if (currWalls || currCamera || currFace || currPosition || currWord || currShape || currCorner || currSound || currColor) {
+ // Track missed stimuli from previous presentation, but not on first iteration
+  if (i > 0 && (currWalls || currCamera || currFace || currPosition || currWord || currShape || currCorner || currSound || currColor)) {
     trackMissedStimuli(); // Track any missed stimuli from the previous presentation
   }
   
@@ -2539,7 +2555,7 @@ if (cornerEnabled && corners) actualLengths.push(corners.length);
 if (soundEnabled && sounds) actualLengths.push(sounds.length);
 if (colorEnabled && colors) actualLengths.push(colors.length);
 
-let length = actualLengths.length > 0 ? Math.min(...actualLengths) : targetNumOfStimuli * (n + 2) + targetNumOfStimuli;
+let length = actualLengths.length > 0 ? Math.max(...actualLengths) : targetNumOfStimuli * (n + 2) + targetNumOfStimuli;
 console.log("Game length:", length, "Actual lengths:", actualLengths);
     let dimensions = 0;
     
@@ -2721,7 +2737,20 @@ if (sessionMetrics.n1LureEncounters && sessionMetrics.n1LureEncounters > 0) {
 }
 
 
+// Calculate d'-prime and response bias
+sessionMetrics.dPrime = calculateDPrime(
+  sessionMetrics.hits, 
+  sessionMetrics.misses, 
+  sessionMetrics.falseAlarms, 
+  sessionMetrics.correctRejections
+);
 
+sessionMetrics.responseBias = calculateResponseBias(
+  sessionMetrics.hits, 
+  sessionMetrics.misses, 
+  sessionMetrics.falseAlarms, 
+  sessionMetrics.correctRejections
+);
 
 // Calculate new micro-level based on d-prime and lure resistance
 const configHistory = sessionHistoriesByConfig[getCurrentConfigKey()] || [];
@@ -2865,20 +2894,6 @@ if (isRunning) {
 
 
 
-      // Calculate d'-prime and response bias
-sessionMetrics.dPrime = calculateDPrime(
-  sessionMetrics.hits, 
-  sessionMetrics.misses, 
-  sessionMetrics.falseAlarms, 
-  sessionMetrics.correctRejections
-);
-
-sessionMetrics.responseBias = calculateResponseBias(
-  sessionMetrics.hits, 
-  sessionMetrics.misses, 
-  sessionMetrics.falseAlarms, 
-  sessionMetrics.correctRejections
-);
 
 // Calculate lure resistances if there were any lures
 if (sessionMetrics.n1LureEncounters && sessionMetrics.n1LureEncounters > 0) {
