@@ -2980,7 +2980,7 @@ document.getElementById("sc-res-dprime").textContent = sessionMetrics.dPrime.toF
 document.getElementById("sc-res-bias").textContent = sessionMetrics.responseBias.toFixed(2);
 
 // Show lure resistance section if any lures were encountered
-const totalLureEncounters = (sessionMetrics.n1LureEncounters || 0) + (sessionMetrics.nPlusLureEncounters || 0);
+totalLureEncounters = (sessionMetrics.n1LureEncounters || 0) + (sessionMetrics.nPlusLureEncounters || 0);
 if (totalLureEncounters > 0) {
   document.getElementById("lure-resistance-section").style.display = "block";
   
