@@ -2527,7 +2527,20 @@ function getGameCycle(n) {
       return;
     }
     
-    let length = targetNumOfStimuli * (n + 2) + targetNumOfStimuli;
+    // Calculate the actual length based on enabled stimuli
+let actualLengths = [];
+if (wallsEnabled && walls) actualLengths.push(walls.length);
+if (cameraEnabled && cameras) actualLengths.push(cameras.length);
+if (faceEnabled && faces) actualLengths.push(faces.length);
+if (positionEnabled && positions) actualLengths.push(positions.length);
+if (wordEnabled && words) actualLengths.push(words.length);
+if (shapeEnabled && shapes) actualLengths.push(shapes.length);
+if (cornerEnabled && corners) actualLengths.push(corners.length);
+if (soundEnabled && sounds) actualLengths.push(sounds.length);
+if (colorEnabled && colors) actualLengths.push(colors.length);
+
+let length = actualLengths.length > 0 ? Math.min(...actualLengths) : targetNumOfStimuli * (n + 2) + targetNumOfStimuli;
+console.log("Game length:", length, "Actual lengths:", actualLengths);
     let dimensions = 0;
     
     // End game
