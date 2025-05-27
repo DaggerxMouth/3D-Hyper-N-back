@@ -2820,7 +2820,13 @@ if (isRunning) {
   document.querySelector(".lvl-res-stay").style.display = "block";
   document.querySelector(".lvl-stays").innerHTML = originalLevel;
   
-  // Show reason if accuracy blocked advancement
+ // Calculate accuracy criteria for display
+const totalTrials = sessionMetrics.hits + sessionMetrics.misses + 
+                   sessionMetrics.falseAlarms + sessionMetrics.correctRejections;
+const correctResponses = sessionMetrics.hits + sessionMetrics.correctRejections;
+const sessionAccuracy = totalTrials > 0 ? correctResponses / totalTrials : 0;
+const goodAccuracy = sessionAccuracy >= 0.90;
+const goodDPrime = sessionMetrics.dPrime > 0.5;
   if (!goodAccuracy && goodDPrime) {
     const accuracyMsg = document.createElement('div');
     accuracyMsg.style = "text-align: center; font-size: 1.2rem; margin-top: 1rem; color: #FF9800;";
