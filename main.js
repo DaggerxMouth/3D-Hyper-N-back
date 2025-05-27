@@ -3153,11 +3153,15 @@ if (positionEnabled && positions && positions[i]) {
         move(innerCube, currCorner.symbol);
       }
       
-      if (shapeEnabled && shapes && shapes[i]) {
-        currShape = shapes[i];
-        if (currShape) {
-          wow(shape, currShape.symbol, baseDelay - 700);
-        }
+      if (shapeEnabled) {
+  currShape = shapes[i];
+  // Remove all shape classes first
+  shape.classList.remove("triangle", "square", "circle");
+  // Add the new shape class
+  shape.classList.add(currShape.symbol);
+  // Apply the wow animation
+  wow(shape, "shape-active", baseDelay - 300);
+}
       }
     }
     if (soundEnabled && sounds && sounds[i]) {
