@@ -2553,7 +2553,6 @@ console.log(`Micro-progress: ${microProgress.toFixed(2)}, Target matches: ${targ
   // Reset total matching count at the start
   matchingStimuli = 0;
   // Calculate lure frequency based on micro-level progress
-  const { nLevel, microProgress } = getMicroLevelComponents(currentMicroLevel);
   
 // Scale lure frequency based on micro-level progress with three phases
 const baseLureFreq = 0.05;
