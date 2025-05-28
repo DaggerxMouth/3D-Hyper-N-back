@@ -1923,9 +1923,16 @@ function toggleStats(_dim) {
         return totalMatching > 0 ? (totalRight / totalMatching) * 100 : null;
       });
       
-      // Only add dataset if there's at least one non-null value
+     // Only add dataset if there's at least one non-null value
       if (data.some(v => v !== null)) {
-        datas
+        datasets.push({
+          label: stimulus.charAt(0).toUpperCase() + stimulus.slice(1),
+          data: data,
+          borderColor: stimuliColors[stimulus],
+          backgroundColor: stimuliColors[stimulus] + '33',
+          tension: 0.1
+        });
+      }
       
       datasets.push({
         label: metric.charAt(0).toUpperCase() + metric.slice(1),
