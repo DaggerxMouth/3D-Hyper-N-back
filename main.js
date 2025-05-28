@@ -330,6 +330,17 @@ let sessionHistoriesByConfig = {
   8: [],
   9: []
 };
+// Accuracy attempts tracking for level advancement
+let accuracyAttemptsByConfig = {
+  2: { attempts: [], requiredSuccesses: 3, windowSize: 5 },
+  3: { attempts: [], requiredSuccesses: 3, windowSize: 5 },
+  4: { attempts: [], requiredSuccesses: 3, windowSize: 5 },
+  5: { attempts: [], requiredSuccesses: 3, windowSize: 5 },
+  6: { attempts: [], requiredSuccesses: 3, windowSize: 5 },
+  7: { attempts: [], requiredSuccesses: 3, windowSize: 5 },
+  8: { attempts: [], requiredSuccesses: 3, windowSize: 5 },
+  9: { attempts: [], requiredSuccesses: 3, windowSize: 5 }
+};
 
 
 function calculateDPrime(hits, misses, falseAlarms, correctRejections) {
@@ -464,14 +475,31 @@ if (goodDPrime && lowBias) {
   
   // Check if this would cross an integer boundary
   if (Math.floor(potentialNewLevel) > Math.floor(currentMicroLevel)) {
-    // Integer level transition - requires 90% accuracy
-    if (accuracy >= 0.90) {
+    // Integer level transition - check accuracy attempts
+    const configKey = getCurrentConfigKey();
+    const attemptData = accuracyAttemptsByConfig[configKey];
+    
+    // Record this attempt
+    attemptData.attempts.push(accuracy >= 0.90);
+    
+    // Keep only the most recent attempts within window size
+    if (attemptData.attempts.length > attemptData.windowSize) {
+      attemptData.attempts = attemptData.attempts.slice(-attemptData.windowSize);
+    }
+    
+    // Count successful attempts (90%+ accuracy) in the window
+    const successCount = attemptData.attempts.filter(a => a).length;
+    
+    // Check if we have enough successful attempts
+    if (successCount >= attemptData.requiredSuccesses) {
       newMicroLevel = potentialNewLevel;
-      console.log(`LEVEL UP! Advancing to level ${Math.floor(potentialNewLevel)} with ${(accuracy * 100).toFixed(0)}% accuracy`);
+      console.log(`LEVEL UP! ${successCount}/${attemptData.requiredSuccesses} successful attempts in last ${attemptData.windowSize} sessions`);
+      // Reset attempts after level up
+      attemptData.attempts = [];
     } else {
       // Cap at .99 of current level
       newMicroLevel = Math.floor(currentMicroLevel) + 0.99;
-      console.log(`Integer transition blocked: ${(accuracy * 100).toFixed(0)}% accuracy (need 90%)`);
+      console.log(`Integer transition blocked: ${successCount}/${attemptData.requiredSuccesses} successful attempts (${(accuracy * 100).toFixed(0)}% this session)`);
     }
   } else {
     // Within same integer level - no accuracy requirement
@@ -1482,6 +1510,7 @@ function saveSettings() {
     currentMicroLevel,
     microLevelsByConfig,  // Save all config levels
     sessionHistoriesByConfig,  // Save all session histories
+    accuracyAttemptsByConfig,  // Save accuracy attempts tracking
     sceneDimmer,
     zoom,
     perspective,
@@ -1512,6 +1541,9 @@ function loadSettings() {
   }
   if (settings.sessionHistoriesByConfig) {
     sessionHistoriesByConfig = settings.sessionHistoriesByConfig;
+  }
+  if (settings.accuracyAttemptsByConfig) {
+    accuracyAttemptsByConfig = settings.accuracyAttemptsByConfig;
   }
 
   wallsEnableTrigHandler(null, settings.wallsEnabled);
@@ -1576,6 +1608,339 @@ function getBar(n) {
 }
 
 function toggleStats(_dim) {
+  // Initialize Chart.js instance for performance graphs
+  let performanceChart = null;
+  
+  // Function to update the performance chart
+  function updatePerformanceChart(dimension, period) {
+    const ctx = document.getElementById('performance-chart');
+    if (!ctx) return;
+    
+    // Destroy existing chart if it exists
+    if (performanceChart) {
+      performanceChart.destroy();
+    }
+    
+    // Get active metrics from checkboxes
+    const activeMetrics = [];
+    document.querySelectorAll('.metric-toggle:checked').forEach(checkbox => {
+      activeMetrics.push(checkbox.dataset.metric);
+    });
+    
+    // Get data for the selected dimension and period
+    const chartData = prepareChartData(dimension, period, activeMetrics);
+    
+    // Chart configuration
+    const config = {
+      type: 'line',
+      data: chartData,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: {
+              color: '#fff',
+              font: {
+                family: 'Nova Square'
+              }
+            }
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleFont: {
+              family: 'Nova Square'
+            },
+            bodyFont: {
+              family: 'Nova Square'
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            },
+            ticks: {
+              color: '#fff',
+              font: {
+                family: 'Nova Square'
+              }
+            }
+          },
+          y: {
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            },
+            ticks: {
+              color: '#fff',
+              font: {
+                family: 'Nova Square'
+              }
+            }
+          }
+        }
+      }
+    };
+    
+    // Create new chart
+    performanceChart = new Chart(ctx, config);
+  }
+  // Function to prepare chart data based on dimension, period, and metrics
+  function prepareChartData(dimension, period, activeMetrics) {
+    const _history = history[dimension] || {};
+    const dates = Object.keys(_history).sort();
+    
+    // Filter dates based on period
+    const now = new Date();
+    const filteredDates = dates.filter(date => {
+      const d = new Date(date);
+      switch(period) {
+        case 'day':
+          return (now - d) <= 86400000; // 1 day
+        case 'week':
+          return (now - d) <= 604800000; // 7 days
+        case 'month':
+          return (now - d) <= 2592000000; // 30 days
+        case 'all':
+        default:
+          return true;
+      }
+    });
+    
+    // Prepare datasets for each active metric
+    const datasets = [];
+    const metricColors = {
+      right: 'rgb(75, 192, 192)',
+      missed: 'rgb(255, 206, 86)',
+      wrong: 'rgb(255, 99, 132)',
+      dprime: 'rgb(54, 162, 235)',
+      baseline: 'rgb(153, 102, 255)',
+      bias: 'rgb(255, 159, 64)',
+      lure: 'rgb(75, 192, 192)'
+    };
+    
+    activeMetrics.forEach(metric => {
+      const data = filteredDates.map(date => {
+        const dayData = _history[date];
+        if (!dayData || !dayData.length) return null;
+        
+        // Average values for the day
+        let sum = 0;
+        let count = 0;
+        
+        dayData.forEach(point => {
+          switch(metric) {
+            case 'right':
+              sum += point.right || 0;
+              count++;
+              break;
+            case 'missed':
+              sum += point.missed || 0;
+              count++;
+              break;
+            case 'wrong':
+              sum += point.wrong || 0;
+              count++;
+              break;
+            case 'dprime':
+              if (point.dPrime !== undefined) {
+                sum += point.dPrime;
+                count++;
+              }
+              break;
+            case 'bias':
+              if (point.responseBias !== undefined) {
+                sum += Math.abs(point.responseBias);
+                count++;
+              }
+              break;
+            case 'lure':
+              if (point.n1LureResistance !== undefined) {
+                sum += point.n1LureResistance * 100;
+                count++;
+              }
+              break;
+            case 'baseline':
+              // This would need session history data
+              sum += 0.5; // Placeholder
+              count = 1;
+              break;
+          }
+        });
+        
+        return count > 0 ? sum / count : null;
+      });
+
+      // Initialize stimuli accuracy chart instance
+  let stimuliAccuracyChart = null;
+  
+  // Function to update stimuli accuracy chart
+  function updateStimuliAccuracyChart(dimension, period) {
+    const ctx = document.getElementById('stimuli-accuracy-chart');
+    if (!ctx) return;
+    
+    // Destroy existing chart if it exists
+    if (stimuliAccuracyChart) {
+      stimuliAccuracyChart.destroy();
+    }
+    
+    // Get data for the selected dimension and period
+    const chartData = prepareStimuliChartData(dimension, period);
+    
+    // Chart configuration
+    const config = {
+      type: 'line',
+      data: chartData,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: {
+              color: '#fff',
+              font: {
+                family: 'Nova Square',
+                size: 10
+              }
+            }
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleFont: {
+              family: 'Nova Square'
+            },
+            bodyFont: {
+              family: 'Nova Square'
+            },
+            callbacks: {
+              label: function(context) {
+                return context.dataset.label + ': ' + 
+                       (context.parsed.y ? context.parsed.y.toFixed(1) + '%' : 'N/A');
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            },
+            ticks: {
+              color: '#fff',
+              font: {
+                family: 'Nova Square',
+                size: 10
+              }
+            }
+          },
+          y: {
+            min: 0,
+            max: 100,
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            },
+            ticks: {
+              color: '#fff',
+              font: {
+                family: 'Nova Square',
+                size: 10
+              },
+              callback: function(value) {
+                return value + '%';
+              }
+            }
+          }
+        }
+      }
+    };
+    
+    // Create new chart
+    stimuliAccuracyChart = new Chart(ctx, config);
+  }
+
+      // Function to prepare stimuli accuracy chart data
+  function prepareStimuliChartData(dimension, period) {
+    const _history = history[dimension] || {};
+    const dates = Object.keys(_history).sort();
+    
+    // Filter dates based on period
+    const now = new Date();
+    const filteredDates = dates.filter(date => {
+      const d = new Date(date);
+      switch(period) {
+        case 'day':
+          return (now - d) <= 86400000;
+        case 'week':
+          return (now - d) <= 604800000;
+        case 'month':
+          return (now - d) <= 2592000000;
+        case 'all':
+        default:
+          return true;
+      }
+    });
+    
+    // Stimuli types and colors
+    const stimuliTypes = ['walls', 'camera', 'face', 'position', 'word', 'shape', 'corner', 'sound', 'color'];
+    const stimuliColors = {
+      walls: '#FF6384',
+      camera: '#36A2EB',
+      face: '#FFCE56',
+      position: '#4BC0C0',
+      word: '#9966FF',
+      shape: '#FF9F40',
+      corner: '#FF6384',
+      sound: '#C9CBCF',
+      color: '#4BC0C0'
+    };
+    
+    // Prepare datasets for each stimulus type
+    const datasets = [];
+    
+    stimuliTypes.forEach(stimulus => {
+      const data = filteredDates.map(date => {
+        const dayData = _history[date];
+        if (!dayData || !dayData.length) return null;
+        
+        let totalRight = 0;
+        let totalMatching = 0;
+        
+        dayData.forEach(point => {
+          if (point.stimuliData && point.stimuliData[stimulus]) {
+            const stimData = point.stimuliData[stimulus];
+            if (stimData.enabled && stimData.matching > 0) {
+              totalRight += stimData.right || 0;
+              totalMatching += stimData.matching || 0;
+            }
+          }
+        });
+        
+        return totalMatching > 0 ? (totalRight / totalMatching) * 100 : null;
+      });
+      
+      // Only add dataset if there's at least one non-null value
+      if (data.some(v => v !== null)) {
+        datas
+      
+      datasets.push({
+        label: metric.charAt(0).toUpperCase() + metric.slice(1),
+        data: data,
+        borderColor: metricColors[metric],
+        backgroundColor: metricColors[metric] + '33',
+        tension: 0.1
+      });
+    });
+    
+    return {
+      labels: filteredDates,
+      datasets: datasets
+    };
+  }
   // If no dimension specified and dialog is already open, close it
   if (!_dim && statsDialogContent.parentElement.hasAttribute("open")) {
     statsDialogContent.parentElement.close();
@@ -1584,6 +1949,38 @@ function toggleStats(_dim) {
 
   // Open the stats dialog
   statsDialogContent.parentElement.show();
+
+  // Add event listeners for time period buttons
+  document.querySelectorAll('.period-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      // Remove active class from all buttons
+      document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+      // Add active class to clicked button
+      this.classList.add('active');
+      // Update chart with new period
+      const period = this.dataset.period;
+      const currentDim = localStorage.getItem("last-dim") || 1;
+      updatePerformanceChart(currentDim, period);
+      updateStimuliAccuracyChart(currentDim, period);
+    });
+  });
+  
+  // Add event listeners for metric toggles
+  document.querySelectorAll('.metric-toggle').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+      // Update chart when metrics are toggled
+      const activePeriod = document.querySelector('.period-btn.active').dataset.period;
+      const currentDim = localStorage.getItem("last-dim") || 1;
+      updatePerformanceChart(currentDim, activePeriod);
+    });
+  });
+  
+  // Initialize chart with default settings
+  setTimeout(() => {
+    const currentDim = localStorage.getItem("last-dim") || 1;
+    updatePerformanceChart(currentDim, 'week');
+    updateStimuliAccuracyChart(currentDim, 'week');
+  }, 100);
   
   // Get the dimension to display (from parameter, localStorage, or default to 1)
   const dim = _dim || localStorage.getItem("last-dim") || 1;
@@ -1653,14 +2050,7 @@ bars.innerHTML = "";
     color: { right: 0, wrong: 0, matching: 0, present: false }
   };
 
-  // Initialize speed tracking
-    let speedProgression = {
-      minSpeed: 10000,
-      maxSpeed: 0,
-      avgSpeed: 0,
-      speedCount: 0,
-      speedImprovement: 0
-    };
+  
   
   // Check if the history exists and has entries
 const entries = _history ? Object.entries(_history) : [];
@@ -1675,6 +2065,13 @@ if (entries.length === 0) {
 
 // Update stimuli accuracy display
 updateStimuliAccuracyDisplay(stimuliTotals);
+
+// Update performance chart when dimension changes
+  if (performanceChart || document.getElementById('performance-chart')) {
+    const activePeriod = document.querySelector('.period-btn.active')?.dataset.period || 'week';
+    updatePerformanceChart(validDim, activePeriod);
+    updateStimuliAccuracyChart(validDim, activePeriod);
+  }
 
 // Process history entries if they exist
 if (entries.length > 0) {
@@ -1737,15 +2134,6 @@ if (points.length > 0) {
     }
   }
 
- // Track speed progression
-for (const point of points) {
-  if (point.speedTarget !== undefined) {
-    speedProgression.minSpeed = Math.min(speedProgression.minSpeed, point.speedTarget);
-    speedProgression.maxSpeed = Math.max(speedProgression.maxSpeed, point.speedTarget);
-    speedProgression.avgSpeed += point.speedTarget;
-    speedProgression.speedCount++;
-  }
-}
   
   // Create bar element showing N-level
 const displayLevel = microCount > 0 ? (_avgMicroLevel / microCount).toFixed(2) : toOneDecimal(_avgNLevel);
@@ -1776,6 +2164,21 @@ barElement.title = `Date: ${date}\nμ-Level: ${displayLevel}${speedInfo}`;
   // Show micro-level for the selected configuration
 const selectedConfigLevel = microLevelsByConfig[validDim] || 2.00;
 document.querySelector("#sc-micro-level").innerHTML = formatMicroLevel(selectedConfigLevel);
+      // Update level progress indicator
+  const progressIndicator = document.querySelector("#level-progress-indicator");
+  if (progressIndicator) {
+    const attemptData = accuracyAttemptsByConfig[validDim];
+    const recentAttempts = attemptData.attempts.slice(-attemptData.windowSize);
+    const successCount = recentAttempts.filter(a => a).length;
+    
+    if (attemptData.attempts.length > 0) {
+      progressIndicator.innerHTML = `Progress: ${successCount}/${attemptData.requiredSuccesses} (Need ${attemptData.requiredSuccesses - successCount} more)`;
+      progressIndicator.style.color = successCount >= attemptData.requiredSuccesses ? '#4CAF50' : '#FFF';
+    } else {
+      progressIndicator.innerHTML = 'No attempts yet';
+      progressIndicator.style.color = '#888';
+    }
+  }
   // Display current speed target
 const currentSpeedElement = document.createElement('div');
 currentSpeedElement.style = "text-align: center; font-size: 1rem; margin-top: 0.5rem; opacity: 0.8;";
@@ -1902,27 +2305,6 @@ if (baselineDPrimeElement) {
 const baselineLureElement = document.querySelector("#sc-baseline-lure");
 if (baselineLureElement) {
   baselineLureElement.innerHTML = (baseline.n1LureResistance * 100).toFixed(0) + "%";
-}
-
-// Update speed statistics
-const minSpeedElement = document.querySelector("#sc-min-speed");
-const avgSpeedElement = document.querySelector("#sc-avg-speed");
-const maxSpeedElement = document.querySelector("#sc-max-speed");
-
-if (speedProgression.speedCount > 0) {
-  if (minSpeedElement) {
-    minSpeedElement.innerHTML = speedProgression.minSpeed + "ms";
-  }
-  if (avgSpeedElement) {
-    avgSpeedElement.innerHTML = Math.round(speedProgression.avgSpeed / speedProgression.speedCount) + "ms";
-  }
-  if (maxSpeedElement) {
-    maxSpeedElement.innerHTML = speedProgression.maxSpeed + "ms";
-  }
-} else {
-  if (minSpeedElement) minSpeedElement.innerHTML = "-";
-  if (avgSpeedElement) avgSpeedElement.innerHTML = "-";
-  if (maxSpeedElement) maxSpeedElement.innerHTML = "-";
 }
 }
 
@@ -3016,6 +3398,13 @@ if (phaseChanged || crossedInteger) {
   console.log(`Phase transition detected! Resetting baseline for config ${getCurrentConfigKey()}`);
   // Reset session history for current configuration
   sessionHistoriesByConfig[getCurrentConfigKey()] = [];
+  if (phaseChanged || crossedInteger) {
+  console.log(`Phase transition detected! Resetting baseline for config ${getCurrentConfigKey()}`);
+  // Reset session history for current configuration
+  sessionHistoriesByConfig[getCurrentConfigKey()] = [];
+  // Reset accuracy attempts for current configuration
+  accuracyAttemptsByConfig[getCurrentConfigKey()].attempts = [];
+}
 }
 
      const historyPoint = {
@@ -3109,6 +3498,32 @@ if (isRunning) {
 } else {
   // Level stays the same (micro-level may have changed)
   document.querySelector(".lvl-res-stay").style.display = "block";
+        // Show accuracy attempts progress
+  const configKey = getCurrentConfigKey();
+  const attemptData = accuracyAttemptsByConfig[configKey];
+  const recentAttempts = attemptData.attempts.slice(-attemptData.windowSize);
+  const successCount = recentAttempts.filter(a => a).length;
+  
+  // Create progress indicator
+  const progressMsg = document.createElement('div');
+  progressMsg.className = 'attempts-progress';
+  progressMsg.style = "text-align: center; font-size: 1.2rem; margin-top: 1rem; color: #4CAF50;";
+  progressMsg.innerHTML = `Level Progress: ${successCount}/${attemptData.requiredSuccesses} successful attempts`;
+  
+  // Add visual representation of attempts
+  const attemptsVisual = document.createElement('div');
+  attemptsVisual.style = "display: flex; justify-content: center; gap: 0.5rem; margin-top: 0.5rem;";
+  
+  for (let i = 0; i < attemptData.windowSize; i++) {
+    const attempt = recentAttempts[i];
+    const dot = document.createElement('span');
+    dot.style = `width: 20px; height: 20px; border-radius: 50%; display: inline-block; 
+                 background: ${attempt === true ? '#4CAF50' : attempt === false ? '#FF5252' : '#555'};`;
+    attemptsVisual.appendChild(dot);
+  }
+  
+  progressMsg.appendChild(attemptsVisual);
+  document.querySelector(".lvl-res-stay").appendChild(progressMsg);
   document.querySelector(".lvl-stays").innerHTML = originalLevel;
 
         // Calculate accuracy criteria for display
