@@ -2112,6 +2112,14 @@ function toggleStats(_dim) {
         
         return count > 0 ? sum / count : null;
       });
+      
+      datasets.push({
+        label: metric.charAt(0).toUpperCase() + metric.slice(1),
+        data: data,
+        borderColor: metricColors[metric],
+        backgroundColor: metricColors[metric] + '33',
+        tension: 0.1
+      });
     });
     
     return {
