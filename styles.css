@@ -1031,6 +1031,119 @@ dialog .dialog-content {
   margin-bottom: 1rem;
 }
 
+/* Line Graphs Section */
+.line-graphs-section {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.line-graphs-section h3 {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: normal;
+  margin-bottom: 1rem;
+}
+
+.time-period-selector {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.period-btn {
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  font-family: inherit;
+  background: transparent;
+  color: #fff;
+  border: 1px solid #fff;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.period-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.period-btn.active {
+  background: #fff;
+  color: #000;
+}
+
+.graphs-container {
+  margin: 1.5rem auto;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+#performance-chart {
+  max-width: 100%;
+  height: auto;
+}
+
+.metric-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  font-size: 1rem;
+}
+
+.metric-toggles label {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+}
+
+.metric-toggle {
+  cursor: pointer;
+}
+
+/* Individual Stimuli Accuracy Graph */
+.stimuli-graph-section {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stimuli-graph-section h4 {
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: normal;
+  margin-bottom: 1rem;
+}
+
+.stimuli-graph-container {
+  margin: 1rem auto;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+#stimuli-accuracy-chart {
+  max-width: 100%;
+  height: auto;
+}
+
+@media (max-width: 768px) {
+  .line-graphs-section {
+    font-size: 0.9rem;
+  }
+  
+  .period-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+  }
+  
+  .metric-toggles {
+    font-size: 0.85rem;
+    gap: 0.5rem;
+  }
+}
+
 /* Excellence Dashboard */
 .excellence-dashboard {
   margin-top: 1.5rem;
