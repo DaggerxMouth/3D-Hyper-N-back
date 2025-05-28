@@ -2383,6 +2383,7 @@ function updateStimuliAccuracyDisplay(totals) {
     }
   });
 }
+}
 
 
 
