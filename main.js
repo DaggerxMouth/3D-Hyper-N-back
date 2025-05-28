@@ -491,17 +491,29 @@ function getMicroLevelComponents(microLevel) {
   return { nLevel, microProgress };
 }
 
-// Function to get speed target based on micro-level and base delay
 function getSpeedTarget(microLevel) {
   const { nLevel, microProgress } = getMicroLevelComponents(microLevel);
   
-  // Within each N-level, speed scales from 100% to 50% of baseDelay
-const levelStartSpeed = baseDelay;  // e.g., 5000ms at x.00
-const levelEndSpeed = baseDelay * 0.5;  // e.g., 2500ms at x.99
+  // Determine which phase we're in and calculate relative progress within that phase
+  let phaseProgress;
+  if (microProgress <= 0.33) {
+    // Phase 1: 0-33 levels
+    phaseProgress = microProgress / 0.33;
+  } else if (microProgress <= 0.66) {
+    // Phase 2: 34-66 levels
+    phaseProgress = (microProgress - 0.34) / 0.32;
+  } else {
+    // Phase 3: 67-99 levels
+    phaseProgress = (microProgress - 0.67) / 0.32;
+  }
   
-  // Speed decreases as decimal increases (0.00 to 0.99)
+  // All phases go from baseDelay (5000ms) to 3000ms
+  const levelStartSpeed = baseDelay;
+  const levelEndSpeed = 3000;
+  
+  // Calculate speed based on phase progress
   const speedRange = levelStartSpeed - levelEndSpeed;
-  const target = levelStartSpeed - (speedRange * microProgress);
+  const target = levelStartSpeed - (speedRange * phaseProgress);
   
   return Math.round(target);
 }
@@ -1682,12 +1694,7 @@ if (microLevelCard && !microLevelCard.querySelector('.speed-info')) {
   }
 
   
-  // Update individual stimuli accuracy display
-  updateStimuliAccuracyDisplay(stimuliTotals);
-  // Store the last displayed dimension
-localStorage.setItem("last-dim", validDim);
-
-  // Update speed range display
+// Update speed range display
 const speedRangeStart = document.querySelector("#speed-range-start");
 const speedRangeEnd = document.querySelector("#speed-range-end");
 
@@ -1695,7 +1702,9 @@ if (speedRangeStart) {
   speedRangeStart.innerHTML = baseDelay + "ms";
 }
 if (speedRangeEnd) {
-  speedRangeEnd.innerHTML = Math.round(baseDelay * 0.5) + "ms";
+  // Show the actual minimum speed (3000ms or 50% of baseDelay, whichever is higher)
+  const minSpeed = Math.max(3000, Math.round(baseDelay * 0.5));
+  speedRangeEnd.innerHTML = minSpeed + "ms";
 }
 
 // Also add d-prime average to stats if available
@@ -2531,19 +2540,42 @@ function selectRandomStimuli(numStimuli = 2) {
 }
 
 function getGameCycle(n) {
+  // Adjust target matches based on micro-level progress
+const { nLevel, microProgress } = getMicroLevelComponents(currentMicroLevel);
+if (microProgress <= 0.33) {
+  targetNumOfStimuli = 2;
+} else if (microProgress <= 0.66) {
+  targetNumOfStimuli = 3;
+} else {
+  targetNumOfStimuli = 4;
+}
+console.log(`Micro-progress: ${microProgress.toFixed(2)}, Target matches: ${targetNumOfStimuli}`);
   // Reset total matching count at the start
   matchingStimuli = 0;
   // Calculate lure frequency based on micro-level progress
   const { nLevel, microProgress } = getMicroLevelComponents(currentMicroLevel);
   
-  // Scale lure frequency based on micro-level progress (10% at .00, up to 25% at .50, stays at 25% after)
-  const baseLureFreq = 0.05;
-  const maxLureFreq = 0.25;
-  // Cap progress at 0.5 so lures max out at x.50
-  const cappedProgress = Math.min(microProgress, 0.5);
-  const lureFrequency = baseLureFreq + (cappedProgress * 2 * (maxLureFreq - baseLureFreq));
-  
-  console.log(`Current micro-level: ${formatMicroLevel(currentMicroLevel)}, Lure frequency: ${(lureFrequency * 100).toFixed(1)}%`);
+// Scale lure frequency based on micro-level progress with three phases
+const baseLureFreq = 0.05;
+const maxLureFreq = 0.40;
+
+// Determine which phase we're in and calculate relative progress within that phase
+let phaseProgress;
+if (microProgress <= 0.33) {
+  // Phase 1: 0-33 levels
+  phaseProgress = microProgress / 0.33;
+} else if (microProgress <= 0.66) {
+  // Phase 2: 34-66 levels
+  phaseProgress = (microProgress - 0.34) / 0.32;
+} else {
+  // Phase 3: 67-99 levels
+  phaseProgress = (microProgress - 0.67) / 0.32;
+}
+
+// Scale lure frequency within the current phase
+const lureFrequency = baseLureFreq + (phaseProgress * (maxLureFreq - baseLureFreq));
+
+console.log(`Current micro-level: ${formatMicroLevel(currentMicroLevel)}, Phase progress: ${(phaseProgress * 100).toFixed(0)}%, Lure frequency: ${(lureFrequency * 100).toFixed(1)}%`);
   
   let walls;
   if (wallsEnabled) {
@@ -3571,6 +3603,21 @@ loadHistory();
 const speedDisplay = document.querySelector("#speed-display");
 if (speedDisplay) {
   speedDisplay.innerHTML = getSpeedTarget(currentMicroLevel);
+}
+// Update match count display based on phase
+const configDisplay = document.querySelector("#config-display");
+if (configDisplay) {
+  const activeCount = getCurrentConfigKey();
+  const { nLevel, microProgress } = getMicroLevelComponents(currentMicroLevel);
+  let matchCount;
+  if (microProgress <= 0.33) {
+    matchCount = "2 matches";
+  } else if (microProgress <= 0.66) {
+    matchCount = "3 matches";
+  } else {
+    matchCount = "4 matches";
+  }
+  configDisplay.innerHTML = activeCount + "D (" + matchCount + ")";
 }
 // Initialize config display
 const configDisplay = document.querySelector("#config-display");
