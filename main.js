@@ -287,7 +287,18 @@ let sessionMetrics = {
   nPlusLureEncounters: 0,
   nPlusLureCorrectRejections: 0,
   nPlusLureFalseAlarms: 0,
-  nPlusLureResistance: 0
+  nPlusLureResistance: 0,
+  totalLureResistance: 0,
+  accuracy: 0,
+  postLureTrials: [],
+  postLurePerformance: 0,
+  responseTimes: [],
+  meanRT: 0,
+  medianRT: 0,
+  hitRT: 0,
+  correctRejectionRT: 0,
+  speedScore: 0,
+  rtImprovement: 0
 };
 
 // Session history for baseline calculation
@@ -784,18 +795,25 @@ function nLevelInputHandler(evt, defVal) {
     nLevel = Math.floor(currentMicroLevel);
   } else {
     // Parse the input value as a float
-    const inputValue = parseFloat(nLevelInput.value);
+    let inputValue = parseFloat(nLevelInput.value);
+    
+    // If parsing failed, use current value
+    if (isNaN(inputValue)) {
+      inputValue = currentMicroLevel;
+      nLevelInput.value = formatMicroLevel(currentMicroLevel);
+    }
     
     // Validate the input
-if (isNaN(inputValue) || inputValue < 2 || inputValue > 9.99) {
-  nLevelInput.classList.add("input-incorrect");
-  return; // Don't update if invalid
-} else {
-  nLevelInput.classList.remove("input-incorrect");
-}
+    if (inputValue < 2 || inputValue > 9.99) {
+      nLevelInput.classList.add("input-incorrect");
+      // Clamp the value but don't return
+      inputValue = Math.min(Math.max(inputValue, 2), 9.99);
+    } else {
+      nLevelInput.classList.remove("input-incorrect");
+    }
 
-// Update the micro-level and standard nLevel
-currentMicroLevel = Math.min(Math.max(inputValue, 2), 9.99);
+    // Update the micro-level and standard nLevel
+    currentMicroLevel = inputValue;
     nLevel = Math.floor(currentMicroLevel);
     saveSettings();
   }
@@ -803,10 +821,10 @@ currentMicroLevel = Math.min(Math.max(inputValue, 2), 9.99);
   // Always update the display to show the micro-level format
   nBackDisplay.innerHTML = formatMicroLevel(currentMicroLevel);
   // Update speed display
-const speedDisplay = document.querySelector("#speed-display");
-if (speedDisplay) {
-  speedDisplay.innerHTML = getSpeedTarget(currentMicroLevel);
-}
+  const speedDisplay = document.querySelector("#speed-display");
+  if (speedDisplay) {
+    speedDisplay.innerHTML = getSpeedTarget(currentMicroLevel);
+  }
 }
 
 function sceneDimmerInputHandler(evt, defVal) {
@@ -855,11 +873,26 @@ function targetStimuliInputHandler(evt, defVal) {
     targetStimuliInput.value = defVal;
     targetNumOfStimuli = defVal;
   } else {
-    targetNumOfStimuli = Math.min(Math.max(+targetStimuliInput.value, 1), 30);
+    let inputValue = parseInt(targetStimuliInput.value);
+    
+    // If parsing failed, use current value
+    if (isNaN(inputValue)) {
+      inputValue = targetNumOfStimuli;
+      targetStimuliInput.value = targetNumOfStimuli;
+    }
+    
+    // Clamp to valid range
+    targetNumOfStimuli = Math.min(Math.max(inputValue, 1), 30);
+    
+    // Update the input field to show the clamped value
+    if (targetNumOfStimuli !== inputValue) {
+      targetStimuliInput.value = targetNumOfStimuli;
+    }
+    
     saveSettings();
   }
 
-  if (+targetStimuliInput.value < 1 || +targetStimuliInput.value > 30) {
+  if (targetNumOfStimuli < 1 || targetNumOfStimuli > 30) {
     targetStimuliInput.classList.add("input-incorrect");
   } else {
     targetStimuliInput.classList.remove("input-incorrect");
@@ -871,7 +904,22 @@ function baseDelayInputHandler(evt, defVal) {
     baseDelayInput.value = defVal;
     baseDelay = defVal;
   } else {
-    baseDelay = Math.min(Math.max(+baseDelayInput.value, 2000), 20000);
+    let inputValue = parseInt(baseDelayInput.value);
+    
+    // If parsing failed, use current value
+    if (isNaN(inputValue)) {
+      inputValue = baseDelay;
+      baseDelayInput.value = baseDelay;
+    }
+    
+    // Clamp to valid range
+    baseDelay = Math.min(Math.max(inputValue, 2000), 20000);
+    
+    // Update the input field to show the clamped value
+    if (baseDelay !== inputValue) {
+      baseDelayInput.value = baseDelay;
+    }
+    
     saveSettings();
     // Update speed display with new base delay
     const speedDisplay = document.querySelector("#speed-display");
@@ -880,7 +928,7 @@ function baseDelayInputHandler(evt, defVal) {
     }
   }
 
-  if (+baseDelayInput.value < 2000 || +baseDelayInput.value > 20000) {
+  if (baseDelay < 2000 || baseDelay > 20000) {
     baseDelayInput.classList.add("input-incorrect");
   } else {
     baseDelayInput.classList.remove("input-incorrect");
@@ -892,11 +940,26 @@ function maxAllowedMistakesInputHandler(evt, defVal) {
     maxAllowedMistakesInput.value = defVal;
     maxAllowedMistakes = defVal;
   } else {
-    maxAllowedMistakes = Math.min(Math.max(+maxAllowedMistakesInput.value, 0), 30);
+    let inputValue = parseInt(maxAllowedMistakesInput.value);
+    
+    // If parsing failed, use current value
+    if (isNaN(inputValue)) {
+      inputValue = maxAllowedMistakes;
+      maxAllowedMistakesInput.value = maxAllowedMistakes;
+    }
+    
+    // Clamp to valid range
+    maxAllowedMistakes = Math.min(Math.max(inputValue, 0), 30);
+    
+    // Update the input field to show the clamped value
+    if (maxAllowedMistakes !== inputValue) {
+      maxAllowedMistakesInput.value = maxAllowedMistakes;
+    }
+    
     saveSettings();
   }
 
-  if (+maxAllowedMistakesInput.value < 0 || +maxAllowedMistakesInput.value > 30) {
+  if (maxAllowedMistakes < 0 || maxAllowedMistakes > 30) {
     maxAllowedMistakesInput.classList.add("input-incorrect");
   } else {
     maxAllowedMistakesInput.classList.remove("input-incorrect");
@@ -929,11 +992,26 @@ function numStimuliSelectInputHandler(evt, defVal) {
     numStimuliSelectInput.value = defVal;
     numStimuliSelect = defVal;
   } else {
-    numStimuliSelect = Math.min(Math.max(+numStimuliSelectInput.value, 1), 9);
+    let inputValue = parseInt(numStimuliSelectInput.value);
+    
+    // If parsing failed, use current value
+    if (isNaN(inputValue)) {
+      inputValue = numStimuliSelect;
+      numStimuliSelectInput.value = numStimuliSelect;
+    }
+    
+    // Clamp to valid range
+    numStimuliSelect = Math.min(Math.max(inputValue, 1), 9);
+    
+    // Update the input field to show the clamped value
+    if (numStimuliSelect !== inputValue) {
+      numStimuliSelectInput.value = numStimuliSelect;
+    }
+    
     saveSettings();
   }
 
-  if (+numStimuliSelectInput.value < 1 || +numStimuliSelectInput.value > 9) {
+  if (numStimuliSelect < 1 || numStimuliSelect > 9) {
     numStimuliSelectInput.classList.add("input-incorrect");
   } else {
     numStimuliSelectInput.classList.remove("input-incorrect");
@@ -1127,6 +1205,8 @@ function reloadBindKeys() {
 
 function saveBindings() {
   const bindings = [...document.querySelectorAll("[id^='binding-']")];
+  let allValid = true;
+  
   for (let binding of bindings) {
     const stim = binding.getAttribute("id").replace("binding-", "");
     const key = binding.value.toLowerCase()[0];
@@ -1134,12 +1214,23 @@ function saveBindings() {
     if (stim && key) {
       keyBindings[stim] = key;
     } else {
-      alert("All buttons need a binding in order to continue.");
+      allValid = false;
     }
   }
-  localStorage.setItem(LS_BINDINGS_KEY, JSON.stringify(keyBindings));
-  bindDialogContent.parentElement.close();
-  reloadBindKeys();
+  
+  if (!allValid) {
+    alert("All buttons need a binding in order to continue.");
+    return;
+  }
+  
+  try {
+    localStorage.setItem(LS_BINDINGS_KEY, JSON.stringify(keyBindings));
+    bindDialogContent.parentElement.close();
+    reloadBindKeys();
+  } catch (e) {
+    console.error("Failed to save bindings:", e);
+    alert("Failed to save key bindings. They will be reset on next reload.");
+  }
 }
 
 function loadBindings() {
@@ -1158,29 +1249,39 @@ function loadBindings() {
 
 
 function saveHistory() {
-  // Create a backup of current history before saving
-  const backupKey = LS_HISTORY_KEY + "_backup";
-  const currentHistory = localStorage.getItem(LS_HISTORY_KEY);
-  if (currentHistory) {
-    localStorage.setItem(backupKey, currentHistory);
-  }
-  
-  // Ensure we're not saving null or undefined
-  if (history) {
-    localStorage.setItem(LS_HISTORY_KEY, JSON.stringify(history));
-  } else {
-    console.error("Attempted to save undefined history");
-    // Restore from backup if history is undefined
-    const backup = localStorage.getItem(backupKey);
-    if (backup) {
-      history = JSON.parse(backup);
-      localStorage.setItem(LS_HISTORY_KEY, backup);
+  try {
+    // Create a backup of current history before saving
+    const backupKey = LS_HISTORY_KEY + "_backup";
+    const currentHistory = localStorage.getItem(LS_HISTORY_KEY);
+    if (currentHistory) {
+      localStorage.setItem(backupKey, currentHistory);
+    }
+    
+    // Ensure we're not saving null or undefined
+    if (history) {
+      localStorage.setItem(LS_HISTORY_KEY, JSON.stringify(history));
     } else {
-      // Reset to empty history structure
+      console.error("Attempted to save undefined history");
+      // Restore from backup if history is undefined
+      const backup = localStorage.getItem(backupKey);
+      if (backup) {
+        history = JSON.parse(backup);
+        localStorage.setItem(LS_HISTORY_KEY, backup);
+      } else {
+        // Reset to empty history structure
+        history = {
+          1: {}, 2: {}, 3: {}, 4: {}, 5: {}, 6: {}, 7: {}, 8: {}, 9: {}
+        };
+        localStorage.setItem(LS_HISTORY_KEY, JSON.stringify(history));
+      }
+    }
+  } catch (e) {
+    console.error("Failed to save history:", e);
+    // Ensure history object exists even if save failed
+    if (!history) {
       history = {
         1: {}, 2: {}, 3: {}, 4: {}, 5: {}, 6: {}, 7: {}, 8: {}, 9: {}
       };
-      localStorage.setItem(LS_HISTORY_KEY, JSON.stringify(history));
     }
   }
 }
@@ -1391,7 +1492,11 @@ function saveSettings() {
     nextLevelThreshold,
     numStimuliSelect
   };
-  localStorage.setItem(LS_SETTINGS_KEY, JSON.stringify(settings));
+  try {
+    localStorage.setItem(LS_SETTINGS_KEY, JSON.stringify(settings));
+  } catch (e) {
+    console.error("Failed to save settings:", e);
+  }
   return settings;
 }
 
@@ -1567,6 +1672,9 @@ if (entries.length === 0) {
   noDataMsg.innerHTML = `No data yet for ${validDim}D configuration.<br>Play some sessions to see stats!`;
   bars.appendChild(noDataMsg);
 }
+
+// Update stimuli accuracy display
+updateStimuliAccuracyDisplay(stimuliTotals);
 
 // Process history entries if they exist
 if (entries.length > 0) {
@@ -2438,11 +2546,34 @@ function wow(htmlElement, cssClass, delay) {
 }
 
 function speak(text) {
-  let utter = new SpeechSynthesisUtterance();
-  utter.lang = 'en-US';
-  utter.text = text;
-  speechSynthesis.speak(utter);
-  return utter;
+  try {
+    // Check if speech synthesis is available
+    if (!('speechSynthesis' in window)) {
+      console.warn('Speech synthesis not supported in this browser');
+      return null;
+    }
+    
+    // Cancel any ongoing speech
+    speechSynthesis.cancel();
+    
+    let utter = new SpeechSynthesisUtterance();
+    utter.lang = 'en-US';
+    utter.text = text;
+    utter.volume = 1.0;
+    utter.rate = 1.0;
+    utter.pitch = 1.0;
+    
+    // Add error handling
+    utter.onerror = function(event) {
+      console.error('Speech synthesis error:', event);
+    };
+    
+    speechSynthesis.speak(utter);
+    return utter;
+  } catch (e) {
+    console.error('Failed to speak:', e);
+    return null;
+  }
 }
 
 function writeWord(word) {
@@ -3166,76 +3297,88 @@ if (oldLureElement) {
    // Animating stimuli
     if (wallsEnabled && walls && walls[i]) {
       currWalls = walls[i];
-      floors.forEach(floor =>
-        setFloorBackground(
-          floor,
-          sceneDimmer,
-          tileAHexColor,
-          currWalls.symbol
-        )
-      );
+      if (currWalls && currWalls.symbol) {
+        floors.forEach(floor =>
+          setFloorBackground(
+            floor,
+            sceneDimmer,
+            tileAHexColor,
+            currWalls.symbol
+          )
+        );
+      }
     }
     if (cameraEnabled && cameras && cameras[i]) {
-      currCamera = cameras[i];
-      if (currCamera) {
-        let [cx, cy] = currCamera.symbol.split("&");
-        rotateCamera(cx, cy);
-      }
+  currCamera = cameras[i];
+  if (currCamera && currCamera.symbol) {
+    let [cx, cy] = currCamera.symbol.split("&");
+    if (cx !== undefined && cy !== undefined) {
+      rotateCamera(cx, cy);
     }
-if (faceEnabled && faces && faces[i]) {
-      currFace = faces[i];
-      if (currFace) {
-        if (colorEnabled && colors && colors[i]) {
-          currColor = colors[i];
-          if (currColor) {
-            wow(faceEls[currFace.symbol - 1], currColor.symbol, baseDelay - 500);
-          }
-        } else {
-          wow(faceEls[currFace.symbol - 1], "col-a", baseDelay - 500);
-        }
-      }
-    } else if (colorEnabled && colors && colors[i]) {
-      currColor = colors[i];
-      if (currColor) {
-        wow(faceEls[0], currColor.symbol, baseDelay - 500);
-      }
-    }
-if (positionEnabled && positions && positions[i]) {
-      currPosition = positions[i];
-      if (currPosition) {
-        move(cube, currPosition.symbol);
-      }
-    }
-    
-    if (wordEnabled && words && words[i]) {
-      currWord = words[i];
-      if (currWord) {
-        writeWord(currWord.symbol);
-      }
-    }
-   if (cornerEnabled && corners && corners[i]) {
-      currCorner = corners[i];
-      if (currCorner) {
-        move(innerCube, currCorner.symbol);
-      }
-      
-      if (shapeEnabled) {
-  currShape = shapes[i];
-  // Remove all shape classes first
-  shape.classList.remove("triangle", "square", "circle");
-  // Add the new shape class
-  shape.classList.add(currShape.symbol);
-  // Apply the wow animation
-  wow(shape, "shape-active", baseDelay - 300);
+  }
 }
-      
-    }
-    if (soundEnabled && sounds && sounds[i]) {
-      currSound = sounds[i];
-      if (currSound) {
-        speak(currSound.symbol);
+
+if (faceEnabled && faces && faces[i]) {
+  currFace = faces[i];
+  if (currFace && currFace.symbol) {
+  const faceIndex = currFace.symbol - 1;
+  if (faceIndex >= 0 && faceIndex < faceEls.length) {
+    if (colorEnabled && colors && colors[i]) {
+      currColor = colors[i];
+      if (currColor && currColor.symbol) {
+        wow(faceEls[faceIndex], currColor.symbol, baseDelay - 500);
       }
+    } else {
+      wow(faceEls[faceIndex], "col-a", baseDelay - 500);
     }
+  }
+}
+} else if (colorEnabled && colors && colors[i]) {
+  currColor = colors[i];
+  if (currColor && currColor.symbol) {
+    wow(faceEls[0], currColor.symbol, baseDelay - 500);
+  }
+}
+
+if (positionEnabled && positions && positions[i]) {
+  currPosition = positions[i];
+  if (currPosition && currPosition.symbol) {
+    move(cube, currPosition.symbol);
+  }
+}
+
+if (wordEnabled && words && words[i]) {
+  currWord = words[i];
+  if (currWord && currWord.symbol) {
+    writeWord(currWord.symbol);
+  }
+}
+
+if (cornerEnabled && corners && corners[i]) {
+  currCorner = corners[i];
+  if (currCorner && currCorner.symbol) {
+    move(innerCube, currCorner.symbol);
+  }
+  
+  if (shapeEnabled && shapes && shapes[i]) {
+    currShape = shapes[i];
+    if (currShape && currShape.symbol) {
+      // Remove all shape classes first
+      shape.classList.remove("triangle", "square", "circle");
+      // Add the new shape class
+      shape.classList.add(currShape.symbol);
+      // Apply the wow animation
+      wow(shape, "shape-active", baseDelay - 300);
+    }
+  }
+}
+
+if (soundEnabled && sounds && sounds[i]) {
+  currSound = sounds[i];
+  if (currSound && currSound.symbol) {
+    speak(currSound.symbol);
+  }
+}
     
     // Increase block index
     i++;
@@ -3311,17 +3454,29 @@ function stop() {
     return;
   }
   
-// Reset game UI and timers
-resetPoints();
-resetBlock();
-resetIntervals();
-
-// Stop the game
-isRunning = false;
-
-speak("Stop.");
-document.querySelector(".stop").classList.add("active");
-document.querySelector(".play").classList.remove("active");
+  // Stop the game first to prevent new intervals from being created
+  isRunning = false;
+  
+  // Cancel any ongoing speech
+  if ('speechSynthesis' in window) {
+    speechSynthesis.cancel();
+  }
+  
+  // Reset game UI and timers
+  resetPoints();
+  resetBlock();
+  resetIntervals();
+  
+  // Clear intervals array after resetting
+  intervals = [];
+  
+  // Announce stop after cancelling previous speech
+  setTimeout(() => {
+    speak("Stop.");
+  }, 100);
+  
+  document.querySelector(".stop").classList.add("active");
+  document.querySelector(".play").classList.remove("active");
 }
 
 function checkHandler(stimulus) {
@@ -3594,6 +3749,49 @@ document.addEventListener("keydown", evt  => {
 // Add event listener for numStimuliSelectInput
 numStimuliSelectInput.addEventListener("change", numStimuliSelectInputHandler);
 
+// Set up dialog close button event listeners
+document.addEventListener('DOMContentLoaded', function() {
+  // Recap dialog close button
+  const recapCloseBtn = document.querySelector('#recap-dialog .close-button');
+  if (recapCloseBtn) {
+    recapCloseBtn.addEventListener('click', function() {
+      document.querySelector('#recap-dialog').close();
+    });
+  }
+  
+  // Stats dialog close button
+  const statsCloseBtn = document.querySelector('#stats-dialog .close-button');
+  if (statsCloseBtn) {
+    statsCloseBtn.addEventListener('click', function() {
+      document.querySelector('#stats-dialog').close();
+    });
+  }
+  
+  // Bind dialog close button
+  const bindCloseBtn = document.querySelector('#bind-dialog .close-button');
+  if (bindCloseBtn) {
+    bindCloseBtn.addEventListener('click', function() {
+      document.querySelector('#bind-dialog').close();
+    });
+  }
+});
+
+// Global error handler for debugging
+window.addEventListener('error', function(event) {
+  console.error('Global error caught:', {
+    message: event.message,
+    filename: event.filename,
+    line: event.lineno,
+    column: event.colno,
+    error: event.error
+  });
+});
+
+// Handle unhandled promise rejections
+window.addEventListener('unhandledrejection', function(event) {
+  console.error('Unhandled promise rejection:', event.reason);
+});
+
 // Initialize the application
 loadBindings();
 loadSettings();
@@ -3602,25 +3800,4 @@ loadHistory();
 const speedDisplay = document.querySelector("#speed-display");
 if (speedDisplay) {
   speedDisplay.innerHTML = getSpeedTarget(currentMicroLevel);
-}
-// Update match count display based on phase
-const configDisplay = document.querySelector("#config-display");
-if (configDisplay) {
-  const activeCount = getCurrentConfigKey();
-  const { nLevel, microProgress } = getMicroLevelComponents(currentMicroLevel);
-  let matchCount;
-  if (microProgress <= 0.33) {
-    matchCount = "2 matches";
-  } else if (microProgress <= 0.66) {
-    matchCount = "3 matches";
-  } else {
-    matchCount = "4 matches";
-  }
-  configDisplay.innerHTML = activeCount + "D (" + matchCount + ")";
-}
-// Initialize config display
-const configDisplay = document.querySelector("#config-display");
-if (configDisplay) {
-  const activeCount = getCurrentConfigKey();
-  configDisplay.innerHTML = activeCount + "D";
 }
