@@ -2956,6 +2956,7 @@ console.log("Game length:", length, "Actual lengths:", actualLengths);
       resWrong.innerHTML = mistakes;
 
 // Define level variables early for scope access
+      let oldMicroLevel = currentMicroLevel;
       let originalLevel = nLevel;
       let newLevel;
       let newMicroLevel;
@@ -2993,6 +2994,29 @@ levelChanged = newLevel !== originalLevel;
 
 // Update micro-level
 currentMicroLevel = newMicroLevel;
+
+// Check for phase transitions and reset baseline
+const oldPhase = oldMicroLevel - Math.floor(oldMicroLevel);
+const newPhase = newMicroLevel - Math.floor(newMicroLevel);
+
+// Detect phase transitions
+const wasPhase1 = oldPhase <= 0.33;
+const wasPhase2 = oldPhase > 0.33 && oldPhase <= 0.66;
+const wasPhase3 = oldPhase > 0.66;
+
+const isPhase1 = newPhase <= 0.33;
+const isPhase2 = newPhase > 0.33 && newPhase <= 0.66;
+const isPhase3 = newPhase > 0.66;
+
+// Check if we've moved to a new phase or crossed an integer boundary
+const phaseChanged = (wasPhase1 && !isPhase1) || (wasPhase2 && !isPhase2) || (wasPhase3 && !isPhase3);
+const crossedInteger = Math.floor(oldMicroLevel) !== Math.floor(newMicroLevel);
+
+if (phaseChanged || crossedInteger) {
+  console.log(`Phase transition detected! Resetting baseline for config ${getCurrentConfigKey()}`);
+  // Reset session history for current configuration
+  sessionHistoriesByConfig[getCurrentConfigKey()] = [];
+}
 
      const historyPoint = {
   nLevel,
