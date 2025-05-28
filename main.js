@@ -1315,7 +1315,14 @@ function saveHistory() {
 }
 
 function loadHistory() {
-  const _history = JSON.parse(localStorage.getItem(LS_HISTORY_KEY));
+  let _history;
+  try {
+    _history = JSON.parse(localStorage.getItem(LS_HISTORY_KEY));
+  } catch (e) {
+    console.error("Failed to parse history from localStorage:", e);
+    _history = null;
+  }
+  
   if (_history) {
     // Use deep copy to avoid reference issues
     history = deepCopy(_history);
@@ -1610,6 +1617,7 @@ function getBar(n) {
 function toggleStats(_dim) {
   // Initialize Chart.js instance for performance graphs
   let performanceChart = null;
+  let stimuliAccuracyChart = null;
   
   // Function to update the performance chart
   function updatePerformanceChart(dimension, period) {
@@ -1773,8 +1781,15 @@ function toggleStats(_dim) {
         
         return count > 0 ? sum / count : null;
       });
+    });
+    
+    return {
+      labels: filteredDates,
+      datasets: datasets
+    };
+  }
 
-      // Initialize stimuli accuracy chart instance
+  // Initialize stimuli accuracy chart instance
   let stimuliAccuracyChart = null;
   
   // Function to update stimuli accuracy chart
@@ -1934,13 +1949,83 @@ function toggleStats(_dim) {
         });
       }
       
-      datasets.push({
-        label: metric.charAt(0).toUpperCase() + metric.slice(1),
-        data: data,
-        borderColor: metricColors[metric],
-        backgroundColor: metricColors[metric] + '33',
-        tension: 0.1
+    
+    return {
+      labels: filteredDates,
+      datasets: datasets
+    };
+  }
+
+  // Function to prepare stimuli accuracy chart data
+  function prepareStimuliChartData(dimension, period) {
+    const _history = history[dimension] || {};
+    const dates = Object.keys(_history).sort();
+    
+    // Filter dates based on period
+    const now = new Date();
+    const filteredDates = dates.filter(date => {
+      const d = new Date(date);
+      switch(period) {
+        case 'day':
+          return (now - d) <= 86400000;
+        case 'week':
+          return (now - d) <= 604800000;
+        case 'month':
+          return (now - d) <= 2592000000;
+        case 'all':
+        default:
+          return true;
+      }
+    });
+    
+    // Stimuli types and colors
+    const stimuliTypes = ['walls', 'camera', 'face', 'position', 'word', 'shape', 'corner', 'sound', 'color'];
+    const stimuliColors = {
+      walls: '#FF6384',
+      camera: '#36A2EB',
+      face: '#FFCE56',
+      position: '#4BC0C0',
+      word: '#9966FF',
+      shape: '#FF9F40',
+      corner: '#FF6384',
+      sound: '#C9CBCF',
+      color: '#4BC0C0'
+    };
+    
+    // Prepare datasets for each stimulus type
+    const datasets = [];
+    
+    stimuliTypes.forEach(stimulus => {
+      const data = filteredDates.map(date => {
+        const dayData = _history[date];
+        if (!dayData || !dayData.length) return null;
+        
+        let totalRight = 0;
+        let totalMatching = 0;
+        
+        dayData.forEach(point => {
+          if (point.stimuliData && point.stimuliData[stimulus]) {
+            const stimData = point.stimuliData[stimulus];
+            if (stimData.enabled && stimData.matching > 0) {
+              totalRight += stimData.right || 0;
+              totalMatching += stimData.matching || 0;
+            }
+          }
+        });
+        
+        return totalMatching > 0 ? (totalRight / totalMatching) * 100 : null;
       });
+      
+      // Only add dataset if there's at least one non-null value
+      if (data.some(v => v !== null)) {
+        datasets.push({
+          label: stimulus.charAt(0).toUpperCase() + stimulus.slice(1),
+          data: data,
+          borderColor: stimuliColors[stimulus],
+          backgroundColor: stimuliColors[stimulus] + '33',
+          tension: 0.1
+        });
+      }
     });
     
     return {
@@ -1948,6 +2033,7 @@ function toggleStats(_dim) {
       datasets: datasets
     };
   }
+
   // If no dimension specified and dialog is already open, close it
   if (!_dim && statsDialogContent.parentElement.hasAttribute("open")) {
     statsDialogContent.parentElement.close();
@@ -1959,7 +2045,11 @@ function toggleStats(_dim) {
 
   // Add event listeners for time period buttons
   document.querySelectorAll('.period-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
+    // Remove any existing listeners first
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+    
+    newBtn.addEventListener('click', function() {
       // Remove active class from all buttons
       document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
       // Add active class to clicked button
@@ -1974,14 +2064,104 @@ function toggleStats(_dim) {
   
   // Add event listeners for metric toggles
   document.querySelectorAll('.metric-toggle').forEach(checkbox => {
-    checkbox.addEventListener('change', function() {
+    // Remove any existing listeners first
+    const newCheckbox = checkbox.cloneNode(true);
+    checkbox.parentNode.replaceChild(newCheckbox, checkbox);
+    
+    newCheckbox.addEventListener('change', function() {
       // Update chart when metrics are toggled
       const activePeriod = document.querySelector('.period-btn.active').dataset.period;
       const currentDim = localStorage.getItem("last-dim") || 1;
       updatePerformanceChart(currentDim, activePeriod);
     });
   });
-  
+
+// Function to update stimuli accuracy chart
+  function updateStimuliAccuracyChart(dimension, period) {
+    const ctx = document.getElementById('stimuli-accuracy-chart');
+    if (!ctx) return;
+    
+    // Destroy existing chart if it exists
+    if (stimuliAccuracyChart) {
+      stimuliAccuracyChart.destroy();
+    }
+    
+    // Get data for the selected dimension and period
+    const chartData = prepareStimuliChartData(dimension, period);
+    
+    // Chart configuration
+    const config = {
+      type: 'line',
+      data: chartData,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: {
+              color: '#fff',
+              font: {
+                family: 'Nova Square',
+                size: 10
+              }
+            }
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleFont: {
+              family: 'Nova Square'
+            },
+            bodyFont: {
+              family: 'Nova Square'
+            },
+            callbacks: {
+              label: function(context) {
+                return context.dataset.label + ': ' + 
+                       (context.parsed.y ? context.parsed.y.toFixed(1) + '%' : 'N/A');
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            },
+            ticks: {
+              color: '#fff',
+              font: {
+                family: 'Nova Square',
+                size: 10
+              }
+            }
+          },
+          y: {
+            min: 0,
+            max: 100,
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            },
+            ticks: {
+              color: '#fff',
+              font: {
+                family: 'Nova Square',
+                size: 10
+              },
+              callback: function(value) {
+                return value + '%';
+              }
+            }
+          }
+        }
+      }
+    };
+    
+    // Create new chart
+    stimuliAccuracyChart = new Chart(ctx, config);
+  }
+    
   // Initialize chart with default settings
   setTimeout(() => {
     const currentDim = localStorage.getItem("last-dim") || 1;
@@ -3001,7 +3181,11 @@ function selectRandomStimuli(numStimuli = 2) {
   
   // Randomly select numStimuli different stimuli
   const selectedIndices = [];
-  while (selectedIndices.length < numStimuli) {
+  let attempts = 0;
+  const maxAttempts = 100; // Prevent infinite loop
+  
+  while (selectedIndices.length < numStimuli && attempts < maxAttempts) {
+    attempts++;
     const randomIndex = Math.floor(Math.random() * stimuliTypes.length);
     
     // Skip if already selected
@@ -3446,7 +3630,7 @@ historyPoint.outcome = newLevel > originalLevel ? 1 : (newLevel < originalLevel 
       const speedTargetElement = document.querySelector("#sc-res-speed-target");
       const speedChangeElement = document.querySelector("#sc-res-speed-change");
       
-      if (speedTargetElement) {
+      if (speedTargetElement && speedChangeElement) {
         const currentSpeed = getSpeedTarget(currentMicroLevel);
         const previousSpeed = getSpeedTarget(historyPoint.microLevel);
         
@@ -3469,7 +3653,11 @@ historyPoint.outcome = newLevel > originalLevel ? 1 : (newLevel < originalLevel 
         }
       }
 
-      localStorage.setItem("last-dim", dimensions);
+      try {
+    localStorage.setItem("last-dim", dimensions);
+  } catch (e) {
+    console.error("Failed to save dimension to localStorage:", e);
+  }
       
 
       if (levelChanged) {
@@ -3582,13 +3770,13 @@ if (isRunning) {
 
 // Calculate lure resistances if there were any lures
 if (sessionMetrics.n1LureEncounters && sessionMetrics.n1LureEncounters > 0) {
-  sessionMetrics.n1LureResistance = sessionMetrics.n1LureCorrectRejections / sessionMetrics.n1LureEncounters;
+  sessionMetrics.n1LureResistance = (sessionMetrics.n1LureCorrectRejections || 0) / sessionMetrics.n1LureEncounters;
 } else {
   sessionMetrics.n1LureResistance = 1.0; // Default if no lures encountered
 }
 
 if (sessionMetrics.nPlusLureEncounters && sessionMetrics.nPlusLureEncounters > 0) {
-  sessionMetrics.nPlusLureResistance = sessionMetrics.nPlusLureCorrectRejections / sessionMetrics.nPlusLureEncounters;
+  sessionMetrics.nPlusLureResistance = (sessionMetrics.nPlusLureCorrectRejections || 0) / sessionMetrics.nPlusLureEncounters;
 } else {
   sessionMetrics.nPlusLureResistance = 1.0; // Default if no lures encountered
 }
@@ -3767,8 +3955,8 @@ if (oldLureElement) {
 if (faceEnabled && faces && faces[i]) {
   currFace = faces[i];
   if (currFace && currFace.symbol) {
-  const faceIndex = currFace.symbol - 1;
-  if (faceIndex >= 0 && faceIndex < faceEls.length) {
+    const faceIndex = parseInt(currFace.symbol) - 1;
+    if (!isNaN(faceIndex) && faceIndex >= 0 && faceIndex < faceEls.length) {
     if (colorEnabled && colors && colors[i]) {
       currColor = colors[i];
       if (currColor && currColor.symbol) {
@@ -3831,10 +4019,13 @@ if (soundEnabled && sounds && sounds[i]) {
   };
 }
 
+let isTransitioning = false;
+
 function play() {
-  if (isRunning) {
+  if (isRunning || isTransitioning) {
     return;
   }
+  isTransitioning = true;
 
 document.querySelectorAll("dialog").forEach(d => d.close());
 closeOptions();
@@ -3891,14 +4082,17 @@ const sessionHistory = sessionHistoriesByConfig[currentConfig] || [];
 
 
   intervals.push(
-  setInterval(getGameCycle(nLevel), getSpeedTarget(currentMicroLevel))
-);
+    setInterval(getGameCycle(nLevel), getSpeedTarget(currentMicroLevel))
+  );
+  
+  isTransitioning = false;
 }
 
 function stop() {
-  if (!isRunning) {
+  if (!isRunning || isTransitioning) {
     return;
   }
+  isTransitioning = true;
   
   // Stop the game first to prevent new intervals from being created
   isRunning = false;
@@ -3923,6 +4117,8 @@ function stop() {
   
   document.querySelector(".stop").classList.add("active");
   document.querySelector(".play").classList.remove("active");
+  
+  isTransitioning = false;
 }
 
 function checkHandler(stimulus) {
@@ -4152,7 +4348,10 @@ if (curr.isMatching) {
 function calculateAccuracy(correct, missed, wrong) {
   const total = correct + missed + wrong;
   if (total === 0) return 0;
-  return correct / total;
+  // Ensure we're calculating accuracy correctly (correct / total possible)
+  const possibleCorrect = correct + missed;
+  if (possibleCorrect === 0) return 0;
+  return correct / possibleCorrect;
 }
 
 // Set up event listeners
