@@ -9,6 +9,7 @@
 	<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
 	<link rel="stylesheet" href="styles.css">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 
 <body>
@@ -196,18 +197,7 @@
 				<div class="stats-card">
 					<div class="stats-card-title">Current μ-Level</div>
 					<div id="sc-micro-level" class="stats-card-value">-</div>
-				</div>
-				<div class="stats-card">
-					<div class="stats-card-title">Fastest Speed</div>
-					<div id="sc-min-speed" class="stats-card-value">-</div>
-				</div>
-				<div class="stats-card">
-					<div class="stats-card-title">Avg Speed</div>
-					<div id="sc-avg-speed" class="stats-card-value">-</div>
-				</div>
-				<div class="stats-card">
-					<div class="stats-card-title">Slowest Speed</div>
-					<div id="sc-max-speed" class="stats-card-value">-</div>
+					<div id="level-progress-indicator" style="font-size: 0.8rem; margin-top: 0.5rem;"></div>
 				</div>
 			</div>
 
@@ -333,6 +323,42 @@
 					</div>
 				</div>
 			</div>
+			<!-- Line Graphs Section -->
+			<div class="line-graphs-section">
+				<h3>Performance Over Time</h3>
+				
+				<!-- Time Period Selector -->
+				<div class="time-period-selector">
+					<button class="period-btn active" data-period="day">Day</button>
+					<button class="period-btn" data-period="week">Week</button>
+					<button class="period-btn" data-period="month">Month</button>
+					<button class="period-btn" data-period="all">All</button>
+				</div>
+				
+				<!-- Graph Container -->
+				<div class="graphs-container">
+					<canvas id="performance-chart" width="800" height="400"></canvas>
+				</div>
+				
+				<!-- Metric Selector -->
+				<div class="metric-toggles">
+					<label><input type="checkbox" class="metric-toggle" data-metric="right" checked> Right</label>
+					<label><input type="checkbox" class="metric-toggle" data-metric="missed" checked> Missed</label>
+					<label><input type="checkbox" class="metric-toggle" data-metric="wrong" checked> Wrong</label>
+					<label><input type="checkbox" class="metric-toggle" data-metric="dprime"> d'-Prime</label>
+					<label><input type="checkbox" class="metric-toggle" data-metric="baseline"> Baseline</label>
+					<label><input type="checkbox" class="metric-toggle" data-metric="bias"> Bias</label>
+					<label><input type="checkbox" class="metric-toggle" data-metric="lure"> Lure Resist</label>
+				</div>
+				<!-- Individual Stimuli Accuracy Graph -->
+				<div class="stimuli-graph-section">
+					<h4>Individual Stimuli Accuracy Over Time</h4>
+					<div class="stimuli-graph-container">
+						<canvas id="stimuli-accuracy-chart" width="800" height="300"></canvas>
+					</div>
+				</div>
+			</div>
+			
 		</div>
 	</dialog>
 
