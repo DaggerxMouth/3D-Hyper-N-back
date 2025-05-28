@@ -1789,8 +1789,7 @@ function toggleStats(_dim) {
     };
   }
 
-  // Initialize stimuli accuracy chart instance
-  let stimuliAccuracyChart = null;
+
   
   // Function to update stimuli accuracy chart
   function updateStimuliAccuracyChart(dimension, period) {
