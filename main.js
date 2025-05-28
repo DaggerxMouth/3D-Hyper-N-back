@@ -2165,6 +2165,41 @@ function resetBlock() {
   checkCornerBtn.classList.remove("right", "wrong");
   checkSoundBtn.classList.remove("right", "wrong");
   checkColorBtn.classList.remove("right", "wrong");
+  
+  // Clear all visual stimuli
+  // Clear shape
+  const shape = document.querySelector(".shape");
+  if (shape) {
+    shape.classList.remove("triangle", "square", "circle");
+  }
+  
+  // Clear face colors
+  faceEls.forEach(face => {
+    face.classList.remove("col-a", "col-b", "col-c", "col-d", "col-e", "col-f");
+  });
+  
+  // Clear word displays
+  wallWords.forEach(wall => {
+    wall.innerText = "";
+    wall.classList.remove("text-white");
+  });
+  
+  // Reset cube and inner cube positions
+  move(cube, initialCubePosition);
+  move(innerCube, initialInnerCubePosition);
+  
+  // Reset camera rotation
+  rotateCamera(-40, -45);
+  
+  // Reset floor backgrounds to default
+  floors.forEach(floor =>
+    setFloorBackground(
+      floor,
+      sceneDimmer,
+      tileAHexColor,
+      tileBHexColor
+    )
+  );
 }
 
 // Track misses and correct rejections at the end of each stimulus presentation
