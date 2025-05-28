@@ -2274,7 +2274,7 @@ const baselineLureElement = document.querySelector("#sc-baseline-lure");
 if (baselineLureElement) {
   baselineLureElement.innerHTML = (baseline.n1LureResistance * 100).toFixed(0) + "%";
 }
-}
+
 
 function updateStimuliAccuracyDisplay(totals) {
   // Hide all items first
