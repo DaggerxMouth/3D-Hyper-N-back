@@ -1621,329 +1621,82 @@ function getBar(n) {
   return wrap.firstChild;
 }
 
-  // Function to prepare stimuli accuracy chart data
-
-  function prepareStimuliChartData(dimension, period) {
-
+function prepareStimuliChartData(dimension, period) {
     const _history = history[dimension] || {};
-
     const dates = Object.keys(_history).sort();
-
     
-
     // Filter dates based on period
-
     const now = new Date();
-
     const filteredDates = dates.filter(date => {
-
       const d = new Date(date);
-
       switch(period) {
-
         case 'day':
-
           return (now - d) <= 86400000;
-
         case 'week':
-
           return (now - d) <= 604800000;
-
         case 'month':
-
           return (now - d) <= 2592000000;
-
         case 'all':
-
         default:
-
           return true;
-
       }
-
     });
-
     
-
     // Stimuli types and colors
-
     const stimuliTypes = ['walls', 'camera', 'face', 'position', 'word', 'shape', 'corner', 'sound', 'color'];
-
     const stimuliColors = {
-
       walls: '#FF6384',
-
       camera: '#36A2EB',
-
       face: '#FFCE56',
-
       position: '#4BC0C0',
-
       word: '#9966FF',
-
       shape: '#FF9F40',
-
       corner: '#FF6384',
-
       sound: '#C9CBCF',
-
       color: '#4BC0C0'
-
     };
-
     
-
     // Prepare datasets for each stimulus type
-
     const datasets = [];
-
     
-
     stimuliTypes.forEach(stimulus => {
-
       const data = filteredDates.map(date => {
-
         const dayData = _history[date];
-
         if (!dayData || !dayData.length) return null;
-
         
-
         let totalRight = 0;
-
         let totalMatching = 0;
-
         
-
         dayData.forEach(point => {
-
           if (point.stimuliData && point.stimuliData[stimulus]) {
-
             const stimData = point.stimuliData[stimulus];
-
             if (stimData.enabled && stimData.matching > 0) {
-
               totalRight += stimData.right || 0;
-
               totalMatching += stimData.matching || 0;
-
             }
-
           }
-
         });
-
         
-
         return totalMatching > 0 ? (totalRight / totalMatching) * 100 : null;
-
       });
-
       
-
       // Only add dataset if there's at least one non-null value
-
       if (data.some(v => v !== null)) {
-
         datasets.push({
-
           label: stimulus.charAt(0).toUpperCase() + stimulus.slice(1),
-
           data: data,
-
           borderColor: stimuliColors[stimulus],
-
           backgroundColor: stimuliColors[stimulus] + '33',
-
           tension: 0.1
-
         });
-
       }
-
     });
-
     
-
     return {
-
       labels: filteredDates,
-
       datasets: datasets
-
     };
-
   }
-
-  // Function to update stimuli accuracy chart
-
-  function updateStimuliAccuracyChart(dimension, period) {
-
-    const ctx = document.getElementById('stimuli-accuracy-chart');
-
-    if (!ctx) return;
-
-    
-
-    // Destroy existing chart if it exists
-
-    if (stimuliAccuracyChart) {
-
-      stimuliAccuracyChart.destroy();
-
-    }
-
-    
-
-    // Get data for the selected dimension and period
-
-    const chartData = prepareStimuliChartData(dimension, period);
-
-    
-
-    // Chart configuration
-
-    const config = {
-
-      type: 'line',
-
-      data: chartData,
-
-      options: {
-
-        responsive: true,
-
-        maintainAspectRatio: false,
-
-        plugins: {
-
-          legend: {
-
-            labels: {
-
-              color: '#fff',
-
-              font: {
-
-                family: 'Nova Square',
-
-                size: 10
-
-              }
-
-            }
-
-          },
-
-          tooltip: {
-
-            mode: 'index',
-
-            intersect: false,
-
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-
-            titleFont: {
-
-              family: 'Nova Square'
-
-            },
-
-            bodyFont: {
-
-              family: 'Nova Square'
-
-            },
-
-            callbacks: {
-
-              label: function(context) {
-
-                return context.dataset.label + ': ' + 
-
-                       (context.parsed.y ? context.parsed.y.toFixed(1) + '%' : 'N/A');
-
-              }
-
-            }
-
-          }
-
-        },
-
-        scales: {
-
-          x: {
-
-            grid: {
-
-              color: 'rgba(255, 255, 255, 0.1)'
-
-            },
-
-            ticks: {
-
-              color: '#fff',
-
-              font: {
-
-                family: 'Nova Square',
-
-                size: 10
-
-              }
-
-            }
-
-          },
-
-          y: {
-
-            min: 0,
-
-            max: 100,
-
-            grid: {
-
-              color: 'rgba(255, 255, 255, 0.1)'
-
-            },
-
-            ticks: {
-
-              color: '#fff',
-
-              font: {
-
-                family: 'Nova Square',
-
-                size: 10
-
-              },
-
-              callback: function(value) {
-
-                return value + '%';
-
-              }
-
-            }
-
-          }
-
-        }
-
-      }
-
-    };
-
-    
-
-    // Create new chart
-
-    stimuliAccuracyChart = new Chart(ctx, config);
-
- }
 
 function toggleStats(_dim) {
   // Initialize Chart.js instance for performance graphs
@@ -2335,6 +2088,7 @@ function toggleStats(_dim) {
     
     // Create new chart
     stimuliAccuracyChart = new Chart(ctx, config);
+  }
   }
     
   // Initialize chart with default settings
