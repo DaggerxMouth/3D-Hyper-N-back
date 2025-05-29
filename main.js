@@ -590,6 +590,10 @@ if (matchAccuracy < 0.3) {
     const decrement = 0.05;
     newMicroLevel = Math.max(2.0, currentMicroLevel - decrement);
     console.log(`Decreasing micro-level by -${decrement.toFixed(2)} (poor accuracy: ${(matchAccuracy * 100).toFixed(1)}%)`);
+  } else if (!goodAccuracy) {
+    // Between 30% and 70% - stay at current level
+    newMicroLevel = currentMicroLevel;
+    console.log(`Staying at current level due to moderate accuracy: ${(matchAccuracy * 100).toFixed(1)}%`);
   }
   
   // Integer level transitions
@@ -3830,11 +3834,17 @@ if (!goodAccuracy && goodDPrime) {
   nLevelInputHandler(null, newMicroLevel);
 }
 
-// Restart game with new speed if currently running (applies to all cases)
+// Update the current micro-level before restarting
+currentMicroLevel = newMicroLevel;
+nLevel = Math.floor(newMicroLevel);
+
+// Restart game with new speed if currently running
 if (isRunning) {
   resetIntervals();
+  const newSpeed = getSpeedTarget(newMicroLevel);
+  console.log(`Restarting game with new speed: ${newSpeed}ms for level ${formatMicroLevel(newMicroLevel)}`);
   intervals.push(
-    setInterval(getGameCycle(nLevel), getSpeedTarget(newMicroLevel))
+    setInterval(getGameCycle(nLevel), newSpeed)
   );
 }
       
