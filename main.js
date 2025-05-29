@@ -452,7 +452,7 @@ const accuracy = totalMatches > 0 ? correctResponses / totalMatches : 0;
 
 // Criteria for advancement
 const matchAccuracy = sessionMetrics.hits / Math.max(1, sessionMetrics.hits + sessionMetrics.misses + sessionMetrics.falseAlarms);
-const goodAccuracy = matchAccuracy >= 0.7; // 70% accuracy minimum for any progress
+const goodAccuracy = matchAccuracy >= 0.9; // 90% accuracy minimum for any progress
 const goodLureResistance = sessionMetrics.n1LureResistance >= lureResistanceThreshold;
 console.log(`Advancement criteria: accuracy=${(matchAccuracy * 100).toFixed(1)}%, goodAccuracy=${goodAccuracy}`);
   
