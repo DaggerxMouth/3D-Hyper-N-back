@@ -470,19 +470,22 @@ console.log(`Advancement criteria: accuracy=${(matchAccuracy * 100).toFixed(1)}%
 let newMicroLevel = currentMicroLevel;
 
 // Check for regression first
+let isRegressing = false;
 if (matchAccuracy < 0.75) {
   // Regression in micro-level for poor performance (below 75% accuracy)
   const decrement = 0.05;
   newMicroLevel = Math.max(2.0, currentMicroLevel - decrement);
   console.log(`Decreasing micro-level by -${decrement.toFixed(2)} (accuracy below 75%: ${(matchAccuracy * 100).toFixed(1)}%)`);
-} else if (goodAccuracy) {
-  // Calculate potential new level
+  isRegressing = true;
+} else if (goodAccuracy && !isRegressing) {
+  // Calculate potential new level (only if not already regressing)
   let potentialNewLevel = currentMicroLevel + increment;
   
-  // Check if this would cross a phase boundary
-  const currentPhase = microProgress < 0.34 ? 1 : (microProgress < 0.67 ? 2 : 3);
-  const newProgress = potentialNewLevel - Math.floor(potentialNewLevel);
-  const potentialPhase = newProgress < 0.34 ? 1 : (newProgress < 0.67 ? 2 : 3);
+  if (!isRegressing) {
+    // Check if this would cross a phase boundary
+    const currentPhase = microProgress < 0.34 ? 1 : (microProgress < 0.67 ? 2 : 3);
+    const newProgress = potentialNewLevel - Math.floor(potentialNewLevel);
+    const potentialPhase = newProgress < 0.34 ? 1 : (newProgress < 0.67 ? 2 : 3);
   
   // If crossing phase boundary, cap at current phase maximum
   if (potentialPhase > currentPhase) {
@@ -591,6 +594,8 @@ if (Math.floor(potentialNewLevel) > Math.floor(currentMicroLevel)) {
     // If phase would change, newMicroLevel remains unchanged from phase transition block
   }
   }
+  } // End of if (!isRegressing) block
+  
   // This regression check has been moved earlier in the function
   
   // Integer level transitions
