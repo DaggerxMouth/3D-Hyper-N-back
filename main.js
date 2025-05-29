@@ -445,11 +445,10 @@ function checkMicroLevelAdvancement(sessionMetrics, sessionHistory) {
   const dPrimeThreshold = Math.max(0.5, baseline.avgDPrime);
   const lureResistanceThreshold = Math.max(0.5, baseline.n1LureResistance);
   
-  // Calculate raw accuracy
-const totalTrials = sessionMetrics.hits + sessionMetrics.misses + 
-                   sessionMetrics.falseAlarms + sessionMetrics.correctRejections;
-const correctResponses = sessionMetrics.hits + sessionMetrics.correctRejections;
-const accuracy = totalTrials > 0 ? correctResponses / totalTrials : 0;
+// Calculate raw accuracy (matches only, no credit for correct rejections)
+const totalMatches = sessionMetrics.hits + sessionMetrics.misses + sessionMetrics.falseAlarms;
+const correctResponses = sessionMetrics.hits;
+const accuracy = totalMatches > 0 ? correctResponses / totalMatches : 0;
 
 // Criteria for advancement
 const goodDPrime = sessionMetrics.dPrime > dPrimeThreshold;
@@ -485,11 +484,14 @@ const potentialPhase = newProgress < 0.34 ? 1 : (newProgress < 0.67 ? 2 : 3);
     const configKey = getCurrentConfigKey();
     const phaseData = phaseAccuracyAttemptsByConfig[configKey];
     
-    // Determine which phase transition this is
-    const transitionKey = currentPhase === 1 ? 'phase1to2' : 'phase2to3';
-    
-    // Record this attempt
-    phaseData[transitionKey].push(accuracy >= 0.90);
+   // Determine which phase transition this is
+const transitionKey = currentPhase === 1 ? 'phase1to2' : 'phase2to3';
+
+// Calculate proper accuracy for phase transitions (matches only)
+const matchAccuracy = (sessionMetrics.hits) / (sessionMetrics.hits + sessionMetrics.misses + sessionMetrics.falseAlarms);
+
+// Record this attempt
+phaseData[transitionKey].push(matchAccuracy >= 0.90);
     
     // Keep only the most recent attempts within window size
     if (phaseData[transitionKey].length > phaseData.windowSize) {
@@ -509,39 +511,42 @@ const potentialPhase = newProgress < 0.34 ? 1 : (newProgress < 0.67 ? 2 : 3);
       // Cap at phase boundary (slightly below to avoid ambiguity)
 const phaseCap = currentPhase === 1 ? 0.33 : 0.66;
 newMicroLevel = Math.floor(currentMicroLevel) + phaseCap;
-      console.log(`Phase transition blocked: ${successCount}/${phaseData.requiredSuccesses} successful attempts (${(accuracy * 100).toFixed(0)}% this session)`);
+      console.log(`Phase transition blocked: ${successCount}/${phaseData.requiredSuccesses} successful attempts (${(matchAccuracy * 100).toFixed(0)}% this session)`);
     }
   }
   
-  // Check if this would cross an integer boundary
-  if (Math.floor(potentialNewLevel) > Math.floor(currentMicroLevel)) {
-    // Integer level transition - check accuracy attempts
-    const configKey = getCurrentConfigKey();
-    const attemptData = accuracyAttemptsByConfig[configKey];
-    
-    // Record this attempt
-    attemptData.attempts.push(accuracy >= 0.90);
-    
-    // Keep only the most recent attempts within window size
-    if (attemptData.attempts.length > attemptData.windowSize) {
-      attemptData.attempts = attemptData.attempts.slice(-attemptData.windowSize);
-    }
-    
-    // Count successful attempts (90%+ accuracy) in the window
-    const successCount = attemptData.attempts.filter(a => a).length;
-    
-    // Check if we have enough successful attempts
-    if (successCount >= attemptData.requiredSuccesses) {
-      newMicroLevel = potentialNewLevel;
-      console.log(`LEVEL UP! ${successCount}/${attemptData.requiredSuccesses} successful attempts in last ${attemptData.windowSize} sessions`);
-      // Reset attempts after level up
-      attemptData.attempts = [];
-    } else {
-      // Cap at .99 of current level
-      newMicroLevel = Math.floor(currentMicroLevel) + 0.99;
-      console.log(`Integer transition blocked: ${successCount}/${attemptData.requiredSuccesses} successful attempts (${(accuracy * 100).toFixed(0)}% this session)`);
-    }
+// Check if this would cross an integer boundary
+if (Math.floor(potentialNewLevel) > Math.floor(currentMicroLevel)) {
+  // Integer level transition - check accuracy attempts
+  const configKey = getCurrentConfigKey();
+  const attemptData = accuracyAttemptsByConfig[configKey];
+  
+  // Calculate proper accuracy for integer transitions (matches only)
+  const matchAccuracy = (sessionMetrics.hits) / (sessionMetrics.hits + sessionMetrics.misses + sessionMetrics.falseAlarms);
+  
+  // Record this attempt
+  attemptData.attempts.push(matchAccuracy >= 0.90);
+  
+  // Keep only the most recent attempts within window size
+  if (attemptData.attempts.length > attemptData.windowSize) {
+    attemptData.attempts = attemptData.attempts.slice(-attemptData.windowSize);
+  }
+  
+  // Count successful attempts (90%+ accuracy) in the window
+  const successCount = attemptData.attempts.filter(a => a).length;
+  
+  // Check if we have enough successful attempts
+  if (successCount >= attemptData.requiredSuccesses) {
+    newMicroLevel = potentialNewLevel;
+    console.log(`LEVEL UP! ${successCount}/${attemptData.requiredSuccesses} successful attempts in last ${attemptData.windowSize} sessions`);
+    // Reset attempts after level up
+    attemptData.attempts = [];
   } else {
+    // Cap at .99 of current level
+    newMicroLevel = Math.floor(currentMicroLevel) + 0.99;
+    console.log(`Integer transition blocked: ${successCount}/${attemptData.requiredSuccesses} successful attempts (${(matchAccuracy * 100).toFixed(0)}% this session)`);
+  }
+} else {
     // Within same integer level - no accuracy requirement
     newMicroLevel = potentialNewLevel;
     console.log(`Micro-progress: +${increment.toFixed(2)} (d'=${sessionMetrics.dPrime.toFixed(2)})`);
