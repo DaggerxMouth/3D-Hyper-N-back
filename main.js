@@ -577,9 +577,7 @@ if (Math.floor(potentialNewLevel) > Math.floor(currentMicroLevel)) {
   }
 } else {
     // Within same integer level - check if this is also within same phase
-    const currentPhase = microProgress < 0.34 ? 1 : (microProgress < 0.67 ? 2 : 3);
-    const newProgress = potentialNewLevel - Math.floor(potentialNewLevel);
-    const potentialPhase = newProgress < 0.34 ? 1 : (newProgress < 0.67 ? 2 : 3);
+    // currentPhase and potentialPhase already calculated above
     
     if (currentPhase === potentialPhase) {
       // Same phase - allow normal progress
