@@ -1629,10 +1629,12 @@ function prepareStimuliChartData(dimension, period) {
     };
 }
 
-function toggleStats(_dim) {
-  // Initialize Chart.js instance for performance graphs
+// Initialize Chart.js instance for performance graphs
   let performanceChart = null;
   let stimuliAccuracyChart = null;
+
+function toggleStats(_dim) {
+  
   
   // Function to update the performance chart
   function updatePerformanceChart(dimension, period) {
