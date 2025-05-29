@@ -330,16 +330,16 @@ let sessionHistoriesByConfig = {
   8: [],
   9: []
 };
-// Accuracy attempts tracking for level advancement
-let accuracyAttemptsByConfig = {
-  2: { attempts: [], requiredSuccesses: 3, windowSize: 5 },
-  3: { attempts: [], requiredSuccesses: 3, windowSize: 5 },
-  4: { attempts: [], requiredSuccesses: 3, windowSize: 5 },
-  5: { attempts: [], requiredSuccesses: 3, windowSize: 5 },
-  6: { attempts: [], requiredSuccesses: 3, windowSize: 5 },
-  7: { attempts: [], requiredSuccesses: 3, windowSize: 5 },
-  8: { attempts: [], requiredSuccesses: 3, windowSize: 5 },
-  9: { attempts: [], requiredSuccesses: 3, windowSize: 5 }
+// Phase transition accuracy tracking
+let phaseAccuracyAttemptsByConfig = {
+  2: { phase1to2: [], phase2to3: [], requiredSuccesses: 3, windowSize: 5 },
+  3: { phase1to2: [], phase2to3: [], requiredSuccesses: 3, windowSize: 5 },
+  4: { phase1to2: [], phase2to3: [], requiredSuccesses: 3, windowSize: 5 },
+  5: { phase1to2: [], phase2to3: [], requiredSuccesses: 3, windowSize: 5 },
+  6: { phase1to2: [], phase2to3: [], requiredSuccesses: 3, windowSize: 5 },
+  7: { phase1to2: [], phase2to3: [], requiredSuccesses: 3, windowSize: 5 },
+  8: { phase1to2: [], phase2to3: [], requiredSuccesses: 3, windowSize: 5 },
+  9: { phase1to2: [], phase2to3: [], requiredSuccesses: 3, windowSize: 5 }
 };
 
 
@@ -472,9 +472,48 @@ let newMicroLevel = currentMicroLevel;
 if (goodDPrime && lowBias) {
   // Calculate potential new level
   const potentialNewLevel = Math.min(9.99, currentMicroLevel + increment);
+
+  // Get current phase and potential new phase
+  const currentPhase = microProgress <= 0.33 ? 1 : (microProgress <= 0.66 ? 2 : 3);
+  const newProgress = potentialNewLevel - Math.floor(potentialNewLevel);
+  const potentialPhase = newProgress <= 0.33 ? 1 : (newProgress <= 0.66 ? 2 : 3);
+  
+  // Check if this would be a phase transition
+  if (potentialPhase > currentPhase) {
+    // Phase transitions require 90% accuracy for 3 out of 5 sessions
+    const configKey = getCurrentConfigKey();
+    const phaseData = phaseAccuracyAttemptsByConfig[configKey];
+    
+    // Determine which phase transition this is
+    const transitionKey = currentPhase === 1 ? 'phase1to2' : 'phase2to3';
+    
+    // Record this attempt
+    phaseData[transitionKey].push(accuracy >= 0.90);
+    
+    // Keep only the most recent attempts within window size
+    if (phaseData[transitionKey].length > phaseData.windowSize) {
+      phaseData[transitionKey] = phaseData[transitionKey].slice(-phaseData.windowSize);
+    }
+    
+    // Count successful attempts (90%+ accuracy) in the window
+    const successCount = phaseData[transitionKey].filter(a => a).length;
+    
+    // Check if we have enough successful attempts
+    if (successCount >= phaseData.requiredSuccesses) {
+      newMicroLevel = potentialNewLevel;
+      console.log(`PHASE UP! ${successCount}/${phaseData.requiredSuccesses} successful attempts`);
+      // Reset attempts after phase transition
+      phaseData[transitionKey] = [];
+    } else {
+      // Cap at phase boundary
+      const phaseCap = currentPhase === 1 ? 0.33 : 0.66;
+      newMicroLevel = Math.floor(currentMicroLevel) + phaseCap;
+      console.log(`Phase transition blocked: ${successCount}/${phaseData.requiredSuccesses} successful attempts (${(accuracy * 100).toFixed(0)}% this session)`);
+    }
+  }
   
   // Check if this would cross an integer boundary
-  if (Math.floor(potentialNewLevel) > Math.floor(currentMicroLevel)) {
+  } else if (Math.floor(potentialNewLevel) > Math.floor(currentMicroLevel)) {
     // Integer level transition - check accuracy attempts
     const configKey = getCurrentConfigKey();
     const attemptData = accuracyAttemptsByConfig[configKey];
@@ -1523,6 +1562,7 @@ function saveSettings() {
     nLevel,
     currentMicroLevel,
     microLevelsByConfig,  // Save all config levels
+    phaseAccuracyAttemptsByConfig,  // Save phase transition attempts
     sessionHistoriesByConfig,  // Save all session histories
     accuracyAttemptsByConfig,  // Save accuracy attempts tracking
     sceneDimmer,
@@ -1559,6 +1599,9 @@ function loadSettings() {
   if (settings.accuracyAttemptsByConfig) {
     accuracyAttemptsByConfig = settings.accuracyAttemptsByConfig;
   }
+  if (settings.phaseAccuracyAttemptsByConfig) {
+  phaseAccuracyAttemptsByConfig = settings.phaseAccuracyAttemptsByConfig;
+}
 
   wallsEnableTrigHandler(null, settings.wallsEnabled);
   cameraEnableTrigHandler(null, settings.cameraEnabled);
@@ -3431,7 +3474,9 @@ console.log("Game length:", length, "Actual lengths:", actualLengths);
       console.log("dimensions", dimensions);
       
       // Calculate accuracy
-      const accuracy = calculateAccuracy(correctStimuli, missed, mistakes);
+      const totalTrials = (correctStimuli + missed + mistakes + sessionMetrics.correctRejections) || 
+                   (correctStimuli + missed + mistakes);
+const accuracy = totalTrials > 0 ? correctStimuli / totalTrials : 0;
       // Calculate percentage for level up/down decisions
       const percentage = accuracy;
       
@@ -4346,6 +4391,8 @@ if (curr.isMatching) {
 function calculateAccuracy(correct, missed, wrong) {
   const total = correct + missed + wrong;
   if (total === 0) return 0;
+  // Note: This doesn't include correct rejections since they're not passed to this function
+  // For true accuracy including CR, use the inline calculation in the game end section
   return correct / total;
 }
 
