@@ -1876,11 +1876,13 @@ function toggleStats(_dim) {
 
   // Add event listeners for time period buttons
   document.querySelectorAll('.period-btn').forEach(btn => {
-    // Remove any existing listeners first
-    const newBtn = btn.cloneNode(true);
-    btn.parentNode.replaceChild(newBtn, btn);
+    // Remove existing event listener by using a named function
+    if (btn._clickHandler) {
+      btn.removeEventListener('click', btn._clickHandler);
+    }
     
-    newBtn.addEventListener('click', function() {
+    // Create and store the new handler
+    btn._clickHandler = function() {
       // Remove active class from all buttons
       document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
       // Add active class to clicked button
@@ -1890,7 +1892,9 @@ function toggleStats(_dim) {
       const currentDim = parseInt(document.querySelector('input[name="dimension"]:checked').value);
       updatePerformanceChart(currentDim, period);
       updateStimuliAccuracyChart(currentDim, period);
-    });
+    };
+    
+    btn.addEventListener('click', btn._clickHandler);
   });
   
   // Add event listeners for metric toggles
