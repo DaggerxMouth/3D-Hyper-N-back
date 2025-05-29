@@ -442,7 +442,7 @@ function checkMicroLevelAdvancement(sessionMetrics, sessionHistory) {
   const baseline = calculateBaseline(sessionHistory);
   
   // Use personal baseline but cap at 2.0 (excellent performance)
-  const dPrimeThreshold = Math.max(0.5, Math.min(2.0, baseline.avgDPrime));
+  const dPrimeThreshold = Math.max(0.5, baseline.avgDPrime);
   const lureResistanceThreshold = Math.max(0.5, baseline.n1LureResistance);
   
   // Calculate raw accuracy
@@ -3474,8 +3474,7 @@ console.log("Game length:", length, "Actual lengths:", actualLengths);
       console.log("dimensions", dimensions);
       
       // Calculate accuracy
-      const totalTrials = (correctStimuli + missed + mistakes + sessionMetrics.correctRejections) || 
-                   (correctStimuli + missed + mistakes);
+const totalTrials = correctStimuli + missed + mistakes;
 const accuracy = totalTrials > 0 ? correctStimuli / totalTrials : 0;
       // Calculate percentage for level up/down decisions
       const percentage = accuracy;
