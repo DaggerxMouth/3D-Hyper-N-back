@@ -508,12 +508,16 @@ phaseData[transitionKey].push(matchAccuracy >= 0.90);
       // Reset attempts after phase transition
       phaseData[transitionKey] = [];
     } else {
-      // Cap at phase boundary (slightly below to avoid ambiguity)
-const phaseCap = currentPhase === 1 ? 0.33 : 0.66;
-newMicroLevel = Math.floor(currentMicroLevel) + phaseCap;
-      console.log(`Phase transition blocked: ${successCount}/${phaseData.requiredSuccesses} successful attempts (${(matchAccuracy * 100).toFixed(0)}% this session)`);
-    }
-  }
+  // Cap at phase boundary - don't allow ANY progress past the current phase
+  newMicroLevel = currentMicroLevel; // Stay exactly where we are
+  console.log(`Phase transition blocked: ${successCount}/${phaseData.requiredSuccesses} successful attempts (${(matchAccuracy * 100).toFixed(0)}% this session)`);
+}
+} else {
+  // Within same integer level and same phase - allow normal micro-progress
+  newMicroLevel = potentialNewLevel;
+  console.log(`Micro-progress: +${increment.toFixed(2)} (d'=${sessionMetrics.dPrime.toFixed(2)})`);
+}
+}
   
 // Check if this would cross an integer boundary
 if (Math.floor(potentialNewLevel) > Math.floor(currentMicroLevel)) {
