@@ -1750,8 +1750,8 @@ function toggleStats(_dim) {
                 family: 'Nova Square'
               },
               callback: function(value) {
-                return value.toFixed(0) + '%';
-              }
+  return value.toFixed(0);
+}
             }
           }
         }
@@ -1858,6 +1858,7 @@ function toggleStats(_dim) {
   
   if (configHistory.length >= 3) {
     const baseline = calculateBaseline(configHistory);
+    console.log(`Baseline for config ${configKey}: avgDPrime=${baseline.avgDPrime}, sessions=${configHistory.length}`);
     // Don't multiply by 100 - d-prime is not a percentage
     sum += baseline.avgDPrime;
     count = 1;
