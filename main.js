@@ -3662,21 +3662,18 @@ const isPhase1 = newPhase < 0.34;
 const isPhase2 = newPhase >= 0.34 && newPhase < 0.67;
 const isPhase3 = newPhase >= 0.67;
 
-// Check if we've moved to a new phase or crossed an integer boundary
-const phaseChanged = (wasPhase1 && !isPhase1) || (wasPhase2 && !isPhase2) || (wasPhase3 && !isPhase3);
-const crossedInteger = Math.floor(oldMicroLevel) !== Math.floor(newMicroLevel);
+// Only check for phase changes if level actually increased
+if (newMicroLevel > oldMicroLevel) {
+  const phaseChanged = (wasPhase1 && !isPhase1) || (wasPhase2 && !isPhase2) || (wasPhase3 && !isPhase3);
+  const crossedInteger = Math.floor(oldMicroLevel) !== Math.floor(newMicroLevel);
 
-if (phaseChanged || crossedInteger) {
-  console.log(`Phase transition detected! Resetting baseline for config ${getCurrentConfigKey()}`);
-  // Reset session history for current configuration
-  sessionHistoriesByConfig[getCurrentConfigKey()] = [];
   if (phaseChanged || crossedInteger) {
-  console.log(`Phase transition detected! Resetting baseline for config ${getCurrentConfigKey()}`);
-  // Reset session history for current configuration
-  sessionHistoriesByConfig[getCurrentConfigKey()] = [];
-  // Reset accuracy attempts for current configuration
-  accuracyAttemptsByConfig[getCurrentConfigKey()].attempts = [];
-}
+    console.log(`Phase transition detected! Resetting baseline for config ${getCurrentConfigKey()}`);
+    // Reset session history for current configuration
+    sessionHistoriesByConfig[getCurrentConfigKey()] = [];
+    // Reset accuracy attempts for current configuration
+    accuracyAttemptsByConfig[getCurrentConfigKey()].attempts = [];
+  }
 }
 
      const historyPoint = {
