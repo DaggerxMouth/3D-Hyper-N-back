@@ -1807,32 +1807,32 @@ function toggleStats(_dim) {
         dayData.forEach(point => {
           switch(metric) {
             case 'right':
-              const totalRight = point.right || 0;
-              const totalMatching = point.matchingStimuli || (point.right + point.missed) || 0;
-              if (totalMatching > 0) {
-                const percentage = (totalRight / totalMatching) * 100;
-                sum += percentage;
-                count++;
-              }
-              break;
+  const totalRight = point.right || 0;
+  const totalMatching = point.matchingStimuli || (point.right + point.missed) || 0;
+  if (totalMatching > 0) {
+    const percentage = (totalRight / totalMatching) * 100;
+    sum += percentage;
+    count++;
+  }
+  break;
             case 'missed':
-              const totalMissed = point.missed || 0;
-              const totalMatchingMissed = point.matchingStimuli || (point.right + point.missed) || 0;
-              if (totalMatchingMissed > 0) {
-                const percentage = (totalMissed / totalMatchingMissed) * 100;
-                sum += percentage;
-                count++;
-              }
-              break;
+  const totalMissed = point.missed || 0;
+  const totalMatchingMissed = point.matchingStimuli || (point.right + point.missed) || 0;
+  if (totalMatchingMissed > 0) {
+    const percentage = (totalMissed / totalMatchingMissed) * 100;
+    sum += percentage;
+    count++;
+  }
+  break;
             case 'wrong':
-              const totalWrong = point.wrong || 0;
-              const totalPossible = (point.right || 0) + (point.missed || 0) + (point.wrong || 0);
-              if (totalPossible > 0) {
-                const percentage = (totalWrong / totalPossible) * 100;
-                sum += percentage;
-                count++;
-              }
-              break;
+  const totalWrong = point.wrong || 0;
+  const totalPossible = (point.right || 0) + (point.missed || 0) + (point.wrong || 0);
+  if (totalPossible > 0) {
+    const percentage = (totalWrong / totalPossible) * 100;
+    sum += percentage;
+    count++;
+  }
+  break;
             case 'dprime':
               if (point.dPrime !== undefined) {
                 sum += point.dPrime;
