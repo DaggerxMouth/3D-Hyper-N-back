@@ -1804,26 +1804,38 @@ function toggleStats(_dim) {
         let sum = 0;
         let count = 0;
         
+        dayData.forEach(point => {
+  switch(metric) {
         case 'right': {
-  const rightCount = point.right || 0;
-  const total = (point.right || 0) + (point.missed || 0) + (point.wrong || 0);
-  if (total > 0) {
-    const percentage = (rightCount / total) * 100;
-    sum += percentage;
-    count++;
-  }
-  break;
-}
-            case 'missed': {
-  const missedCount = point.missed || 0;
-  const total = (point.right || 0) + (point.missed || 0) + (point.wrong || 0);
-  if (total > 0) {
-    const percentage = (missedCount / total) * 100;
-    sum += percentage;
-    count++;
-  }
-  break;
-}
+      const rightCount = point.right || 0;
+      const total = (point.right || 0) + (point.missed || 0) + (point.wrong || 0);
+      if (total > 0) {
+        const percentage = (rightCount / total) * 100;
+        sum += percentage;
+        count++;
+      }
+      break;
+    }
+    case 'missed': {
+      const missedCount = point.missed || 0;
+      const total = (point.right || 0) + (point.missed || 0) + (point.wrong || 0);
+      if (total > 0) {
+        const percentage = (missedCount / total) * 100;
+        sum += percentage;
+        count++;
+      }
+      break;
+    }
+    case 'wrong': {
+      const wrongCount = point.wrong || 0;
+      const total = (point.right || 0) + (point.missed || 0) + (point.wrong || 0);
+      if (total > 0) {
+        const percentage = (wrongCount / total) * 100;
+        sum += percentage;
+        count++;
+      }
+      break;
+    }
             case 'wrong': {
   const wrongCount = point.wrong || 0;
   const total = (point.right || 0) + (point.missed || 0) + (point.wrong || 0);
