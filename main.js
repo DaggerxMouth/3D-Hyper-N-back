@@ -1653,6 +1653,32 @@ function toggleStats(_dim) {
     });
     
     // Get data for the selected dimension and period
+    // Check if there's any data for this dimension
+    const _history = history[dimension] || {};
+    if (Object.keys(_history).length === 0) {
+      // No data for this dimension - destroy chart and show message
+      if (performanceChart) {
+        performanceChart.destroy();
+        performanceChart = null;
+      }
+      const ctx = document.getElementById('performance-chart');
+      ctx.style.display = 'none';
+      
+      // Show no data message if not already present
+      if (!ctx.parentElement.querySelector('.no-data-msg')) {
+        const noDataMsg = document.createElement('div');
+        noDataMsg.className = 'no-data-msg';
+        noDataMsg.style = "text-align: center; font-size: 1.5rem; margin: 2rem; opacity: 0.7;";
+        noDataMsg.innerHTML = `No performance data yet for ${dimension}D configuration.<br>Play some sessions to see charts!`;
+        ctx.parentElement.appendChild(noDataMsg);
+      }
+      return;
+    } else {
+      // Remove no data message if it exists
+      const noDataMsg = ctx.parentElement.querySelector('.no-data-msg');
+      if (noDataMsg) noDataMsg.remove();
+      ctx.style.display = 'block';
+    }
     const chartData = prepareChartData(dimension, period, activeMetrics);
     
     // Chart configuration
@@ -1963,6 +1989,32 @@ function toggleStats(_dim) {
   function updateStimuliAccuracyChart(dimension, period) {
     const ctx = document.getElementById('stimuli-accuracy-chart');
     if (!ctx) return;
+
+    // Check if there's any data for this dimension
+    const _history = history[dimension] || {};
+    if (Object.keys(_history).length === 0) {
+      // No data for this dimension - destroy chart and show message
+      if (stimuliAccuracyChart) {
+        stimuliAccuracyChart.destroy();
+        stimuliAccuracyChart = null;
+      }
+      ctx.style.display = 'none';
+      
+      // Show no data message if not already present
+      if (!ctx.parentElement.querySelector('.no-data-msg-stimuli')) {
+        const noDataMsg = document.createElement('div');
+        noDataMsg.className = 'no-data-msg-stimuli';
+        noDataMsg.style = "text-align: center; font-size: 1.25rem; margin: 2rem; opacity: 0.7;";
+        noDataMsg.innerHTML = `No stimuli data yet for ${dimension}D configuration.`;
+        ctx.parentElement.appendChild(noDataMsg);
+      }
+      return;
+    } else {
+      // Remove no data message if it exists
+      const noDataMsg = ctx.parentElement.querySelector('.no-data-msg-stimuli');
+      if (noDataMsg) noDataMsg.remove();
+      ctx.style.display = 'block';
+    }
     
     // Destroy existing chart if it exists
     if (stimuliAccuracyChart) {
