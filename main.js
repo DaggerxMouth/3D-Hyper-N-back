@@ -1855,15 +1855,14 @@ function toggleStats(_dim) {
   // Calculate baseline d-prime for this configuration
   const configKey = dimension;
   const configHistory = sessionHistoriesByConfig[configKey] || [];
-              console.log(`Config ${configKey} history:`, configHistory);
-console.log(`Config ${configKey} dPrimes:`, configHistory.map(s => s.dPrime));
   
   if (configHistory.length >= 3) {
     const baseline = calculateBaseline(configHistory);
-console.log(`Baseline calc for config ${configKey}: history length=${configHistory.length}, avgDPrime=${baseline.avgDPrime}`);
-// Don't multiply by 100 - d-prime is not a percentage
-sum += baseline.avgDPrime;
-count = 1;
+    // Only add once per day, not per session
+    if (count === 0) {
+      sum = baseline.avgDPrime;
+      count = 1;
+    }
   }
   break;
           }
