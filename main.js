@@ -2067,7 +2067,9 @@ function toggleStats(_dim) {
                   label += ': ';
                 }
                 const value = context.parsed.y;
-                if (['Right', 'Missed', 'Wrong', 'Lure'].includes(context.dataset.label)) {
+                // Check the metric type from the original data
+                const metricType = context.dataset.label.toLowerCase();
+                if (['right', 'missed', 'wrong', 'lure'].includes(metricType)) {
                   label += value.toFixed(1) + '%';
                 } else {
                   label += value.toFixed(2);
@@ -2436,6 +2438,10 @@ if (avgLureElement) {
 // Calculate and display baseline metrics
 const configHistory = sessionHistoriesByConfig[validDim] || [];
 const baseline = calculateBaseline(configHistory);
+  // Ensure baseline is not multiplied by 100
+                const baselineValue = baseline.avgDPrime > 10 ? baseline.avgDPrime / 100 : baseline.avgDPrime;
+                console.log(`Baseline d-prime: ${baselineValue}`);
+                sum += baselineValue;
 
 const baselineDPrimeElement = document.querySelector("#sc-baseline-dprime");
 if (baselineDPrimeElement) {
