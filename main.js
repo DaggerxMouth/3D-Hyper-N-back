@@ -462,9 +462,8 @@ console.log(`Advancement criteria: accuracy=${(matchAccuracy * 100).toFixed(1)}%
 // Advancement size (0.01 to 0.05 based on accuracy)
   const baseIncrement = 0.01;
   const maxIncrement = 0.05;
-  // Calculate accuracy for micro-level progress
-  const accuracy = sessionMetrics.hits / Math.max(1, sessionMetrics.hits + sessionMetrics.misses + sessionMetrics.falseAlarms);
-  const performanceRatio = Math.min(1, Math.max(0, (accuracy - 0.5) / 0.4)); // Scale from 50% to 90%
+  // Use matchAccuracy that was already calculated above
+  const performanceRatio = Math.min(1, Math.max(0, (matchAccuracy - 0.5) / 0.4)); // Scale from 50% to 90%
   const increment = baseIncrement + (performanceRatio * (maxIncrement - baseIncrement));
   
   // Determine new micro-level
@@ -590,11 +589,11 @@ if (Math.floor(potentialNewLevel) > Math.floor(currentMicroLevel)) {
     // If phase would change, newMicroLevel remains unchanged from phase transition block
   }
   }
-if (accuracy < 0.3) {
+if (matchAccuracy < 0.3) {
     // Regression in micro-level for poor performance (below 30% accuracy)
     const decrement = 0.05;
     newMicroLevel = Math.max(2.0, currentMicroLevel - decrement);
-    console.log(`Decreasing micro-level by -${decrement.toFixed(2)} (poor accuracy: ${(accuracy * 100).toFixed(1)}%)`);
+    console.log(`Decreasing micro-level by -${decrement.toFixed(2)} (poor accuracy: ${(matchAccuracy * 100).toFixed(1)}%)`);
   }
   
   // Integer level transitions
