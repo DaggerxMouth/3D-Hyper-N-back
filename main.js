@@ -3699,8 +3699,9 @@ if (isRunning) {
       
       // Save history and show results
       const datestamp = new Date().toLocaleDateString("sv");
-      history[dimensions][datestamp] = history[dimensions][datestamp] || [];
-      history[dimensions][datestamp].push(historyPoint);
+      const configKey = getCurrentConfigKey();
+history[configKey][datestamp] = history[configKey][datestamp] || [];
+history[configKey][datestamp].push(historyPoint);
       console.log("history", history);
       
       saveSettings();
