@@ -1804,13 +1804,16 @@ function toggleStats(_dim) {
               }
               break;
             case 'baseline':
-              // Calculate baseline d-prime for this configuration
+              // Only show baseline if we have at least 5 sessions of history
               const configKey = dimension;
               const configHistory = sessionHistoriesByConfig[configKey] || [];
-              if (configHistory.length > 0) {
+              if (configHistory.length >= 5) {
                 const baseline = calculateBaseline(configHistory);
                 sum += baseline.avgDPrime;
                 count = 1;
+              } else {
+                // Not enough data for baseline
+                return null;
               }
               break;
           }
