@@ -1807,30 +1807,28 @@ function toggleStats(_dim) {
         dayData.forEach(point => {
           switch(metric) {
             case 'right':
-  const totalRight = point.right || 0;
-  const totalMatching = point.matchingStimuli || (point.right + point.missed) || 0;
-  if (totalMatching > 0) {
-    const percentage = (totalRight / totalMatching) * 100;
+  const rightCount = point.right || 0;
+  const total = (point.right || 0) + (point.missed || 0) + (point.wrong || 0);
+  if (total > 0) {
+    const percentage = (rightCount / total) * 100;
     sum += percentage;
     count++;
   }
   break;
             case 'missed':
-  const totalMissed = point.missed || 0;
-  const totalMatchingMissed = point.matchingStimuli || (point.right + point.missed) || 0;
-  if (totalMatchingMissed > 0) {
-    const percentage = (totalMissed / totalMatchingMissed) * 100;
+  const missedCount = point.missed || 0;
+  const total = (point.right || 0) + (point.missed || 0) + (point.wrong || 0);
+  if (total > 0) {
+    const percentage = (missedCount / total) * 100;
     sum += percentage;
     count++;
   }
   break;
             case 'wrong':
-  const hits = point.right || 0;
-  const falseAlarms = point.wrong || 0;
-  const totalButtonPresses = hits + falseAlarms;
-  
-  if (totalButtonPresses > 0) {
-    const percentage = (falseAlarms / totalButtonPresses) * 100;
+  const wrongCount = point.wrong || 0;
+  const total = (point.right || 0) + (point.missed || 0) + (point.wrong || 0);
+  if (total > 0) {
+    const percentage = (wrongCount / total) * 100;
     sum += percentage;
     count++;
   }
@@ -3129,7 +3127,7 @@ function speak(text) {
 function writeWord(word) {
   wallWords.forEach(wall => {
     wall.innerText = word;
-    wow(wall, "text-white", baseDelay - 300);
+    wow(wall, "text-white", getSpeedTarget(currentMicroLevel) - 500);
   });
 }
 
@@ -3680,7 +3678,10 @@ if (isRunning) {
   const attemptData = accuracyAttemptsByConfig[configKey];
   const recentAttempts = attemptData.attempts.slice(-attemptData.windowSize);
   const successCount = recentAttempts.filter(a => a).length;
-  
+
+        // Remove any existing progress messages first
+const existingProgress = document.querySelector('.attempts-progress');
+if (existingProgress) existingProgress.remove();
   // Create progress indicator
   const progressMsg = document.createElement('div');
   progressMsg.className = 'attempts-progress';
@@ -4329,14 +4330,10 @@ if (curr.isMatching) {
 }
 
 
-// Function to calculate accuracy based on correct, missed, and wrong responses
 function calculateAccuracy(correct, missed, wrong) {
   const total = correct + missed + wrong;
   if (total === 0) return 0;
-  // Ensure we're calculating accuracy correctly (correct / total possible)
-  const possibleCorrect = correct + missed;
-  if (possibleCorrect === 0) return 0;
-  return correct / possibleCorrect;
+  return correct / total;
 }
 
 // Set up event listeners
