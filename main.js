@@ -3834,9 +3834,8 @@ if (!goodAccuracy && goodDPrime) {
   nLevelInputHandler(null, newMicroLevel);
 }
 
-// Update the current micro-level before restarting
-currentMicroLevel = newMicroLevel;
-nLevel = Math.floor(newMicroLevel);
+// Update the micro-level using the proper handler
+nLevelInputHandler(null, newMicroLevel);
 
 // Restart game with new speed if currently running
 if (isRunning) {
