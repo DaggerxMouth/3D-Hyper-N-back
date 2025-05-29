@@ -639,8 +639,10 @@ if (microProgress < 0.34) {
   return Math.round(target);
 }
 
-// Function to format micro-level for display
 function formatMicroLevel(microLevel) {
+  if (microLevel === undefined || microLevel === null || isNaN(microLevel)) {
+    return "2.00"; // Default to 2.00 if undefined
+  }
   return microLevel.toFixed(2); // Always show 2 decimal places
 }
 
