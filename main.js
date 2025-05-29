@@ -522,14 +522,11 @@ phaseData[transitionKey].push(matchAccuracy >= 0.90);
   }
 }
   
-}
-  
   // If phase transition was blocked, skip all other advancement logic
   if (newMicroLevel === currentMicroLevel) {
     // Do nothing more - stay at current level
   } else {
-  
-  // Check if this would cross an integer boundary
+    // Check if this would cross an integer boundary
 if (Math.floor(potentialNewLevel) > Math.floor(currentMicroLevel)) {
   // Integer level transition - check accuracy attempts
   const configKey = getCurrentConfigKey();
