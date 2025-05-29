@@ -1729,6 +1729,9 @@ function toggleStats(_dim) {
               color: '#fff',
               font: {
                 family: 'Nova Square'
+              },
+              callback: function(value) {
+                return value.toFixed(0) + '%';
               }
             }
           }
@@ -1830,16 +1833,18 @@ function toggleStats(_dim) {
               }
               break;
             case 'baseline':
-              // Only show baseline if we have at least 5 sessions of history
+              // Calculate baseline d-prime for this configuration
               const configKey = dimension;
               const configHistory = sessionHistoriesByConfig[configKey] || [];
-              if (configHistory.length >= 5) {
+              console.log(`Baseline for dimension ${configKey}: ${configHistory.length} sessions`);
+              
+              if (configHistory.length >= 3) { // Reduced from 5 for testing
                 const baseline = calculateBaseline(configHistory);
+                console.log(`Baseline d-prime: ${baseline.avgDPrime}`);
                 sum += baseline.avgDPrime;
                 count = 1;
               } else {
-                // Not enough data for baseline
-                return null;
+                console.log(`Not enough data for baseline (need 3+)`);
               }
               break;
           }
@@ -2057,8 +2062,17 @@ function toggleStats(_dim) {
             },
             callbacks: {
               label: function(context) {
-                return context.dataset.label + ': ' + 
-                       (context.parsed.y ? context.parsed.y.toFixed(1) + '%' : 'N/A');
+                let label = context.dataset.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                const value = context.parsed.y;
+                if (['Right', 'Missed', 'Wrong', 'Lure'].includes(context.dataset.label)) {
+                  label += value.toFixed(1) + '%';
+                } else {
+                  label += value.toFixed(2);
+                }
+                return label;
               }
             }
           }
