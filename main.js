@@ -693,6 +693,7 @@ function updateMicroLevelForConfig() {
   
   // Load micro-level for new config
   currentMicroLevel = microLevelsByConfig[configKey] || 2.00;
+  console.log(`Loaded micro-level ${currentMicroLevel} from config ${configKey}`);
   nLevel = Math.floor(currentMicroLevel);
   
   // Update displays
@@ -3644,6 +3645,7 @@ const configHistory = sessionHistoriesByConfig[getCurrentConfigKey()] || [];
 newMicroLevel = checkMicroLevelAdvancement(sessionMetrics, configHistory);
       // Save the new micro-level to config storage immediately after calculation
 microLevelsByConfig[getCurrentConfigKey()] = newMicroLevel;
+      console.log(`Saved micro-level ${newMicroLevel} to config ${getCurrentConfigKey()}`);
 
 // Check if there's a change in integer level for UI display
 newLevel = Math.floor(newMicroLevel);
