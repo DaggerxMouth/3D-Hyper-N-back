@@ -1804,9 +1804,7 @@ function toggleStats(_dim) {
         let sum = 0;
         let count = 0;
         
-        dayData.forEach(point => {
-          switch(metric) {
-            case 'right':
+        case 'right': {
   const rightCount = point.right || 0;
   const total = (point.right || 0) + (point.missed || 0) + (point.wrong || 0);
   if (total > 0) {
@@ -1815,7 +1813,8 @@ function toggleStats(_dim) {
     count++;
   }
   break;
-            case 'missed':
+}
+            case 'missed': {
   const missedCount = point.missed || 0;
   const total = (point.right || 0) + (point.missed || 0) + (point.wrong || 0);
   if (total > 0) {
@@ -1824,7 +1823,8 @@ function toggleStats(_dim) {
     count++;
   }
   break;
-            case 'wrong':
+}
+            case 'wrong': {
   const wrongCount = point.wrong || 0;
   const total = (point.right || 0) + (point.missed || 0) + (point.wrong || 0);
   if (total > 0) {
@@ -1833,6 +1833,7 @@ function toggleStats(_dim) {
     count++;
   }
   break;
+}
             case 'dprime':
               if (point.dPrime !== undefined) {
                 sum += point.dPrime;
