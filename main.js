@@ -570,12 +570,12 @@ if (Math.floor(potentialNewLevel) > Math.floor(currentMicroLevel)) {
   }
   // If phase would change, newMicroLevel remains unchanged from phase transition block
 }
-} else if (sessionMetrics.dPrime < dPrimeThreshold * 0.7) {
-  // Regression in micro-level for poor performance
-  const decrement = 0.05;
-  newMicroLevel = Math.max(2.0, currentMicroLevel - decrement);
-  console.log(`Decreasing micro-level by -${decrement.toFixed(2)} (poor d-prime: ${sessionMetrics.dPrime.toFixed(2)})`);
-}
+if (sessionMetrics.dPrime < dPrimeThreshold * 0.7) {
+    // Regression in micro-level for poor performance
+    const decrement = 0.05;
+    newMicroLevel = Math.max(2.0, currentMicroLevel - decrement);
+    console.log(`Decreasing micro-level by -${decrement.toFixed(2)} (poor d-prime: ${sessionMetrics.dPrime.toFixed(2)})`);
+  }
   
   // Integer level transitions
   if (Math.floor(newMicroLevel) > nLevel) {
