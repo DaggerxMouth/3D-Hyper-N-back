@@ -551,10 +551,18 @@ if (Math.floor(potentialNewLevel) > Math.floor(currentMicroLevel)) {
     console.log(`Integer transition blocked: ${successCount}/${attemptData.requiredSuccesses} successful attempts (${(matchAccuracy * 100).toFixed(0)}% this session)`);
   }
 } else {
-    // Within same integer level - no accuracy requirement
+  // Within same integer level - check if this is also within same phase
+  const currentPhase = microProgress < 0.34 ? 1 : (microProgress < 0.67 ? 2 : 3);
+  const newProgress = potentialNewLevel - Math.floor(potentialNewLevel);
+  const potentialPhase = newProgress < 0.34 ? 1 : (newProgress < 0.67 ? 2 : 3);
+  
+  if (currentPhase === potentialPhase) {
+    // Same phase - allow normal progress
     newMicroLevel = potentialNewLevel;
     console.log(`Micro-progress: +${increment.toFixed(2)} (d'=${sessionMetrics.dPrime.toFixed(2)})`);
   }
+  // If phase would change, newMicroLevel remains unchanged from phase transition block
+}
 } else if (sessionMetrics.dPrime < dPrimeThreshold * 0.7) {
   // Regression in micro-level for poor performance
   const decrement = 0.05;
