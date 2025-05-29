@@ -1759,22 +1759,28 @@ function toggleStats(_dim) {
         dayData.forEach(point => {
           switch(metric) {
             case 'right':
-              if (point.right !== undefined && point.matchingStimuli) {
-                const percentage = (point.right / point.matchingStimuli) * 100;
+              const totalRight = point.right || 0;
+              const totalMatching = point.matchingStimuli || (point.right + point.missed) || 0;
+              if (totalMatching > 0) {
+                const percentage = (totalRight / totalMatching) * 100;
                 sum += percentage;
                 count++;
               }
               break;
             case 'missed':
-              if (point.missed !== undefined && point.matchingStimuli) {
-                const percentage = (point.missed / point.matchingStimuli) * 100;
+              const totalMissed = point.missed || 0;
+              const totalMatchingMissed = point.matchingStimuli || (point.right + point.missed) || 0;
+              if (totalMatchingMissed > 0) {
+                const percentage = (totalMissed / totalMatchingMissed) * 100;
                 sum += percentage;
                 count++;
               }
               break;
             case 'wrong':
-              if (point.wrong !== undefined && point.matchingStimuli) {
-                const percentage = (point.wrong / point.matchingStimuli) * 100;
+              const totalWrong = point.wrong || 0;
+              const totalPossible = (point.right || 0) + (point.missed || 0) + (point.wrong || 0);
+              if (totalPossible > 0) {
+                const percentage = (totalWrong / totalPossible) * 100;
                 sum += percentage;
                 count++;
               }
@@ -3481,6 +3487,7 @@ if (phaseChanged || crossedInteger) {
   missed,
   wrong: mistakes,
   accuracy: accuracy,
+       matchingStimuli: matchingStimuli,
   // Signal detection metrics
   dPrime: 0,  // Will be set after calculation
   responseBias: 0,  // Will be set after calculation
