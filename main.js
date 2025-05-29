@@ -451,10 +451,10 @@ const correctResponses = sessionMetrics.hits;
 const accuracy = totalMatches > 0 ? correctResponses / totalMatches : 0;
 
 // Criteria for advancement
-const accuracy = sessionMetrics.hits / Math.max(1, sessionMetrics.hits + sessionMetrics.misses + sessionMetrics.falseAlarms);
-const goodAccuracy = accuracy >= 0.7; // 70% accuracy minimum for any progress
+const matchAccuracy = sessionMetrics.hits / Math.max(1, sessionMetrics.hits + sessionMetrics.misses + sessionMetrics.falseAlarms);
+const goodAccuracy = matchAccuracy >= 0.7; // 70% accuracy minimum for any progress
 const goodLureResistance = sessionMetrics.n1LureResistance >= lureResistanceThreshold;
-console.log(`Advancement criteria: accuracy=${(accuracy * 100).toFixed(1)}%, goodAccuracy=${goodAccuracy}`);
+console.log(`Advancement criteria: accuracy=${(matchAccuracy * 100).toFixed(1)}%, goodAccuracy=${goodAccuracy}`);
   
   // Get current level components
   const { nLevel, microProgress } = getMicroLevelComponents(currentMicroLevel);
