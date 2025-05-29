@@ -489,11 +489,9 @@ if (goodAccuracy) {
   
   potentialNewLevel = Math.min(9.99, potentialNewLevel);
 
-  // Get current phase and potential new phase
+// Get current phase and potential new phase
 // Fixed phase boundaries: Phase 1: 0.00-0.33, Phase 2: 0.34-0.66, Phase 3: 0.67-0.99
-const currentPhase = microProgress < 0.34 ? 1 : (microProgress < 0.67 ? 2 : 3);
-const newProgress = potentialNewLevel - Math.floor(potentialNewLevel);
-const potentialPhase = newProgress < 0.34 ? 1 : (newProgress < 0.67 ? 2 : 3);
+// Variables currentPhase, newProgress, and potentialPhase already declared above
   
   // Check if this would be a phase transition
 let phaseTransitionBlocked = false;
