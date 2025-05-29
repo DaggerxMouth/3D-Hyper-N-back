@@ -1759,16 +1759,25 @@ function toggleStats(_dim) {
         dayData.forEach(point => {
           switch(metric) {
             case 'right':
-              sum += point.right || 0;
-              count++;
+              if (point.right !== undefined && point.matchingStimuli) {
+                const percentage = (point.right / point.matchingStimuli) * 100;
+                sum += percentage;
+                count++;
+              }
               break;
             case 'missed':
-              sum += point.missed || 0;
-              count++;
+              if (point.missed !== undefined && point.matchingStimuli) {
+                const percentage = (point.missed / point.matchingStimuli) * 100;
+                sum += percentage;
+                count++;
+              }
               break;
             case 'wrong':
-              sum += point.wrong || 0;
-              count++;
+              if (point.wrong !== undefined && point.matchingStimuli) {
+                const percentage = (point.wrong / point.matchingStimuli) * 100;
+                sum += percentage;
+                count++;
+              }
               break;
             case 'dprime':
               if (point.dPrime !== undefined) {
@@ -1789,9 +1798,14 @@ function toggleStats(_dim) {
               }
               break;
             case 'baseline':
-              // This would need session history data
-              sum += 0.5; // Placeholder
-              count = 1;
+              // Calculate baseline d-prime for this configuration
+              const configKey = dimension;
+              const configHistory = sessionHistoriesByConfig[configKey] || [];
+              if (configHistory.length > 0) {
+                const baseline = calculateBaseline(configHistory);
+                sum += baseline.avgDPrime;
+                count = 1;
+              }
               break;
           }
         });
