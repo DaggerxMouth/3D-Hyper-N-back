@@ -1698,16 +1698,35 @@ function toggleStats(_dim) {
             }
           },
           tooltip: {
-            mode: 'index',
-            intersect: false,
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            titleFont: {
-              family: 'Nova Square'
-            },
-            bodyFont: {
-              family: 'Nova Square'
-            }
-          }
+  mode: 'index',
+  intersect: false,
+  backgroundColor: 'rgba(0, 0, 0, 0.8)',
+  titleFont: {
+    family: 'Nova Square'
+  },
+  bodyFont: {
+    family: 'Nova Square'
+  },
+  callbacks: {
+    label: function(context) {
+      let label = context.dataset.label || '';
+      if (label) {
+        label += ': ';
+      }
+      const value = context.parsed.y;
+      const metricType = context.dataset.label.toLowerCase();
+      
+      // Format as percentage for these metrics
+      if (['right', 'missed', 'wrong', 'lure'].includes(metricType)) {
+        label += value.toFixed(1) + '%';
+      } else {
+        // For d-prime, baseline, and bias - show as regular numbers
+        label += value.toFixed(2);
+      }
+      return label;
+    }
+  }
+}
         },
         scales: {
           x: {
