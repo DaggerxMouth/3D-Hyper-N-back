@@ -1825,13 +1825,12 @@ function toggleStats(_dim) {
   }
   break;
             case 'wrong':
-  const totalWrong = point.wrong || 0;
-  const matchingStimuli = point.matchingStimuli || (point.right + point.missed) || 0;
-  const totalTrials = (point.right || 0) + (point.missed || 0) + (point.wrong || 0) + (point.correctRejections || 0);
-  const nonMatchingStimuli = totalTrials - matchingStimuli;
+  const hits = point.right || 0;
+  const falseAlarms = point.wrong || 0;
+  const totalButtonPresses = hits + falseAlarms;
   
-  if (nonMatchingStimuli > 0) {
-    const percentage = (totalWrong / nonMatchingStimuli) * 100;
+  if (totalButtonPresses > 0) {
+    const percentage = (falseAlarms / totalButtonPresses) * 100;
     sum += percentage;
     count++;
   }
