@@ -688,14 +688,8 @@ function randomizeEnableTrigHandler(evt, defVal) {
 function updateMicroLevelForConfig() {
   const configKey = getCurrentConfigKey();
   
-  // Save current micro-level for previous config
-  const prevConfigKey = Object.keys(microLevelsByConfig).find(key => 
-    microLevelsByConfig[key] === currentMicroLevel
-  ) || configKey;
-  
-  if (prevConfigKey) {
-    microLevelsByConfig[prevConfigKey] = currentMicroLevel;
-  }
+  // Don't save here - micro-levels are saved when they change during game end
+// Just load the stored value for the new config
   
   // Load micro-level for new config
   currentMicroLevel = microLevelsByConfig[configKey] || 2.00;
@@ -3648,13 +3642,15 @@ sessionMetrics.responseBias = calculateResponseBias(
 // Calculate new micro-level based on d-prime and lure resistance
 const configHistory = sessionHistoriesByConfig[getCurrentConfigKey()] || [];
 newMicroLevel = checkMicroLevelAdvancement(sessionMetrics, configHistory);
+      // Save the new micro-level to config storage immediately after calculation
+microLevelsByConfig[getCurrentConfigKey()] = newMicroLevel;
 
 // Check if there's a change in integer level for UI display
 newLevel = Math.floor(newMicroLevel);
 levelChanged = newLevel !== originalLevel;
 
-// Update micro-level
-currentMicroLevel = newMicroLevel;
+// Update micro-level immediately using the handler
+nLevelInputHandler(null, newMicroLevel);
 
 // Save the updated micro-level to the config storage
 microLevelsByConfig[getCurrentConfigKey()] = newMicroLevel;
@@ -3757,13 +3753,7 @@ historyPoint.outcome = newLevel > originalLevel ? 1 : (newLevel < originalLevel 
     document.querySelector(".lvl-after").innerHTML = newLevel;
     // Update nLevel for game state
     nLevelInputHandler(null, newMicroLevel);
-// Restart game with new speed if currently running
-if (isRunning) {
-  resetIntervals();
-  intervals.push(
-    setInterval(getGameCycle(nLevel), getSpeedTarget(newMicroLevel))
-  );
-}
+
   } else if (newLevel < originalLevel) {
     // Level down
     document.querySelector(".lvl-res-move").style.display = "block";
@@ -3771,13 +3761,7 @@ if (isRunning) {
     document.querySelector(".lvl-after").innerHTML = newLevel;
     // Update nLevel for game state
     nLevelInputHandler(null, newMicroLevel);
-// Restart game with new speed if currently running
-if (isRunning) {
-  resetIntervals();
-  intervals.push(
-    setInterval(getGameCycle(nLevel), getSpeedTarget(newMicroLevel))
-  );
-}
+
   }
 } else {
   // Level stays the same (micro-level may have changed)
@@ -3840,8 +3824,6 @@ if (!goodAccuracy && goodDPrime) {
   nLevelInputHandler(null, newMicroLevel);
 }
 
-// Update the micro-level using the proper handler
-nLevelInputHandler(null, newMicroLevel);
 
 // Restart game with new speed if currently running
 if (isRunning) {
@@ -4132,6 +4114,11 @@ closeOptions();
 
 // Update micro-level for the new random configuration
 if (randomizeEnabled) {
+  // Save current micro-level before switching configurations
+  const currentConfig = getCurrentConfigKey();
+  microLevelsByConfig[currentConfig] = currentMicroLevel;
+  
+  // Now select random stimuli and update
   selectRandomStimuli(numStimuliSelect);
   updateMicroLevelForConfig();
 }
