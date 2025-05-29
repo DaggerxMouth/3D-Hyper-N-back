@@ -585,13 +585,13 @@ if (Math.floor(potentialNewLevel) > Math.floor(currentMicroLevel)) {
     // If phase would change, newMicroLevel remains unchanged from phase transition block
   }
   }
-if (matchAccuracy < 0.3) {
-    // Regression in micro-level for poor performance (below 30% accuracy)
+if (matchAccuracy < 0.75) {
+    // Regression in micro-level for poor performance (below 75% accuracy)
     const decrement = 0.05;
     newMicroLevel = Math.max(2.0, currentMicroLevel - decrement);
-    console.log(`Decreasing micro-level by -${decrement.toFixed(2)} (poor accuracy: ${(matchAccuracy * 100).toFixed(1)}%)`);
+    console.log(`Decreasing micro-level by -${decrement.toFixed(2)} (accuracy below 75%: ${(matchAccuracy * 100).toFixed(1)}%)`);
   } else if (!goodAccuracy) {
-    // Between 30% and 70% - stay at current level
+    // Between 75% and 90% - stay at current level
     newMicroLevel = currentMicroLevel;
     console.log(`Staying at current level due to moderate accuracy: ${(matchAccuracy * 100).toFixed(1)}%`);
   }
