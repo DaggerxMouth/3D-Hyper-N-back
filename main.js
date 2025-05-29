@@ -1871,7 +1871,7 @@ count = 1;
         
         return count > 0 ? sum / count : null;
       });
-      
+      console.log(`Adding dataset for ${metric}:`, data.filter(d => d !== null));
       datasets.push({
         label: metric.charAt(0).toUpperCase() + metric.slice(1),
         data: data,
