@@ -474,9 +474,10 @@ if (goodDPrime && lowBias) {
   const potentialNewLevel = Math.min(9.99, currentMicroLevel + increment);
 
   // Get current phase and potential new phase
-  const currentPhase = microProgress <= 0.33 ? 1 : (microProgress <= 0.66 ? 2 : 3);
-  const newProgress = potentialNewLevel - Math.floor(potentialNewLevel);
-  const potentialPhase = newProgress <= 0.33 ? 1 : (newProgress <= 0.66 ? 2 : 3);
+// Fixed phase boundaries: Phase 1: 0.00-0.33, Phase 2: 0.34-0.66, Phase 3: 0.67-0.99
+const currentPhase = microProgress < 0.34 ? 1 : (microProgress < 0.67 ? 2 : 3);
+const newProgress = potentialNewLevel - Math.floor(potentialNewLevel);
+const potentialPhase = newProgress < 0.34 ? 1 : (newProgress < 0.67 ? 2 : 3);
   
   // Check if this would be a phase transition
   if (potentialPhase > currentPhase) {
@@ -505,9 +506,9 @@ if (goodDPrime && lowBias) {
       // Reset attempts after phase transition
       phaseData[transitionKey] = [];
     } else {
-      // Cap at phase boundary
-      const phaseCap = currentPhase === 1 ? 0.33 : 0.66;
-      newMicroLevel = Math.floor(currentMicroLevel) + phaseCap;
+      // Cap at phase boundary (slightly below to avoid ambiguity)
+const phaseCap = currentPhase === 1 ? 0.33 : 0.66;
+newMicroLevel = Math.floor(currentMicroLevel) + phaseCap;
       console.log(`Phase transition blocked: ${successCount}/${phaseData.requiredSuccesses} successful attempts (${(accuracy * 100).toFixed(0)}% this session)`);
     }
   }
@@ -573,17 +574,17 @@ function getSpeedTarget(microLevel) {
   const { nLevel, microProgress } = getMicroLevelComponents(microLevel);
   
   // Determine which phase we're in and calculate relative progress within that phase
-  let phaseProgress;
-  if (microProgress <= 0.33) {
-    // Phase 1: 0-33 levels
-    phaseProgress = microProgress / 0.33;
-  } else if (microProgress <= 0.66) {
-    // Phase 2: 34-66 levels
-    phaseProgress = (microProgress - 0.34) / 0.32;
-  } else {
-    // Phase 3: 67-99 levels
-    phaseProgress = (microProgress - 0.67) / 0.32;
-  }
+let phaseProgress;
+if (microProgress < 0.34) {
+  // Phase 1: 0-33 levels
+  phaseProgress = microProgress / 0.33;
+} else if (microProgress < 0.67) {
+  // Phase 2: 34-66 levels
+  phaseProgress = (microProgress - 0.34) / 0.32;
+} else {
+  // Phase 3: 67-99 levels
+  phaseProgress = (microProgress - 0.67) / 0.32;
+}
   
   // All phases go from baseDelay (5000ms) to 3000ms
   const levelStartSpeed = baseDelay;
@@ -3299,10 +3300,10 @@ const maxLureFreq = 0.40;
 
 // Determine which phase we're in and calculate relative progress within that phase
 let phaseProgress;
-if (microProgress <= 0.33) {
+if (microProgress < 0.34) {
   // Phase 1: 0-33 levels
   phaseProgress = microProgress / 0.33;
-} else if (microProgress <= 0.66) {
+} else if (microProgress < 0.67) {
   // Phase 2: 34-66 levels
   phaseProgress = (microProgress - 0.34) / 0.32;
 } else {
@@ -3609,13 +3610,13 @@ const oldPhase = oldMicroLevel - Math.floor(oldMicroLevel);
 const newPhase = newMicroLevel - Math.floor(newMicroLevel);
 
 // Detect phase transitions
-const wasPhase1 = oldPhase <= 0.33;
-const wasPhase2 = oldPhase > 0.33 && oldPhase <= 0.66;
-const wasPhase3 = oldPhase > 0.66;
+const wasPhase1 = oldPhase < 0.34;
+const wasPhase2 = oldPhase >= 0.34 && oldPhase < 0.67;
+const wasPhase3 = oldPhase >= 0.67;
 
-const isPhase1 = newPhase <= 0.33;
-const isPhase2 = newPhase > 0.33 && newPhase <= 0.66;
-const isPhase3 = newPhase > 0.66;
+const isPhase1 = newPhase < 0.34;
+const isPhase2 = newPhase >= 0.34 && newPhase < 0.67;
+const isPhase3 = newPhase >= 0.67;
 
 // Check if we've moved to a new phase or crossed an integer boundary
 const phaseChanged = (wasPhase1 && !isPhase1) || (wasPhase2 && !isPhase2) || (wasPhase3 && !isPhase3);
