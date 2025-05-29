@@ -585,7 +585,10 @@ if (sessionMetrics.dPrime < dPrimeThreshold * 0.7) {
   }
   
   return newMicroLevel;
+  }
 }
+
+// Function to get micro-level components
 
 // Function to get micro-level components
 function getMicroLevelComponents(microLevel) {
