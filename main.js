@@ -1826,9 +1826,12 @@ function toggleStats(_dim) {
   break;
             case 'wrong':
   const totalWrong = point.wrong || 0;
-  const totalPossible = (point.right || 0) + (point.missed || 0) + (point.wrong || 0);
-  if (totalPossible > 0) {
-    const percentage = (totalWrong / totalPossible) * 100;
+  const matchingStimuli = point.matchingStimuli || (point.right + point.missed) || 0;
+  const totalTrials = (point.right || 0) + (point.missed || 0) + (point.wrong || 0) + (point.correctRejections || 0);
+  const nonMatchingStimuli = totalTrials - matchingStimuli;
+  
+  if (nonMatchingStimuli > 0) {
+    const percentage = (totalWrong / nonMatchingStimuli) * 100;
     sum += percentage;
     count++;
   }
