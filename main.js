@@ -1860,10 +1860,10 @@ console.log(`Config ${configKey} dPrimes:`, configHistory.map(s => s.dPrime));
   
   if (configHistory.length >= 3) {
     const baseline = calculateBaseline(configHistory);
-    console.log(`Baseline for config ${configKey}: avgDPrime=${baseline.avgDPrime}, sessions=${configHistory.length}`);
-    // Don't multiply by 100 - d-prime is not a percentage
-    sum += baseline.avgDPrime;
-    count = 1;
+console.log(`Baseline calc for config ${configKey}: history length=${configHistory.length}, avgDPrime=${baseline.avgDPrime}`);
+// Don't multiply by 100 - d-prime is not a percentage
+sum += baseline.avgDPrime;
+count = 1;
   }
   break;
           }
@@ -3838,6 +3838,8 @@ if (!sessionHistoriesByConfig[currentConfigKey]) {
 
 // Add accuracy to session metrics
 sessionMetrics.accuracy = accuracy;
+
+      console.log(`Adding session to config ${currentConfigKey} with dPrime=${sessionMetrics.dPrime}`);
 
 sessionHistoriesByConfig[currentConfigKey].push({
   ...sessionMetrics, 
