@@ -3643,15 +3643,15 @@ sessionMetrics.responseBias = calculateResponseBias(
 // Calculate new micro-level based on d-prime and lure resistance
 const configHistory = sessionHistoriesByConfig[getCurrentConfigKey()] || [];
 newMicroLevel = checkMicroLevelAdvancement(sessionMetrics, configHistory);
-      // Save the new micro-level to config storage immediately after calculation
-microLevelsByConfig[getCurrentConfigKey()] = newMicroLevel;
-      console.log(`Saved micro-level ${newMicroLevel} to config ${getCurrentConfigKey()}`);
 
 // Check if there's a change in integer level for UI display
 newLevel = Math.floor(newMicroLevel);
 levelChanged = newLevel !== originalLevel;
 
 // Update micro-level immediately using the handler
+      // Save the new micro-level to config storage before updating
+microLevelsByConfig[getCurrentConfigKey()] = newMicroLevel;
+console.log(`Saved micro-level ${newMicroLevel} to config ${getCurrentConfigKey()}`);
 nLevelInputHandler(null, newMicroLevel);
 
 // Save the updated micro-level to the config storage
