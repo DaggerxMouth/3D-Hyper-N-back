@@ -513,7 +513,7 @@ if (goodDPrime && lowBias) {
   }
   
   // Check if this would cross an integer boundary
-  } else if (Math.floor(potentialNewLevel) > Math.floor(currentMicroLevel)) {
+  if (Math.floor(potentialNewLevel) > Math.floor(currentMicroLevel)) {
     // Integer level transition - check accuracy attempts
     const configKey = getCurrentConfigKey();
     const attemptData = accuracyAttemptsByConfig[configKey];
