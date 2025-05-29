@@ -1855,6 +1855,8 @@ function toggleStats(_dim) {
   // Calculate baseline d-prime for this configuration
   const configKey = dimension;
   const configHistory = sessionHistoriesByConfig[configKey] || [];
+              console.log(`Config ${configKey} history:`, configHistory);
+console.log(`Config ${configKey} dPrimes:`, configHistory.map(s => s.dPrime));
   
   if (configHistory.length >= 3) {
     const baseline = calculateBaseline(configHistory);
