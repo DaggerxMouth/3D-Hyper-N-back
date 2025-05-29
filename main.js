@@ -1836,15 +1836,11 @@ function toggleStats(_dim) {
               // Calculate baseline d-prime for this configuration
               const configKey = dimension;
               const configHistory = sessionHistoriesByConfig[configKey] || [];
-              console.log(`Baseline for dimension ${configKey}: ${configHistory.length} sessions`);
               
-              if (configHistory.length >= 3) { // Reduced from 5 for testing
+              if (configHistory.length >= 3) {
                 const baseline = calculateBaseline(configHistory);
-                console.log(`Baseline d-prime: ${baseline.avgDPrime}`);
                 sum += baseline.avgDPrime;
                 count = 1;
-              } else {
-                console.log(`Not enough data for baseline (need 3+)`);
               }
               break;
           }
@@ -2438,10 +2434,6 @@ if (avgLureElement) {
 // Calculate and display baseline metrics
 const configHistory = sessionHistoriesByConfig[validDim] || [];
 const baseline = calculateBaseline(configHistory);
-  // Ensure baseline is not multiplied by 100
-                const baselineValue = baseline.avgDPrime > 10 ? baseline.avgDPrime / 100 : baseline.avgDPrime;
-                console.log(`Baseline d-prime: ${baselineValue}`);
-                sum += baselineValue;
 
 const baselineDPrimeElement = document.querySelector("#sc-baseline-dprime");
 if (baselineDPrimeElement) {
