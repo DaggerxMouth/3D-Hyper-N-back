@@ -1872,6 +1872,9 @@ count = 1;
         return count > 0 ? sum / count : null;
       });
       console.log(`Adding dataset for ${metric}:`, data.filter(d => d !== null));
+if (metric === 'baseline') {
+  console.log('Baseline values:', data);
+}
       datasets.push({
         label: metric.charAt(0).toUpperCase() + metric.slice(1),
         data: data,
