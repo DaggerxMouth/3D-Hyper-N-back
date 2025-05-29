@@ -479,6 +479,7 @@ const newProgress = potentialNewLevel - Math.floor(potentialNewLevel);
 const potentialPhase = newProgress < 0.34 ? 1 : (newProgress < 0.67 ? 2 : 3);
   
   // Check if this would be a phase transition
+let phaseTransitionBlocked = false;
   if (potentialPhase > currentPhase) {
     // Phase transitions require 90% accuracy for 3 out of 5 sessions
     const configKey = getCurrentConfigKey();
@@ -507,16 +508,18 @@ phaseData[transitionKey].push(matchAccuracy >= 0.90);
       console.log(`PHASE UP! ${successCount}/${phaseData.requiredSuccesses} successful attempts`);
       // Reset attempts after phase transition
       phaseData[transitionKey] = [];
-    } else {
+   } else {
   // Cap at phase boundary - don't allow ANY progress past the current phase
   newMicroLevel = currentMicroLevel; // Stay exactly where we are
+  phaseTransitionBlocked = true; // Set flag
   console.log(`Phase transition blocked: ${successCount}/${phaseData.requiredSuccesses} successful attempts (${(matchAccuracy * 100).toFixed(0)}% this session)`);
 }
 } else {
-  // Within same integer level and same phase - allow normal micro-progress
-  newMicroLevel = potentialNewLevel;
-  console.log(`Micro-progress: +${increment.toFixed(2)} (d'=${sessionMetrics.dPrime.toFixed(2)})`);
-}
+  // Within same integer level - no accuracy requirement
+  if (!phaseTransitionBlocked) {
+    newMicroLevel = potentialNewLevel;
+    console.log(`Micro-progress: +${increment.toFixed(2)} (d'=${sessionMetrics.dPrime.toFixed(2)})`);
+  }
 }
   
 }
