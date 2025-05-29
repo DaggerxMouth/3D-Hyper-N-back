@@ -3657,8 +3657,7 @@ levelChanged = newLevel !== originalLevel;
 currentMicroLevel = newMicroLevel;
 
 // Save the updated micro-level to the config storage
-const currentConfigKey = getCurrentConfigKey();
-microLevelsByConfig[currentConfigKey] = newMicroLevel;
+microLevelsByConfig[getCurrentConfigKey()] = newMicroLevel;
 
 // Check for phase transitions and reset baseline
 const oldPhase = oldMicroLevel - Math.floor(oldMicroLevel);
