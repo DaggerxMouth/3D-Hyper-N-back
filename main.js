@@ -2045,9 +2045,8 @@ function toggleStats(_dim) {
     
   // Initialize chart with default settings
   setTimeout(() => {
-    const currentDim = localStorage.getItem("last-dim") || 1;
-    updatePerformanceChart(currentDim, 'week');
-    updateStimuliAccuracyChart(currentDim, 'week');
+    updatePerformanceChart(validDim, 'week');
+    updateStimuliAccuracyChart(validDim, 'week');
   }, 100);
   
   // Get the dimension to display (from parameter, localStorage, or default to 1)
