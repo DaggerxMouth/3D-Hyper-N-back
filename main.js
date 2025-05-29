@@ -451,26 +451,44 @@ const correctResponses = sessionMetrics.hits;
 const accuracy = totalMatches > 0 ? correctResponses / totalMatches : 0;
 
 // Criteria for advancement
-const goodDPrime = sessionMetrics.dPrime > dPrimeThreshold;
+const accuracy = sessionMetrics.hits / Math.max(1, sessionMetrics.hits + sessionMetrics.misses + sessionMetrics.falseAlarms);
+const goodAccuracy = accuracy >= 0.7; // 70% accuracy minimum for any progress
 const goodLureResistance = sessionMetrics.n1LureResistance >= lureResistanceThreshold;
-const lowBias = Math.abs(sessionMetrics.responseBias) < 0.5; // Not too biased toward yes or no
-console.log(`Advancement criteria: dPrime=${sessionMetrics.dPrime.toFixed(2)} (threshold=${dPrimeThreshold}), goodDPrime=${goodDPrime}, lowBias=${lowBias}, responseBias=${sessionMetrics.responseBias.toFixed(2)}`);
+console.log(`Advancement criteria: accuracy=${(accuracy * 100).toFixed(1)}%, goodAccuracy=${goodAccuracy}`);
   
   // Get current level components
   const { nLevel, microProgress } = getMicroLevelComponents(currentMicroLevel);
   
-  // Advancement size (0.01 to 0.05 based on performance)
+// Advancement size (0.01 to 0.05 based on accuracy)
   const baseIncrement = 0.01;
   const maxIncrement = 0.05;
-  const performanceRatio = Math.min(1, (sessionMetrics.dPrime - dPrimeThreshold) / 1.0);
+  // Calculate accuracy for micro-level progress
+  const accuracy = sessionMetrics.hits / Math.max(1, sessionMetrics.hits + sessionMetrics.misses + sessionMetrics.falseAlarms);
+  const performanceRatio = Math.min(1, Math.max(0, (accuracy - 0.5) / 0.4)); // Scale from 50% to 90%
   const increment = baseIncrement + (performanceRatio * (maxIncrement - baseIncrement));
   
   // Determine new micro-level
 let newMicroLevel = currentMicroLevel;
 
-if (goodDPrime && lowBias) {
+if (goodAccuracy) {
   // Calculate potential new level
-  const potentialNewLevel = Math.min(9.99, currentMicroLevel + increment);
+  let potentialNewLevel = currentMicroLevel + increment;
+  
+  // Check if this would cross a phase boundary
+  const currentPhase = microProgress < 0.34 ? 1 : (microProgress < 0.67 ? 2 : 3);
+  const newProgress = potentialNewLevel - Math.floor(potentialNewLevel);
+  const potentialPhase = newProgress < 0.34 ? 1 : (newProgress < 0.67 ? 2 : 3);
+  
+  // If crossing phase boundary, cap at current phase maximum
+  if (potentialPhase > currentPhase) {
+    if (currentPhase === 1) {
+      potentialNewLevel = Math.floor(currentMicroLevel) + 0.33;
+    } else if (currentPhase === 2) {
+      potentialNewLevel = Math.floor(currentMicroLevel) + 0.66;
+    }
+  }
+  
+  potentialNewLevel = Math.min(9.99, potentialNewLevel);
 
   // Get current phase and potential new phase
 // Fixed phase boundaries: Phase 1: 0.00-0.33, Phase 2: 0.34-0.66, Phase 3: 0.67-0.99
@@ -489,7 +507,8 @@ let phaseTransitionBlocked = false;
 const transitionKey = currentPhase === 1 ? 'phase1to2' : 'phase2to3';
 
 // Calculate proper accuracy for phase transitions (matches only)
-const matchAccuracy = (sessionMetrics.hits) / (sessionMetrics.hits + sessionMetrics.misses + sessionMetrics.falseAlarms);
+// Using right/total formula: hits divided by all attempts (hits + misses + false alarms)
+const matchAccuracy = sessionMetrics.hits / Math.max(1, sessionMetrics.hits + sessionMetrics.misses + sessionMetrics.falseAlarms);
 
 // Record this attempt
 phaseData[transitionKey].push(matchAccuracy >= 0.90);
@@ -526,14 +545,14 @@ phaseData[transitionKey].push(matchAccuracy >= 0.90);
   if (newMicroLevel === currentMicroLevel) {
     // Do nothing more - stay at current level
   } else {
-    // Check if this would cross an integer boundary
+// Check if this would cross an integer boundary
 if (Math.floor(potentialNewLevel) > Math.floor(currentMicroLevel)) {
   // Integer level transition - check accuracy attempts
   const configKey = getCurrentConfigKey();
   const attemptData = accuracyAttemptsByConfig[configKey];
   
   // Calculate proper accuracy for integer transitions (matches only)
-  const matchAccuracy = (sessionMetrics.hits) / (sessionMetrics.hits + sessionMetrics.misses + sessionMetrics.falseAlarms);
+  const matchAccuracy = sessionMetrics.hits / Math.max(1, sessionMetrics.hits + sessionMetrics.misses + sessionMetrics.falseAlarms);
   
   // Record this attempt
   attemptData.attempts.push(matchAccuracy >= 0.90);
@@ -571,11 +590,11 @@ if (Math.floor(potentialNewLevel) > Math.floor(currentMicroLevel)) {
     // If phase would change, newMicroLevel remains unchanged from phase transition block
   }
   }
-if (sessionMetrics.dPrime < dPrimeThreshold * 0.7) {
-    // Regression in micro-level for poor performance
+if (accuracy < 0.3) {
+    // Regression in micro-level for poor performance (below 30% accuracy)
     const decrement = 0.05;
     newMicroLevel = Math.max(2.0, currentMicroLevel - decrement);
-    console.log(`Decreasing micro-level by -${decrement.toFixed(2)} (poor d-prime: ${sessionMetrics.dPrime.toFixed(2)})`);
+    console.log(`Decreasing micro-level by -${decrement.toFixed(2)} (poor accuracy: ${(accuracy * 100).toFixed(1)}%)`);
   }
   
   // Integer level transitions
