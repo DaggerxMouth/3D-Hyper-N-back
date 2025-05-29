@@ -4238,10 +4238,18 @@ function calculateAccuracy(correct, missed, wrong) {
 }
 
 // Set up event listeners
-[ ...document.querySelectorAll("input[name='dimension'") ].forEach(el => {
+[ ...document.querySelectorAll("input[name='dimension']") ].forEach(el => {
   el.addEventListener("click", function(evt) {
-      const dim = evt.target.value;
-      toggleStats(dim);
+      const dim = parseInt(evt.target.value);
+      
+      // Update the charts with the selected dimension
+      const activePeriod = document.querySelector('.period-btn.active')?.dataset.period || 'week';
+      if (typeof updatePerformanceChart === 'function') {
+        updatePerformanceChart(dim, activePeriod);
+      }
+      if (typeof updateStimuliAccuracyChart === 'function') {
+        updateStimuliAccuracyChart(dim, activePeriod);
+      }
   });
 });
 
