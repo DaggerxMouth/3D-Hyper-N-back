@@ -1887,7 +1887,7 @@ function toggleStats(_dim) {
       this.classList.add('active');
       // Update chart with new period
       const period = this.dataset.period;
-      const currentDim = localStorage.getItem("last-dim") || 1;
+      const currentDim = parseInt(document.querySelector('input[name="dimension"]:checked').value);
       updatePerformanceChart(currentDim, period);
       updateStimuliAccuracyChart(currentDim, period);
     });
@@ -1902,7 +1902,7 @@ function toggleStats(_dim) {
     newCheckbox.addEventListener('change', function() {
       // Update chart when metrics are toggled
       const activePeriod = document.querySelector('.period-btn.active').dataset.period;
-      const currentDim = localStorage.getItem("last-dim") || 1;
+      const currentDim = parseInt(document.querySelector('input[name="dimension"]:checked').value);
       updatePerformanceChart(currentDim, activePeriod);
     });
   });
