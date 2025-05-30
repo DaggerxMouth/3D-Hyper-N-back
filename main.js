@@ -4060,6 +4060,15 @@ function getGameCycle(n) {
       recapDialogContent.parentElement.show();
       
       // Reset game state for next round
+      // If game was running, restart with new speed
+      if (isRunning) {
+        resetIntervals();
+        const newSpeed = getSpeedTarget(newMicroLevel);
+        console.log(`Level changed to ${formatMicroLevel(newMicroLevel)}, new speed: ${newSpeed}ms`);
+        intervals.push(
+          setInterval(getGameCycle(Math.floor(newMicroLevel)), newSpeed)
+        );
+      }
       resetPoints();
       resetBlock();
       
