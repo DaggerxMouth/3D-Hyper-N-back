@@ -608,6 +608,8 @@ if (Math.floor(potentialNewLevel) > Math.floor(currentMicroLevel)) {
   console.log(`Returning newMicroLevel: ${newMicroLevel} (was ${currentMicroLevel})`);
   return newMicroLevel;
 }
+}
+
 
 // Function to get micro-level components
 
@@ -3642,6 +3644,7 @@ sessionMetrics.responseBias = calculateResponseBias(
 // Calculate new micro-level based on d-prime and lure resistance
 const configHistory = sessionHistoriesByConfig[getCurrentConfigKey()] || [];
 newMicroLevel = checkMicroLevelAdvancement(sessionMetrics, configHistory);
+console.log(`checkMicroLevelAdvancement returned: ${newMicroLevel}`);
 
 // Save the new micro-level to config storage immediately
 microLevelsByConfig[getCurrentConfigKey()] = newMicroLevel;
