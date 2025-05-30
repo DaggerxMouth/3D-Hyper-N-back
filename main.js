@@ -3501,6 +3501,8 @@ function getGameCycle(n) {
     
     // End game
     if (i > length - 1) {
+      // Get config key early for use throughout game end
+      const configKey = getCurrentConfigKey();
       let correctStimuli = 0;
       let mistakes = 0;
       
@@ -3897,7 +3899,6 @@ function getGameCycle(n) {
       
       // Save history and show results
       const datestamp = new Date().toLocaleDateString("sv");
-      const configKey = getCurrentConfigKey();
       history[configKey][datestamp] = history[configKey][datestamp] || [];
       history[configKey][datestamp].push(historyPoint);
       console.log("history", history);
