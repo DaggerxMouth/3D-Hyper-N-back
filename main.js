@@ -3693,7 +3693,7 @@ function getGameCycle(n) {
       levelChanged = newLevel !== originalLevel;
 
       // Update micro-level immediately 
-      microLevelsByConfig[getCurrentConfigKey()] = newMicroLevel;
+      microLevelsByConfig[configKey] = newMicroLevel;
       currentMicroLevel = newMicroLevel;
       nLevel = Math.floor(newMicroLevel);
       
@@ -3713,7 +3713,6 @@ function getGameCycle(n) {
       // Now update displays
       nLevelInput.value = formatMicroLevel(newMicroLevel);
       nBackDisplay.innerHTML = formatMicroLevel(newMicroLevel);
-      const speedDisplay = document.querySelector("#speed-display");
       if (speedDisplay) {
         speedDisplay.innerHTML = getSpeedTarget(newMicroLevel);
       }
