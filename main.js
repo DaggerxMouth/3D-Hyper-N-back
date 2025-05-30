@@ -661,6 +661,7 @@ function getSpeedTarget(microLevel) {
   const speedRange = levelStartSpeed - levelEndSpeed;
   const target = levelStartSpeed - (speedRange * phaseProgress);
   
+  console.log(`Speed calc: phase=${phaseProgress.toFixed(2)}, target=${target}, returning=${Math.round(target)}`);
   return Math.round(target);
 }
 
@@ -3711,7 +3712,7 @@ function getGameCycle(n) {
       microLevelsByConfig[configKey] = newMicroLevel;
       console.log(`Saved micro-level ${newMicroLevel} to config ${configKey} BEFORE handler update`);
       currentMicroLevel = newMicroLevel;
-      nLevel = Math.floor(newMicroLevel);
+      // nLevel will be updated globally when needed
       // Now update displays
       nLevelInput.value = formatMicroLevel(newMicroLevel);
       nBackDisplay.innerHTML = formatMicroLevel(newMicroLevel);
