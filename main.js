@@ -315,6 +315,18 @@ let microLevelsByConfig = {
   9: 2.00
 };
 
+// Track accuracy attempts for integer level transitions
+let accuracyAttemptsByConfig = {
+  2: { attempts: [], requiredSuccesses: 3, windowSize: 5 },
+  3: { attempts: [], requiredSuccesses: 3, windowSize: 5 },
+  4: { attempts: [], requiredSuccesses: 3, windowSize: 5 },
+  5: { attempts: [], requiredSuccesses: 3, windowSize: 5 },
+  6: { attempts: [], requiredSuccesses: 3, windowSize: 5 },
+  7: { attempts: [], requiredSuccesses: 3, windowSize: 5 },
+  8: { attempts: [], requiredSuccesses: 3, windowSize: 5 },
+  9: { attempts: [], requiredSuccesses: 3, windowSize: 5 }
+};
+
 // Session histories by configuration
 let sessionHistoriesByConfig = {
   2: [],
@@ -475,11 +487,12 @@ function checkMicroLevelAdvancement(sessionMetrics, sessionHistory) {
     newMicroLevel = Math.max(2.0, currentMicroLevel - decrement);
     console.log(`Decreasing micro-level by -${decrement.toFixed(2)} (accuracy below 75%: ${(matchAccuracy * 100).toFixed(1)}%)`);
     isRegressing = true;
-  } else if (goodAccuracy && !isRegressing) {
+    console.log(`Returning newMicroLevel: ${newMicroLevel} (was ${currentMicroLevel})`);
+    return newMicroLevel;
+  } else if (goodAccuracy) {
     // Calculate potential new level (only if not already regressing)
     let potentialNewLevel = currentMicroLevel + increment;
     
-    if (!isRegressing) {
       // Check if this would cross a phase boundary
       const currentPhase = microProgress < 0.34 ? 1 : (microProgress < 0.67 ? 2 : 3);
       const newProgress = potentialNewLevel - Math.floor(potentialNewLevel);
@@ -501,7 +514,6 @@ function checkMicroLevelAdvancement(sessionMetrics, sessionHistory) {
       // Variables currentPhase, newProgress, and potentialPhase already declared above
       
       // Check if this would be a phase transition
-      let phaseTransitionBlocked = false;
       if (potentialPhase > currentPhase) {
         // Phase transitions require 90% accuracy for 3 out of 5 sessions
         const configKey = getCurrentConfigKey();
@@ -532,17 +544,25 @@ function checkMicroLevelAdvancement(sessionMetrics, sessionHistory) {
           // Reset attempts after phase transition
           phaseData[transitionKey] = [];
         } else {
-          // Cap at phase boundary - don't allow ANY progress past the current phase
-          newMicroLevel = currentMicroLevel; // Stay exactly where we are
-          phaseTransitionBlocked = true; // Set flag
+          // Allow progress up to phase boundary
+          const phaseCap = currentPhase === 1 ? 0.33 : (currentPhase === 2 ? 0.66 : 0.99);
+          const maxAllowedLevel = Math.floor(currentMicroLevel) + phaseCap;
+          
+          // Progress within phase but don't exceed boundary
+          newMicroLevel = Math.min(potentialNewLevel, maxAllowedLevel);
+          
+          // Only log as blocked if we actually hit the cap
+          if (potentialNewLevel > maxAllowedLevel) {
+            console.log(`Phase transition blocked: ${successCount}/${phaseData.requiredSuccesses} successful attempts (${(matchAccuracy * 100).toFixed(0)}% this session)`);
+          } else {
+            console.log(`Progress within phase: +${(newMicroLevel - currentMicroLevel).toFixed(2)}`);
+          }
           console.log(`Phase transition blocked: ${successCount}/${phaseData.requiredSuccesses} successful attempts (${(matchAccuracy * 100).toFixed(0)}% this session)`);
         }
       } else {
         // Within same integer level - no accuracy requirement
-        if (!phaseTransitionBlocked) {
-          newMicroLevel = potentialNewLevel;
-          console.log(`Micro-progress: +${increment.toFixed(2)} (d'=${sessionMetrics.dPrime.toFixed(2)})`);
-        }
+        newMicroLevel = potentialNewLevel;
+        console.log(`Micro-progress: +${increment.toFixed(2)} (d'=${sessionMetrics.dPrime.toFixed(2)})`);
       }
       
       // If phase transition was blocked, skip all other advancement logic
@@ -590,23 +610,24 @@ function checkMicroLevelAdvancement(sessionMetrics, sessionHistory) {
             console.log(`Micro-progress: +${increment.toFixed(2)} (d'=${sessionMetrics.dPrime.toFixed(2)})`);
           }
           // If phase would change, newMicroLevel remains unchanged from phase transition block
-        }
       }
-    } // End of if (!isRegressing) block
-    
-    // This regression check has been moved earlier in the function
-    
-    // Integer level transitions
-    if (Math.floor(newMicroLevel) > nLevel) {
-      console.log(`LEVEL UP! ${nLevel} -> ${Math.floor(newMicroLevel)}`);
-    } else if (Math.floor(newMicroLevel) < nLevel) {
-      console.log(`LEVEL DOWN! ${nLevel} -> ${Math.floor(newMicroLevel)}`);
     }
-    console.log(`Returning newMicroLevel: ${newMicroLevel} (was ${currentMicroLevel})`);
-    console.log("=== END checkMicroLevelAdvancement ===");
-    console.log(`About to return: ${newMicroLevel}`);
-    return newMicroLevel;
+    } else {
+    // Accuracy between 75-89% - maintain current level with no progress
+    newMicroLevel = currentMicroLevel;
+    console.log(`Maintaining current level (accuracy ${(matchAccuracy * 100).toFixed(1)}% - need 90% for progress)`);
+}
+  
+  // Integer level transitions
+  if (Math.floor(newMicroLevel) > nLevel) {
+    console.log(`LEVEL UP! ${nLevel} -> ${Math.floor(newMicroLevel)}`);
+  } else if (Math.floor(newMicroLevel) < nLevel) {
+    console.log(`LEVEL DOWN! ${nLevel} -> ${Math.floor(newMicroLevel)}`);
   }
+  
+  console.log("=== END checkMicroLevelAdvancement ===");
+  console.log(`About to return: ${newMicroLevel}`);
+  return newMicroLevel;
 }
 
 // Function to get micro-level components
@@ -667,7 +688,13 @@ function getActiveStimuliCount() {
 
 // Function to get current configuration key
 function getCurrentConfigKey() {
-  return getActiveStimuliCount();
+  const count = getActiveStimuliCount();
+  // Ensure we always return a valid config key (minimum 2)
+  if (count < 2) {
+    console.warn(`Invalid stimulus count ${count}, defaulting to 2`);
+    return 2;
+  }
+  return count;
 }
 
 // Handler function for randomize stimuli toggle
@@ -683,13 +710,26 @@ function randomizeEnableTrigHandler(evt, defVal) {
 
 // Function to update micro-level when configuration changes
 function updateMicroLevelForConfig() {
+  // Ensure currentMicroLevel is valid
+  if (currentMicroLevel === undefined || currentMicroLevel === null || isNaN(currentMicroLevel)) {
+    console.error("Invalid currentMicroLevel detected, resetting to 2.00");
+    currentMicroLevel = 2.00;
+  }
   const configKey = getCurrentConfigKey();
   
   // Don't save here - micro-levels are saved when they change during game end
   // Just load the stored value for the new config
   
   // Load micro-level for new config
-  currentMicroLevel = microLevelsByConfig[configKey] || 2.00;
+  // Validate the stored micro-level before using it
+  const storedLevel = microLevelsByConfig[configKey];
+  if (storedLevel === undefined || storedLevel === null || isNaN(storedLevel) || storedLevel < 2 || storedLevel > 9.99) {
+    console.warn(`Invalid stored micro-level ${storedLevel} for config ${configKey}, using 2.00`);
+    currentMicroLevel = 2.00;
+    microLevelsByConfig[configKey] = 2.00;
+  } else {
+    currentMicroLevel = storedLevel;
+  }
   console.log(`Loaded micro-level ${currentMicroLevel} from config ${configKey}`);
   nLevel = Math.floor(currentMicroLevel);
   
@@ -1631,8 +1671,22 @@ function loadSettings() {
   
   // Restore multi-config data if available
   if (settings.microLevelsByConfig) {
-    microLevelsByConfig = settings.microLevelsByConfig;
+  // Validate each config's micro-level
+  for (let config = 1; config <= 9; config++) {
+    const storedLevel = settings.microLevelsByConfig[config];
+    if (storedLevel === undefined || storedLevel === null || isNaN(storedLevel) || storedLevel < 2 || storedLevel > 9.99) {
+      console.warn(`Invalid micro-level ${storedLevel} for config ${config}, resetting to 2.00`);
+      microLevelsByConfig[config] = 2.00;
+    } else {
+      microLevelsByConfig[config] = storedLevel;
+    }
   }
+} else {
+  // Initialize all configs to 2.00 if not in storage
+  for (let config = 1; config <= 9; config++) {
+    microLevelsByConfig[config] = 2.00;
+  }
+}
   if (settings.sessionHistoriesByConfig) {
     sessionHistoriesByConfig = settings.sessionHistoriesByConfig;
   }
@@ -1640,8 +1694,23 @@ function loadSettings() {
     accuracyAttemptsByConfig = settings.accuracyAttemptsByConfig;
   }
   if (settings.phaseAccuracyAttemptsByConfig) {
-    phaseAccuracyAttemptsByConfig = settings.phaseAccuracyAttemptsByConfig;
+  // Validate each config's phase data
+  for (let config = 2; config <= 9; config++) {
+    if (!settings.phaseAccuracyAttemptsByConfig[config] || 
+        !Array.isArray(settings.phaseAccuracyAttemptsByConfig[config].phase1to2) ||
+        !Array.isArray(settings.phaseAccuracyAttemptsByConfig[config].phase2to3)) {
+      console.warn(`Invalid phase data for config ${config}, resetting`);
+      phaseAccuracyAttemptsByConfig[config] = {
+        phase1to2: [],
+        phase2to3: [],
+        requiredSuccesses: 3,
+        windowSize: 5
+      };
+    } else {
+      phaseAccuracyAttemptsByConfig[config] = settings.phaseAccuracyAttemptsByConfig[config];
+    }
   }
+}
 
   wallsEnableTrigHandler(null, settings.wallsEnabled);
   cameraEnableTrigHandler(null, settings.cameraEnabled);
@@ -2402,7 +2471,9 @@ function toggleStats(_dim) {
   document.querySelector("#sc-min").innerHTML = (minNLevel === 10) ? "-" : minNLevel;
   document.querySelector("#sc-max").innerHTML = maxNLevel || "-";
   // Show micro-level for the selected configuration
+  console.log(`Stats debug - validDim: ${validDim}, microLevelsByConfig:`, microLevelsByConfig);
   const selectedConfigLevel = microLevelsByConfig[validDim] || 2.00;
+  console.log(`Selected config ${validDim} micro-level: ${selectedConfigLevel}`);
   document.querySelector("#sc-micro-level").innerHTML = formatMicroLevel(selectedConfigLevel);
   
   // Update level progress indicator
@@ -3612,16 +3683,42 @@ function getGameCycle(n) {
       newMicroLevel = checkMicroLevelAdvancement(sessionMetrics, configHistory);
       console.log(`checkMicroLevelAdvancement returned: ${newMicroLevel}`);
 
-      // Save the new micro-level to config storage immediately
-      microLevelsByConfig[getCurrentConfigKey()] = newMicroLevel;
-      console.log(`Saved micro-level ${newMicroLevel} to config ${getCurrentConfigKey()}`);
+      // Update current micro-level immediately for consistency
+      currentMicroLevel = newMicroLevel;
+      // Save settings immediately after micro-level change
+      saveSettings();
 
       // Check if there's a change in integer level for UI display
       newLevel = Math.floor(newMicroLevel);
       levelChanged = newLevel !== originalLevel;
 
-      // Update micro-level immediately using the handler
-      nLevelInputHandler(null, newMicroLevel);
+      // Update micro-level immediately 
+      const configKey = getCurrentConfigKey();
+      microLevelsByConfig[configKey] = newMicroLevel;
+      currentMicroLevel = newMicroLevel;
+      nLevel = Math.floor(newMicroLevel);
+      
+      // Update all displays
+      nLevelInput.value = formatMicroLevel(newMicroLevel);
+      nBackDisplay.innerHTML = formatMicroLevel(newMicroLevel);
+      const speedDisplay = document.querySelector("#speed-display");
+      if (speedDisplay) {
+        speedDisplay.innerHTML = getSpeedTarget(newMicroLevel);
+      }
+      console.log(`Updated config ${configKey} to micro-level ${newMicroLevel}`);
+      // Save to config BEFORE updating the handler
+      const configKey = getCurrentConfigKey();
+      microLevelsByConfig[configKey] = newMicroLevel;
+      console.log(`Saved micro-level ${newMicroLevel} to config ${configKey} BEFORE handler update`);
+      currentMicroLevel = newMicroLevel;
+      nLevel = Math.floor(newMicroLevel);
+      // Now update displays
+      nLevelInput.value = formatMicroLevel(newMicroLevel);
+      nBackDisplay.innerHTML = formatMicroLevel(newMicroLevel);
+      const speedDisplay = document.querySelector("#speed-display");
+      if (speedDisplay) {
+        speedDisplay.innerHTML = getSpeedTarget(newMicroLevel);
+      }
 
       // Check for phase transitions and reset baseline
       const oldPhase = oldMicroLevel - Math.floor(oldMicroLevel);
@@ -4403,6 +4500,11 @@ function calculateAccuracy(correct, missed, wrong) {
 // Set up event listeners
 [ ...document.querySelectorAll("input[name='dimension']") ].forEach(el => {
   el.addEventListener("click", function(evt) {
+    // Save current config's micro-level before switching views
+    const currentConfig = getCurrentConfigKey();
+    if (currentMicroLevel !== undefined && !isNaN(currentMicroLevel)) {
+      microLevelsByConfig[currentConfig] = currentMicroLevel;
+    }
     const dim = evt.target.value;
     toggleStats(dim);
   });
