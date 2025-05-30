@@ -181,9 +181,6 @@ const defVal_prevLevelThreshold = 0.5;
 const defVal_nextLevelThreshold = 0.8;
 const defVal_numStimuliSelect = 2;
 
-
-
-
 // Editable settings
 let wallsEnabled = defVal_wallsEnabled;
 let cameraEnabled = defVal_cameraEnabled;
@@ -207,7 +204,6 @@ let maxAllowedMistakes = defVal_maxAllowedMistakes;
 let prevLevelThreshold = defVal_prevLevelThreshold;
 let nextLevelThreshold = defVal_nextLevelThreshold;
 let numStimuliSelect = defVal_numStimuliSelect;
-
 
 // Game states
 let matchingStimuli = 0;
@@ -330,6 +326,7 @@ let sessionHistoriesByConfig = {
   8: [],
   9: []
 };
+
 // Phase transition accuracy tracking
 let phaseAccuracyAttemptsByConfig = {
   2: { phase1to2: [], phase2to3: [], requiredSuccesses: 3, windowSize: 5 },
@@ -341,7 +338,6 @@ let phaseAccuracyAttemptsByConfig = {
   8: { phase1to2: [], phase2to3: [], requiredSuccesses: 3, windowSize: 5 },
   9: { phase1to2: [], phase2to3: [], requiredSuccesses: 3, windowSize: 5 }
 };
-
 
 function calculateDPrime(hits, misses, falseAlarms, correctRejections) {
   console.log(`calculateDPrime inputs: hits=${hits}, misses=${misses}, FA=${falseAlarms}, CR=${correctRejections}`);
@@ -445,21 +441,21 @@ function checkMicroLevelAdvancement(sessionMetrics, sessionHistory) {
   const dPrimeThreshold = Math.max(0.5, baseline.avgDPrime);
   const lureResistanceThreshold = Math.max(0.5, baseline.n1LureResistance);
   
-// Calculate raw accuracy (matches only, no credit for correct rejections)
-const totalMatches = sessionMetrics.hits + sessionMetrics.misses + sessionMetrics.falseAlarms;
-const correctResponses = sessionMetrics.hits;
-const accuracy = totalMatches > 0 ? correctResponses / totalMatches : 0;
+  // Calculate raw accuracy (matches only, no credit for correct rejections)
+  const totalMatches = sessionMetrics.hits + sessionMetrics.misses + sessionMetrics.falseAlarms;
+  const correctResponses = sessionMetrics.hits;
+  const accuracy = totalMatches > 0 ? correctResponses / totalMatches : 0;
 
-// Criteria for advancement
-const matchAccuracy = sessionMetrics.hits / Math.max(1, sessionMetrics.hits + sessionMetrics.misses + sessionMetrics.falseAlarms);
-const goodAccuracy = matchAccuracy >= 0.9; // 90% accuracy minimum for any progress
-const goodLureResistance = sessionMetrics.n1LureResistance >= lureResistanceThreshold;
-console.log(`Advancement criteria: accuracy=${(matchAccuracy * 100).toFixed(1)}%, goodAccuracy=${goodAccuracy}`);
+  // Criteria for advancement
+  const matchAccuracy = sessionMetrics.hits / Math.max(1, sessionMetrics.hits + sessionMetrics.misses + sessionMetrics.falseAlarms);
+  const goodAccuracy = matchAccuracy >= 0.9; // 90% accuracy minimum for any progress
+  const goodLureResistance = sessionMetrics.n1LureResistance >= lureResistanceThreshold;
+  console.log(`Advancement criteria: accuracy=${(matchAccuracy * 100).toFixed(1)}%, goodAccuracy=${goodAccuracy}`);
   
   // Get current level components
   const { nLevel, microProgress } = getMicroLevelComponents(currentMicroLevel);
   
-// Advancement size (0.01 to 0.05 based on accuracy)
+  // Advancement size (0.01 to 0.05 based on accuracy)
   const baseIncrement = 0.01;
   const maxIncrement = 0.05;
   // Use matchAccuracy that was already calculated above
@@ -467,154 +463,151 @@ console.log(`Advancement criteria: accuracy=${(matchAccuracy * 100).toFixed(1)}%
   const increment = baseIncrement + (performanceRatio * (maxIncrement - baseIncrement));
   
   // Determine new micro-level
-let newMicroLevel = currentMicroLevel;
+  let newMicroLevel = currentMicroLevel;
   console.log("=== START checkMicroLevelAdvancement ===");
-console.log(`Initial newMicroLevel: ${newMicroLevel}`);
+  console.log(`Initial newMicroLevel: ${newMicroLevel}`);
 
-// Check for regression first
-let isRegressing = false;
-if (matchAccuracy < 0.75) {
-  // Regression in micro-level for poor performance (below 75% accuracy)
-  const decrement = 0.05;
-  newMicroLevel = Math.max(2.0, currentMicroLevel - decrement);
-  console.log(`Decreasing micro-level by -${decrement.toFixed(2)} (accuracy below 75%: ${(matchAccuracy * 100).toFixed(1)}%)`);
-  isRegressing = true;
-} else if (goodAccuracy && !isRegressing) {
-  // Calculate potential new level (only if not already regressing)
-  let potentialNewLevel = currentMicroLevel + increment;
-  
-  if (!isRegressing) {
-    // Check if this would cross a phase boundary
-    const currentPhase = microProgress < 0.34 ? 1 : (microProgress < 0.67 ? 2 : 3);
-    const newProgress = potentialNewLevel - Math.floor(potentialNewLevel);
-    const potentialPhase = newProgress < 0.34 ? 1 : (newProgress < 0.67 ? 2 : 3);
-  
-  // If crossing phase boundary, cap at current phase maximum
-  if (potentialPhase > currentPhase) {
-    if (currentPhase === 1) {
-      potentialNewLevel = Math.floor(currentMicroLevel) + 0.33;
-    } else if (currentPhase === 2) {
-      potentialNewLevel = Math.floor(currentMicroLevel) + 0.66;
+  // Check for regression first
+  let isRegressing = false;
+  if (matchAccuracy < 0.75) {
+    // Regression in micro-level for poor performance (below 75% accuracy)
+    const decrement = 0.05;
+    newMicroLevel = Math.max(2.0, currentMicroLevel - decrement);
+    console.log(`Decreasing micro-level by -${decrement.toFixed(2)} (accuracy below 75%: ${(matchAccuracy * 100).toFixed(1)}%)`);
+    isRegressing = true;
+  } else if (goodAccuracy && !isRegressing) {
+    // Calculate potential new level (only if not already regressing)
+    let potentialNewLevel = currentMicroLevel + increment;
+    
+    if (!isRegressing) {
+      // Check if this would cross a phase boundary
+      const currentPhase = microProgress < 0.34 ? 1 : (microProgress < 0.67 ? 2 : 3);
+      const newProgress = potentialNewLevel - Math.floor(potentialNewLevel);
+      const potentialPhase = newProgress < 0.34 ? 1 : (newProgress < 0.67 ? 2 : 3);
+    
+      // If crossing phase boundary, cap at current phase maximum
+      if (potentialPhase > currentPhase) {
+        if (currentPhase === 1) {
+          potentialNewLevel = Math.floor(currentMicroLevel) + 0.33;
+        } else if (currentPhase === 2) {
+          potentialNewLevel = Math.floor(currentMicroLevel) + 0.66;
+        }
+      }
+      
+      potentialNewLevel = Math.min(9.99, potentialNewLevel);
+
+      // Get current phase and potential new phase
+      // Fixed phase boundaries: Phase 1: 0.00-0.33, Phase 2: 0.34-0.66, Phase 3: 0.67-0.99
+      // Variables currentPhase, newProgress, and potentialPhase already declared above
+      
+      // Check if this would be a phase transition
+      let phaseTransitionBlocked = false;
+      if (potentialPhase > currentPhase) {
+        // Phase transitions require 90% accuracy for 3 out of 5 sessions
+        const configKey = getCurrentConfigKey();
+        const phaseData = phaseAccuracyAttemptsByConfig[configKey];
+        
+        // Determine which phase transition this is
+        const transitionKey = currentPhase === 1 ? 'phase1to2' : 'phase2to3';
+
+        // Calculate proper accuracy for phase transitions (matches only)
+        // Using right/total formula: hits divided by all attempts (hits + misses + false alarms)
+        const matchAccuracy = sessionMetrics.hits / Math.max(1, sessionMetrics.hits + sessionMetrics.misses + sessionMetrics.falseAlarms);
+
+        // Record this attempt
+        phaseData[transitionKey].push(matchAccuracy >= 0.90);
+        
+        // Keep only the most recent attempts within window size
+        if (phaseData[transitionKey].length > phaseData.windowSize) {
+          phaseData[transitionKey] = phaseData[transitionKey].slice(-phaseData.windowSize);
+        }
+        
+        // Count successful attempts (90%+ accuracy) in the window
+        const successCount = phaseData[transitionKey].filter(a => a).length;
+        
+        // Check if we have enough successful attempts
+        if (successCount >= phaseData.requiredSuccesses) {
+          newMicroLevel = potentialNewLevel;
+          console.log(`PHASE UP! ${successCount}/${phaseData.requiredSuccesses} successful attempts`);
+          // Reset attempts after phase transition
+          phaseData[transitionKey] = [];
+        } else {
+          // Cap at phase boundary - don't allow ANY progress past the current phase
+          newMicroLevel = currentMicroLevel; // Stay exactly where we are
+          phaseTransitionBlocked = true; // Set flag
+          console.log(`Phase transition blocked: ${successCount}/${phaseData.requiredSuccesses} successful attempts (${(matchAccuracy * 100).toFixed(0)}% this session)`);
+        }
+      } else {
+        // Within same integer level - no accuracy requirement
+        if (!phaseTransitionBlocked) {
+          newMicroLevel = potentialNewLevel;
+          console.log(`Micro-progress: +${increment.toFixed(2)} (d'=${sessionMetrics.dPrime.toFixed(2)})`);
+        }
+      }
+      
+      // If phase transition was blocked, skip all other advancement logic
+      if (newMicroLevel === currentMicroLevel) {
+        // Do nothing more - stay at current level
+      } else {
+        // Check if this would cross an integer boundary
+        if (Math.floor(potentialNewLevel) > Math.floor(currentMicroLevel)) {
+          // Integer level transition - check accuracy attempts
+          const configKey = getCurrentConfigKey();
+          const attemptData = accuracyAttemptsByConfig[configKey];
+          
+          // Calculate proper accuracy for integer transitions (matches only)
+          const matchAccuracy = sessionMetrics.hits / Math.max(1, sessionMetrics.hits + sessionMetrics.misses + sessionMetrics.falseAlarms);
+          
+          // Record this attempt
+          attemptData.attempts.push(matchAccuracy >= 0.90);
+          
+          // Keep only the most recent attempts within window size
+          if (attemptData.attempts.length > attemptData.windowSize) {
+            attemptData.attempts = attemptData.attempts.slice(-attemptData.windowSize);
+          }
+          
+          // Count successful attempts (90%+ accuracy) in the window
+          const successCount = attemptData.attempts.filter(a => a).length;
+          
+          // Check if we have enough successful attempts
+          if (successCount >= attemptData.requiredSuccesses) {
+            newMicroLevel = potentialNewLevel;
+            console.log(`LEVEL UP! ${successCount}/${attemptData.requiredSuccesses} successful attempts in last ${attemptData.windowSize} sessions`);
+            // Reset attempts after level up
+            attemptData.attempts = [];
+          } else {
+            // Cap at .99 of current level
+            newMicroLevel = Math.floor(currentMicroLevel) + 0.99;
+            console.log(`Integer transition blocked: ${successCount}/${attemptData.requiredSuccesses} successful attempts (${(matchAccuracy * 100).toFixed(0)}% this session)`);
+          }
+        } else {
+          // Within same integer level - check if this is also within same phase
+          // currentPhase and potentialPhase already calculated above
+          
+          if (currentPhase === potentialPhase) {
+            // Same phase - allow normal progress
+            newMicroLevel = potentialNewLevel;
+            console.log(`Micro-progress: +${increment.toFixed(2)} (d'=${sessionMetrics.dPrime.toFixed(2)})`);
+          }
+          // If phase would change, newMicroLevel remains unchanged from phase transition block
+        }
+      }
+    } // End of if (!isRegressing) block
+    
+    // This regression check has been moved earlier in the function
+    
+    // Integer level transitions
+    if (Math.floor(newMicroLevel) > nLevel) {
+      console.log(`LEVEL UP! ${nLevel} -> ${Math.floor(newMicroLevel)}`);
+    } else if (Math.floor(newMicroLevel) < nLevel) {
+      console.log(`LEVEL DOWN! ${nLevel} -> ${Math.floor(newMicroLevel)}`);
     }
-  }
-  
-  potentialNewLevel = Math.min(9.99, potentialNewLevel);
-
-// Get current phase and potential new phase
-// Fixed phase boundaries: Phase 1: 0.00-0.33, Phase 2: 0.34-0.66, Phase 3: 0.67-0.99
-// Variables currentPhase, newProgress, and potentialPhase already declared above
-  
-  // Check if this would be a phase transition
-let phaseTransitionBlocked = false;
-  if (potentialPhase > currentPhase) {
-    // Phase transitions require 90% accuracy for 3 out of 5 sessions
-    const configKey = getCurrentConfigKey();
-    const phaseData = phaseAccuracyAttemptsByConfig[configKey];
-    
-   // Determine which phase transition this is
-const transitionKey = currentPhase === 1 ? 'phase1to2' : 'phase2to3';
-
-// Calculate proper accuracy for phase transitions (matches only)
-// Using right/total formula: hits divided by all attempts (hits + misses + false alarms)
-const matchAccuracy = sessionMetrics.hits / Math.max(1, sessionMetrics.hits + sessionMetrics.misses + sessionMetrics.falseAlarms);
-
-// Record this attempt
-phaseData[transitionKey].push(matchAccuracy >= 0.90);
-    
-    // Keep only the most recent attempts within window size
-    if (phaseData[transitionKey].length > phaseData.windowSize) {
-      phaseData[transitionKey] = phaseData[transitionKey].slice(-phaseData.windowSize);
-    }
-    
-    // Count successful attempts (90%+ accuracy) in the window
-    const successCount = phaseData[transitionKey].filter(a => a).length;
-    
-    // Check if we have enough successful attempts
-    if (successCount >= phaseData.requiredSuccesses) {
-      newMicroLevel = potentialNewLevel;
-      console.log(`PHASE UP! ${successCount}/${phaseData.requiredSuccesses} successful attempts`);
-      // Reset attempts after phase transition
-      phaseData[transitionKey] = [];
-   } else {
-  // Cap at phase boundary - don't allow ANY progress past the current phase
-  newMicroLevel = currentMicroLevel; // Stay exactly where we are
-  phaseTransitionBlocked = true; // Set flag
-  console.log(`Phase transition blocked: ${successCount}/${phaseData.requiredSuccesses} successful attempts (${(matchAccuracy * 100).toFixed(0)}% this session)`);
-}
-} else {
-  // Within same integer level - no accuracy requirement
-  if (!phaseTransitionBlocked) {
-    newMicroLevel = potentialNewLevel;
-    console.log(`Micro-progress: +${increment.toFixed(2)} (d'=${sessionMetrics.dPrime.toFixed(2)})`);
+    console.log(`Returning newMicroLevel: ${newMicroLevel} (was ${currentMicroLevel})`);
+    console.log("=== END checkMicroLevelAdvancement ===");
+    console.log(`About to return: ${newMicroLevel}`);
+    return newMicroLevel;
   }
 }
-  
-  // If phase transition was blocked, skip all other advancement logic
-  if (newMicroLevel === currentMicroLevel) {
-    // Do nothing more - stay at current level
-  } else {
-// Check if this would cross an integer boundary
-if (Math.floor(potentialNewLevel) > Math.floor(currentMicroLevel)) {
-  // Integer level transition - check accuracy attempts
-  const configKey = getCurrentConfigKey();
-  const attemptData = accuracyAttemptsByConfig[configKey];
-  
-  // Calculate proper accuracy for integer transitions (matches only)
-  const matchAccuracy = sessionMetrics.hits / Math.max(1, sessionMetrics.hits + sessionMetrics.misses + sessionMetrics.falseAlarms);
-  
-  // Record this attempt
-  attemptData.attempts.push(matchAccuracy >= 0.90);
-  
-  // Keep only the most recent attempts within window size
-  if (attemptData.attempts.length > attemptData.windowSize) {
-    attemptData.attempts = attemptData.attempts.slice(-attemptData.windowSize);
-  }
-  
-  // Count successful attempts (90%+ accuracy) in the window
-  const successCount = attemptData.attempts.filter(a => a).length;
-  
-  // Check if we have enough successful attempts
-  if (successCount >= attemptData.requiredSuccesses) {
-    newMicroLevel = potentialNewLevel;
-    console.log(`LEVEL UP! ${successCount}/${attemptData.requiredSuccesses} successful attempts in last ${attemptData.windowSize} sessions`);
-    // Reset attempts after level up
-    attemptData.attempts = [];
-  } else {
-    // Cap at .99 of current level
-    newMicroLevel = Math.floor(currentMicroLevel) + 0.99;
-    console.log(`Integer transition blocked: ${successCount}/${attemptData.requiredSuccesses} successful attempts (${(matchAccuracy * 100).toFixed(0)}% this session)`);
-  }
-} else {
-    // Within same integer level - check if this is also within same phase
-    // currentPhase and potentialPhase already calculated above
-    
-    if (currentPhase === potentialPhase) {
-      // Same phase - allow normal progress
-      newMicroLevel = potentialNewLevel;
-      console.log(`Micro-progress: +${increment.toFixed(2)} (d'=${sessionMetrics.dPrime.toFixed(2)})`);
-    }
-    // If phase would change, newMicroLevel remains unchanged from phase transition block
-  }
-  }
-  } // End of if (!isRegressing) block
-  
-  // This regression check has been moved earlier in the function
-  
-  // Integer level transitions
-  if (Math.floor(newMicroLevel) > nLevel) {
-    console.log(`LEVEL UP! ${nLevel} -> ${Math.floor(newMicroLevel)}`);
-  } else if (Math.floor(newMicroLevel) < nLevel) {
-    console.log(`LEVEL DOWN! ${nLevel} -> ${Math.floor(newMicroLevel)}`);
-  }
-  console.log(`Returning newMicroLevel: ${newMicroLevel} (was ${currentMicroLevel})`);
-  console.log("=== END checkMicroLevelAdvancement ===");
-console.log(`About to return: ${newMicroLevel}`);
-return newMicroLevel;
-}
-}
-
-
-// Function to get micro-level components
 
 // Function to get micro-level components
 function getMicroLevelComponents(microLevel) {
@@ -627,17 +620,17 @@ function getSpeedTarget(microLevel) {
   const { nLevel, microProgress } = getMicroLevelComponents(microLevel);
   
   // Determine which phase we're in and calculate relative progress within that phase
-let phaseProgress;
-if (microProgress < 0.34) {
-  // Phase 1: 0-33 levels
-  phaseProgress = microProgress / 0.33;
-} else if (microProgress < 0.67) {
-  // Phase 2: 34-66 levels
-  phaseProgress = (microProgress - 0.34) / 0.32;
-} else {
-  // Phase 3: 67-99 levels
-  phaseProgress = (microProgress - 0.67) / 0.32;
-}
+  let phaseProgress;
+  if (microProgress < 0.34) {
+    // Phase 1: 0-33 levels
+    phaseProgress = microProgress / 0.33;
+  } else if (microProgress < 0.67) {
+    // Phase 2: 34-66 levels
+    phaseProgress = (microProgress - 0.34) / 0.32;
+  } else {
+    // Phase 3: 67-99 levels
+    phaseProgress = (microProgress - 0.67) / 0.32;
+  }
   
   // All phases go from baseDelay (5000ms) to 3000ms
   const levelStartSpeed = baseDelay;
@@ -693,7 +686,7 @@ function updateMicroLevelForConfig() {
   const configKey = getCurrentConfigKey();
   
   // Don't save here - micro-levels are saved when they change during game end
-// Just load the stored value for the new config
+  // Just load the stored value for the new config
   
   // Load micro-level for new config
   currentMicroLevel = microLevelsByConfig[configKey] || 2.00;
@@ -709,14 +702,12 @@ function updateMicroLevelForConfig() {
     speedDisplay.innerHTML = getSpeedTarget(currentMicroLevel);
   }
   // Update config display
-const configDisplay = document.querySelector("#config-display");
-if (configDisplay) {
-  const activeCount = getCurrentConfigKey();
-  configDisplay.innerHTML = activeCount + "D";
+  const configDisplay = document.querySelector("#config-display");
+  if (configDisplay) {
+    const activeCount = getCurrentConfigKey();
+    configDisplay.innerHTML = activeCount + "D";
+  }
 }
-}
-
-
 
 // Handler functions for enabling/disabling stimuli
 function wallsEnableTrigHandler(evt, defVal) {
@@ -726,7 +717,7 @@ function wallsEnableTrigHandler(evt, defVal) {
   } else {
     wallsEnabled = !wallsEnabled;
     saveSettings();
-updateMicroLevelForConfig();
+    updateMicroLevelForConfig();
   }
 
   if (!wallsEnabled) {
@@ -745,7 +736,7 @@ function cameraEnableTrigHandler(evt, defVal) {
   } else {
     cameraEnabled = !cameraEnabled;
     saveSettings();
-updateMicroLevelForConfig();
+    updateMicroLevelForConfig();
   }
 
   if (!cameraEnabled) {
@@ -764,7 +755,7 @@ function faceEnableTrigHandler(evt, defVal) {
   } else {
     faceEnabled = !faceEnabled;
     saveSettings();
-updateMicroLevelForConfig();
+    updateMicroLevelForConfig();
   }
 
   if (!faceEnabled) {
@@ -783,7 +774,7 @@ function positionEnableTrigHandler(evt, defVal) {
   } else {
     positionEnabled = !positionEnabled;
     saveSettings();
-updateMicroLevelForConfig();
+    updateMicroLevelForConfig();
   }
 
   if (!positionEnabled) {
@@ -802,7 +793,7 @@ function wordEnableTrigHandler(evt, defVal) {
   } else {
     wordEnabled = !wordEnabled;
     saveSettings();
-updateMicroLevelForConfig();
+    updateMicroLevelForConfig();
   }
 
   if (!wordEnabled) {
@@ -821,7 +812,7 @@ function shapeEnableTrigHandler(evt, defVal) {
   } else {
     shapeEnabled = !shapeEnabled;
     saveSettings();
-updateMicroLevelForConfig();
+    updateMicroLevelForConfig();
   }
 
   if (!shapeEnabled) {
@@ -840,7 +831,7 @@ function cornerEnableTrigHandler(evt, defVal) {
   } else {
     cornerEnabled = !cornerEnabled;
     saveSettings();
-updateMicroLevelForConfig();
+    updateMicroLevelForConfig();
   }
   
   if (!cornerEnabled) {
@@ -868,7 +859,7 @@ function soundEnableTrigHandler(evt, defVal) {
   } else {
     soundEnabled = !soundEnabled;
     saveSettings();
-updateMicroLevelForConfig();
+    updateMicroLevelForConfig();
   }
 
   if (!soundEnabled) {
@@ -887,7 +878,7 @@ function colorEnableTrigHandler(evt, defVal) {
   } else {
     colorEnabled = !colorEnabled;
     saveSettings();
-updateMicroLevelForConfig();
+    updateMicroLevelForConfig();
   }
 
   if (!colorEnabled) {
@@ -1084,7 +1075,6 @@ function maxAllowedMistakesInputHandler(evt, defVal) {
   }
 }
 
-
 function previousLevelThresholdInputHandler(evt, defVal) {
   if (defVal != null) {
     previousLevelThresholdInput.value = defVal * 100;
@@ -1189,58 +1179,58 @@ function setFloorBackground(floor, dimPercent, tileAHexColor, tileBHexColor) {
   ];
   if (floor.classList.contains("floor-bottom")) {
     floor.style.backgroundImage = `linear-gradient(
-  #000${hexBrightness},
-  #000${hexBrightness}
-),
-radial-gradient(
-  at 0px 0px,
-  #0000,
-  #0000 15%,
-  20%,
-  #000
-),
-repeating-conic-gradient(
-  ${tileAHexColor} 0deg,
-  ${tileAHexColor} 90deg,
-  ${tileBHexColor} 90deg,
-  ${tileBHexColor} 180deg
-)`;
+      #000${hexBrightness},
+      #000${hexBrightness}
+    ),
+    radial-gradient(
+      at 0px 0px,
+      #0000,
+      #0000 15%,
+      20%,
+      #000
+    ),
+    repeating-conic-gradient(
+      ${tileAHexColor} 0deg,
+      ${tileAHexColor} 90deg,
+      ${tileBHexColor} 90deg,
+      ${tileBHexColor} 180deg
+    )`;
   } else if (floor.classList.contains("floor-left")) {
     floor.style.backgroundImage = `linear-gradient(
-  #000${hexBrightness},
-  #000${hexBrightness}
-),
-radial-gradient(
-  at 54em 53.5em,
-  #0000,
-  #0000 15%,
-  20%,
-  #000
-),
-repeating-conic-gradient(
-  ${tileAHexColor} 0deg,
-  ${tileAHexColor} 90deg,
-  ${tileBHexColor} 90deg,
-  ${tileBHexColor} 180deg
-)`;
+      #000${hexBrightness},
+      #000${hexBrightness}
+    ),
+    radial-gradient(
+      at 54em 53.5em,
+      #0000,
+      #0000 15%,
+      20%,
+      #000
+    ),
+    repeating-conic-gradient(
+      ${tileAHexColor} 0deg,
+      ${tileAHexColor} 90deg,
+      ${tileBHexColor} 90deg,
+      ${tileBHexColor} 180deg
+    )`;
   } else {
     floor.style.backgroundImage = `linear-gradient(
-  #000${hexBrightness},
-  #000${hexBrightness}
-),
-radial-gradient(
-  at 0 53.5em,
-  #0000,
-  #0000 15%,
-  20%,
-  #000
-),
-repeating-conic-gradient(
-  ${tileBHexColor} 0deg,
-  ${tileBHexColor} 90deg,
-  ${tileAHexColor} 90deg,
-  ${tileAHexColor} 180deg
-)`;
+      #000${hexBrightness},
+      #000${hexBrightness}
+    ),
+    radial-gradient(
+      at 0 53.5em,
+      #0000,
+      #0000 15%,
+      20%,
+      #000
+    ),
+    repeating-conic-gradient(
+      ${tileBHexColor} 0deg,
+      ${tileBHexColor} 90deg,
+      ${tileAHexColor} 90deg,
+      ${tileAHexColor} 180deg
+    )`;
   }
 }
 
@@ -1371,7 +1361,6 @@ function loadBindings() {
   }
   reloadBindKeys();
 }
-
 
 function saveHistory() {
   try {
@@ -1651,8 +1640,8 @@ function loadSettings() {
     accuracyAttemptsByConfig = settings.accuracyAttemptsByConfig;
   }
   if (settings.phaseAccuracyAttemptsByConfig) {
-  phaseAccuracyAttemptsByConfig = settings.phaseAccuracyAttemptsByConfig;
-}
+    phaseAccuracyAttemptsByConfig = settings.phaseAccuracyAttemptsByConfig;
+  }
 
   wallsEnableTrigHandler(null, settings.wallsEnabled);
   cameraEnableTrigHandler(null, settings.cameraEnabled);
@@ -1666,15 +1655,15 @@ function loadSettings() {
   randomizeEnableTrigHandler(null, settings.randomizeEnabled || defVal_randomizeEnabled);
   
   // Load micro-level if available, otherwise use nLevel
-if (settings.currentMicroLevel !== undefined) {
-  // Upgrade level 1 saves to level 2
-  const upgradeLevel = settings.currentMicroLevel < 2 ? 2.0 : settings.currentMicroLevel;
-  nLevelInputHandler(null, upgradeLevel);
-} else {
-  // Upgrade level 1 saves to level 2
-  const upgradeLevel = (settings.nLevel < 2) ? 2 : settings.nLevel;
-  nLevelInputHandler(null, upgradeLevel);
-}
+  if (settings.currentMicroLevel !== undefined) {
+    // Upgrade level 1 saves to level 2
+    const upgradeLevel = settings.currentMicroLevel < 2 ? 2.0 : settings.currentMicroLevel;
+    nLevelInputHandler(null, upgradeLevel);
+  } else {
+    // Upgrade level 1 saves to level 2
+    const upgradeLevel = (settings.nLevel < 2) ? 2 : settings.nLevel;
+    nLevelInputHandler(null, upgradeLevel);
+  }
   
   sceneDimmerInputHandler(null, settings.sceneDimmer);
   zoomInputHandler(null, settings.zoom);
@@ -1716,20 +1705,18 @@ function getBar(n) {
 }
 
 function prepareStimuliChartData(dimension, period) {
-    // ... all the code that prepares the chart data ...
-    return {
-      labels: filteredDates,
-      datasets: datasets
-    };
+  // ... all the code that prepares the chart data ...
+  return {
+    labels: filteredDates,
+    datasets: datasets
+  };
 }
 
 // Initialize Chart.js instance for performance graphs
-  let performanceChart = null;
-  let stimuliAccuracyChart = null;
+let performanceChart = null;
+let stimuliAccuracyChart = null;
 
 function toggleStats(_dim) {
-  
-  
   // Function to update the performance chart
   function updatePerformanceChart(dimension, period) {
     const ctx = document.getElementById('performance-chart');
@@ -1792,35 +1779,35 @@ function toggleStats(_dim) {
             }
           },
           tooltip: {
-  mode: 'index',
-  intersect: false,
-  backgroundColor: 'rgba(0, 0, 0, 0.8)',
-  titleFont: {
-    family: 'Nova Square'
-  },
-  bodyFont: {
-    family: 'Nova Square'
-  },
-  callbacks: {
-    label: function(context) {
-      let label = context.dataset.label || '';
-      if (label) {
-        label += ': ';
-      }
-      const value = context.parsed.y;
-      const metricType = context.dataset.label.toLowerCase();
-      
-      // Format as percentage for these metrics
-      if (['right', 'missed', 'wrong', 'lure'].includes(metricType)) {
-        label += value.toFixed(1) + '%';
-      } else {
-        // For d-prime, baseline, and bias - show as regular numbers
-        label += value.toFixed(2);
-      }
-      return label;
-    }
-  }
-}
+            mode: 'index',
+            intersect: false,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleFont: {
+              family: 'Nova Square'
+            },
+            bodyFont: {
+              family: 'Nova Square'
+            },
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                const value = context.parsed.y;
+                const metricType = context.dataset.label.toLowerCase();
+                
+                // Format as percentage for these metrics
+                if (['right', 'missed', 'wrong', 'lure'].includes(metricType)) {
+                  label += value.toFixed(1) + '%';
+                } else {
+                  // For d-prime, baseline, and bias - show as regular numbers
+                  label += value.toFixed(2);
+                }
+                return label;
+              }
+            }
+          }
         },
         scales: {
           x: {
@@ -1844,8 +1831,8 @@ function toggleStats(_dim) {
                 family: 'Nova Square'
               },
               callback: function(value) {
-  return value.toFixed(0);
-}
+                return value.toFixed(0);
+              }
             }
           }
         }
@@ -1855,6 +1842,7 @@ function toggleStats(_dim) {
     // Create new chart
     performanceChart = new Chart(ctx, config);
   }
+  
   // Function to prepare chart data based on dimension, period, and metrics
   function prepareChartData(dimension, period, activeMetrics) {
     const _history = history[dimension] || {};
@@ -1899,47 +1887,37 @@ function toggleStats(_dim) {
         let count = 0;
         
         dayData.forEach(point => {
-  switch(metric) {
-        case 'right': {
-      const rightCount = point.right || 0;
-      const total = (point.right || 0) + (point.missed || 0) + (point.wrong || 0);
-      if (total > 0) {
-        const percentage = (rightCount / total) * 100;
-        sum += percentage;
-        count++;
-      }
-      break;
-    }
-    case 'missed': {
-      const missedCount = point.missed || 0;
-      const total = (point.right || 0) + (point.missed || 0) + (point.wrong || 0);
-      if (total > 0) {
-        const percentage = (missedCount / total) * 100;
-        sum += percentage;
-        count++;
-      }
-      break;
-    }
-    case 'wrong': {
-      const wrongCount = point.wrong || 0;
-      const total = (point.right || 0) + (point.missed || 0) + (point.wrong || 0);
-      if (total > 0) {
-        const percentage = (wrongCount / total) * 100;
-        sum += percentage;
-        count++;
-      }
-      break;
-    }
+          switch(metric) {
+            case 'right': {
+              const rightCount = point.right || 0;
+              const total = (point.right || 0) + (point.missed || 0) + (point.wrong || 0);
+              if (total > 0) {
+                const percentage = (rightCount / total) * 100;
+                sum += percentage;
+                count++;
+              }
+              break;
+            }
+            case 'missed': {
+              const missedCount = point.missed || 0;
+              const total = (point.right || 0) + (point.missed || 0) + (point.wrong || 0);
+              if (total > 0) {
+                const percentage = (missedCount / total) * 100;
+                sum += percentage;
+                count++;
+              }
+              break;
+            }
             case 'wrong': {
-  const wrongCount = point.wrong || 0;
-  const total = (point.right || 0) + (point.missed || 0) + (point.wrong || 0);
-  if (total > 0) {
-    const percentage = (wrongCount / total) * 100;
-    sum += percentage;
-    count++;
-  }
-  break;
-}
+              const wrongCount = point.wrong || 0;
+              const total = (point.right || 0) + (point.missed || 0) + (point.wrong || 0);
+              if (total > 0) {
+                const percentage = (wrongCount / total) * 100;
+                sum += percentage;
+                count++;
+              }
+              break;
+            }
             case 'dprime':
               if (point.dPrime !== undefined) {
                 sum += point.dPrime;
@@ -1959,28 +1937,30 @@ function toggleStats(_dim) {
               }
               break;
             case 'baseline':
-  // Calculate baseline d-prime for this configuration
-  const configKey = dimension;
-  const configHistory = sessionHistoriesByConfig[configKey] || [];
-  
-  if (configHistory.length >= 3) {
-    const baseline = calculateBaseline(configHistory);
-    // Only add once per day, not per session
-    if (count === 0) {
-      sum = baseline.avgDPrime;
-      count = 1;
-    }
-  }
-  break;
+              // Calculate baseline d-prime for this configuration
+              const configKey = dimension;
+              const configHistory = sessionHistoriesByConfig[configKey] || [];
+              
+              if (configHistory.length >= 3) {
+                const baseline = calculateBaseline(configHistory);
+                // Only add once per day, not per session
+                if (count === 0) {
+                  sum = baseline.avgDPrime;
+                  count = 1;
+                }
+              }
+              break;
           }
         });
         
         return count > 0 ? sum / count : null;
       });
+      
       console.log(`Adding dataset for ${metric}:`, data.filter(d => d !== null));
-if (metric === 'baseline') {
-  console.log('Baseline values:', data);
-}
+      if (metric === 'baseline') {
+        console.log('Baseline values:', data);
+      }
+      
       datasets.push({
         label: metric.charAt(0).toUpperCase() + metric.slice(1),
         data: data,
@@ -1995,8 +1975,6 @@ if (metric === 'baseline') {
       datasets: datasets
     };
   }
-
-
 
   // If no dimension specified and dialog is already open, close it
   if (!_dim && statsDialogContent.parentElement.hasAttribute("open")) {
@@ -2044,7 +2022,7 @@ if (metric === 'baseline') {
     });
   });
 
-// Function to prepare stimuli accuracy chart data
+  // Function to prepare stimuli accuracy chart data
   function prepareStimuliChartData(dimension, period) {
     const _history = history[dimension] || {};
     const dates = Object.keys(_history).sort();
@@ -2122,7 +2100,7 @@ if (metric === 'baseline') {
     };
   }
   
-// Function to update stimuli accuracy chart
+  // Function to update stimuli accuracy chart
   function updateStimuliAccuracyChart(dimension, period) {
     const ctx = document.getElementById('stimuli-accuracy-chart');
     if (!ctx) return;
@@ -2179,35 +2157,35 @@ if (metric === 'baseline') {
             }
           },
           tooltip: {
-  mode: 'index',
-  intersect: false,
-  backgroundColor: 'rgba(0, 0, 0, 0.8)',
-  titleFont: {
-    family: 'Nova Square'
-  },
-  bodyFont: {
-    family: 'Nova Square'
-  },
-  callbacks: {
-    label: function(context) {
-      let label = context.dataset.label || '';
-      if (label) {
-        label += ': ';
-      }
-      const value = context.parsed.y;
-      const metricType = context.dataset.label.toLowerCase();
-      
-      // Format as percentage for these metrics
-      if (['right', 'missed', 'wrong', 'lure'].includes(metricType)) {
-        label += value.toFixed(1) + '%';
-      } else {
-        // For d-prime, baseline, and bias - show as regular numbers
-        label += value.toFixed(2);
-      }
-      return label;
-    }
-  }
-}
+            mode: 'index',
+            intersect: false,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleFont: {
+              family: 'Nova Square'
+            },
+            bodyFont: {
+              family: 'Nova Square'
+            },
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                const value = context.parsed.y;
+                const metricType = context.dataset.label.toLowerCase();
+                
+                // Format as percentage for these metrics
+                if (['right', 'missed', 'wrong', 'lure'].includes(metricType)) {
+                  label += value.toFixed(1) + '%';
+                } else {
+                  // For d-prime, baseline, and bias - show as regular numbers
+                  label += value.toFixed(2);
+                }
+                return label;
+              }
+            }
+          }
         },
         scales: {
           x: {
@@ -2246,7 +2224,6 @@ if (metric === 'baseline') {
     // Create new chart
     stimuliAccuracyChart = new Chart(ctx, config);
   }
-  
     
   // Initialize chart with default settings
   setTimeout(() => {
@@ -2263,39 +2240,37 @@ if (metric === 'baseline') {
   radios[validDim - 1].checked = true;
 
   // Update radio buttons to show which configs have data
-radios.forEach((radio, index) => {
-  const dimension = index + 1;
-  const hasHistory = history[dimension] && Object.keys(history[dimension]).length > 0;
-  const hasConfig = microLevelsByConfig[dimension] && microLevelsByConfig[dimension] > 2.00;
-  
-  const label = radio.parentElement.querySelector('div');
-  if (label) {
-    // Reset styles
-    label.style.fontWeight = 'normal';
-    label.style.opacity = '1';
+  radios.forEach((radio, index) => {
+    const dimension = index + 1;
+    const hasHistory = history[dimension] && Object.keys(history[dimension]).length > 0;
+    const hasConfig = microLevelsByConfig[dimension] && microLevelsByConfig[dimension] > 2.00;
     
-    // Highlight configs with data
-    if (hasHistory || hasConfig) {
-      label.style.fontWeight = 'bold';
-    } else {
-      label.style.opacity = '0.5';
+    const label = radio.parentElement.querySelector('div');
+    if (label) {
+      // Reset styles
+      label.style.fontWeight = 'normal';
+      label.style.opacity = '1';
+      
+      // Highlight configs with data
+      if (hasHistory || hasConfig) {
+        label.style.fontWeight = 'bold';
+      } else {
+        label.style.opacity = '0.5';
+      }
+      
+      // Mark current active config
+      if (dimension === getCurrentConfigKey()) {
+        label.style.textDecoration = 'underline';
+      } else {
+        label.style.textDecoration = 'none';
+      }
     }
-    
-    // Mark current active config
-    if (dimension === getCurrentConfigKey()) {
-      label.style.textDecoration = 'underline';
-    } else {
-      label.style.textDecoration = 'none';
-    }
-  }
-});
+  });
   
   // Get history for the selected dimension
-const _history = history[validDim];
-const bars = document.querySelector(".bar-chart-bars");
-bars.innerHTML = "";
-
-
+  const _history = history[validDim];
+  const bars = document.querySelector(".bar-chart-bars");
+  bars.innerHTML = "";
   
   // Initialize stats variables
   let avgNLevel = 0;
@@ -2306,8 +2281,6 @@ bars.innerHTML = "";
   let wrong = 0;
   let totalAccuracy = 0;
   let pointsCount = 0;
-  
-
   
   // Initialize stimuli totals
   let stimuliTotals = {
@@ -2321,32 +2294,30 @@ bars.innerHTML = "";
     sound: { right: 0, wrong: 0, matching: 0, present: false },
     color: { right: 0, wrong: 0, matching: 0, present: false }
   };
-
-  
   
   // Check if the history exists and has entries
-const entries = _history ? Object.entries(_history) : [];
+  const entries = _history ? Object.entries(_history) : [];
 
-// Show message if no data for this configuration
-if (entries.length === 0) {
-  const noDataMsg = document.createElement('div');
-  noDataMsg.style = "text-align: center; font-size: 1.5rem; margin: 2rem; opacity: 0.7;";
-  noDataMsg.innerHTML = `No data yet for ${validDim}D configuration.<br>Play some sessions to see stats!`;
-  bars.appendChild(noDataMsg);
-}
+  // Show message if no data for this configuration
+  if (entries.length === 0) {
+    const noDataMsg = document.createElement('div');
+    noDataMsg.style = "text-align: center; font-size: 1.5rem; margin: 2rem; opacity: 0.7;";
+    noDataMsg.innerHTML = `No data yet for ${validDim}D configuration.<br>Play some sessions to see stats!`;
+    bars.appendChild(noDataMsg);
+  }
 
-// Update stimuli accuracy display
-updateStimuliAccuracyDisplay(stimuliTotals);
+  // Update stimuli accuracy display
+  updateStimuliAccuracyDisplay(stimuliTotals);
 
-// Update performance chart when dimension changes
+  // Update performance chart when dimension changes
   if (performanceChart || document.getElementById('performance-chart')) {
     const activePeriod = document.querySelector('.period-btn.active')?.dataset.period || 'week';
     updatePerformanceChart(validDim, activePeriod);
     updateStimuliAccuracyChart(validDim, activePeriod);
   }
 
-// Process history entries if they exist
-if (entries.length > 0) {
+  // Process history entries if they exist
+  if (entries.length > 0) {
     for (const [date, points] of entries) {
       if (!Array.isArray(points) || points.length === 0) continue;
       
@@ -2376,8 +2347,6 @@ if (entries.length > 0) {
           totalAccuracy += calculateAccuracy(point.right || 0, point.missed || 0, point.wrong || 0);
         }
         
-        
-        
         // Aggregate individual stimuli accuracy data if it exists
         if (point.stimuliData) {
           Object.entries(point.stimuliData).forEach(([key, data]) => {
@@ -2391,36 +2360,35 @@ if (entries.length > 0) {
         }
       }
       
-// Create bar chart for this date's history data
-if (points.length > 0) {
-  _avgNLevel = _avgNLevel / points.length;
-  avgNLevel += _avgNLevel;
-  
-  // Calculate average micro-level for this date
-  let _avgMicroLevel = 0;
-  let microCount = 0;
-  for (const point of points) {
-    if (point.microLevel !== undefined) {
-      _avgMicroLevel += point.microLevel;
-      microCount++;
-    }
-  }
+      // Create bar chart for this date's history data
+      if (points.length > 0) {
+        _avgNLevel = _avgNLevel / points.length;
+        avgNLevel += _avgNLevel;
+        
+        // Calculate average micro-level for this date
+        let _avgMicroLevel = 0;
+        let microCount = 0;
+        for (const point of points) {
+          if (point.microLevel !== undefined) {
+            _avgMicroLevel += point.microLevel;
+            microCount++;
+          }
+        }
+        
+        // Create bar element showing N-level
+        const displayLevel = microCount > 0 ? (_avgMicroLevel / microCount).toFixed(2) : toOneDecimal(_avgNLevel);
+        const barElement = getBar(displayLevel);
 
-  
-  // Create bar element showing N-level
-const displayLevel = microCount > 0 ? (_avgMicroLevel / microCount).toFixed(2) : toOneDecimal(_avgNLevel);
-const barElement = getBar(displayLevel);
+        // Add speed info to tooltip if available
+        let speedInfo = "";
+        if (points[0] && points[0].speedTarget) {
+          speedInfo = `\nSpeed: ${points[0].speedTarget}ms`;
+        }
 
-// Add speed info to tooltip if available
-let speedInfo = "";
-if (points[0] && points[0].speedTarget) {
-  speedInfo = `\nSpeed: ${points[0].speedTarget}ms`;
-}
-
-barElement.title = `Date: ${date}\nμ-Level: ${displayLevel}${speedInfo}`;
-  
-  bars.appendChild(barElement);
-}
+        barElement.title = `Date: ${date}\nμ-Level: ${displayLevel}${speedInfo}`;
+        
+        bars.appendChild(barElement);
+      }
     }
     
     // Calculate overall average n-level
@@ -2434,9 +2402,10 @@ barElement.title = `Date: ${date}\nμ-Level: ${displayLevel}${speedInfo}`;
   document.querySelector("#sc-min").innerHTML = (minNLevel === 10) ? "-" : minNLevel;
   document.querySelector("#sc-max").innerHTML = maxNLevel || "-";
   // Show micro-level for the selected configuration
-const selectedConfigLevel = microLevelsByConfig[validDim] || 2.00;
-document.querySelector("#sc-micro-level").innerHTML = formatMicroLevel(selectedConfigLevel);
-      // Update level progress indicator
+  const selectedConfigLevel = microLevelsByConfig[validDim] || 2.00;
+  document.querySelector("#sc-micro-level").innerHTML = formatMicroLevel(selectedConfigLevel);
+  
+  // Update level progress indicator
   const progressIndicator = document.querySelector("#level-progress-indicator");
   if (progressIndicator) {
     const attemptData = accuracyAttemptsByConfig[validDim];
@@ -2451,16 +2420,18 @@ document.querySelector("#sc-micro-level").innerHTML = formatMicroLevel(selectedC
       progressIndicator.style.color = '#888';
     }
   }
+  
   // Display current speed target
-const currentSpeedElement = document.createElement('div');
-currentSpeedElement.style = "text-align: center; font-size: 1rem; margin-top: 0.5rem; opacity: 0.8;";
-currentSpeedElement.innerHTML = `Current Speed: ${getSpeedTarget(currentMicroLevel)}ms`;
+  const currentSpeedElement = document.createElement('div');
+  currentSpeedElement.style = "text-align: center; font-size: 1rem; margin-top: 0.5rem; opacity: 0.8;";
+  currentSpeedElement.innerHTML = `Current Speed: ${getSpeedTarget(currentMicroLevel)}ms`;
 
-const microLevelCard = document.querySelector("#sc-micro-level").parentElement;
-if (microLevelCard && !microLevelCard.querySelector('.speed-info')) {
-  currentSpeedElement.className = 'speed-info';
-  microLevelCard.appendChild(currentSpeedElement);
-}
+  const microLevelCard = document.querySelector("#sc-micro-level").parentElement;
+  if (microLevelCard && !microLevelCard.querySelector('.speed-info')) {
+    currentSpeedElement.className = 'speed-info';
+    microLevelCard.appendChild(currentSpeedElement);
+  }
+  
   document.querySelector("#sc-right").innerHTML = right || "-";
   document.querySelector("#sc-missed").innerHTML = missed || "-";
   document.querySelector("#sc-wrong").innerHTML = wrong || "-";
@@ -2476,144 +2447,138 @@ if (microLevelCard && !microLevelCard.querySelector('.speed-info')) {
     }
   }
 
-  
-// Update speed range display
-const speedRangeStart = document.querySelector("#speed-range-start");
-const speedRangeEnd = document.querySelector("#speed-range-end");
+  // Update speed range display
+  const speedRangeStart = document.querySelector("#speed-range-start");
+  const speedRangeEnd = document.querySelector("#speed-range-end");
 
-if (speedRangeStart) {
-  speedRangeStart.innerHTML = baseDelay + "ms";
-}
-if (speedRangeEnd) {
-  // Show the actual minimum speed (3000ms or 50% of baseDelay, whichever is higher)
-  const minSpeed = Math.max(3000, Math.round(baseDelay * 0.5));
-  speedRangeEnd.innerHTML = minSpeed + "ms";
-}
-
-// Also add d-prime average to stats if available
-let totalDPrime = 0;
-let dPrimeCount = 0;
-let totalBias = 0;
-let biasCount = 0;
-let totalLureResistance = 0;
-let lureResistanceCount = 0;
-
-for (const [date, points] of entries) {
-  if (!Array.isArray(points) || points.length === 0) continue;
-  
-  for (const point of points) {
-    if (point.dPrime !== undefined && !isNaN(point.dPrime)) {
-      totalDPrime += point.dPrime;
-      dPrimeCount++;
-    }
-    if (point.responseBias !== undefined && !isNaN(point.responseBias)) {
-      totalBias += point.responseBias;
-      biasCount++;
-    }
-    if (point.n1LureResistance !== undefined && !isNaN(point.n1LureResistance)) {
-      totalLureResistance += point.n1LureResistance;
-      lureResistanceCount++;
-    }
+  if (speedRangeStart) {
+    speedRangeStart.innerHTML = baseDelay + "ms";
   }
-}
-
-// Update average d'prime
-const dPrimeElement = document.querySelector("#sc-dprime");
-if (dPrimeElement) {
-  if (dPrimeCount > 0) {
-    dPrimeElement.innerHTML = (totalDPrime / dPrimeCount).toFixed(2);
-  } else {
-    dPrimeElement.innerHTML = "-";
+  if (speedRangeEnd) {
+    // Show the actual minimum speed (3000ms or 50% of baseDelay, whichever is higher)
+    const minSpeed = Math.max(3000, Math.round(baseDelay * 0.5));
+    speedRangeEnd.innerHTML = minSpeed + "ms";
   }
-}
 
-// Update signal detection metrics section
-const avgDPrimeElement = document.querySelector("#sc-avg-dprime");
-if (avgDPrimeElement) {
-  const avgDPrime = dPrimeCount > 0 ? (totalDPrime / dPrimeCount) : 0;
-  const dPrimeDescriptor = 
-    avgDPrime >= 3.0 ? "Excellent" :
-    avgDPrime >= 2.0 ? "Great" :
-    avgDPrime >= 1.0 ? "Good" :
-    avgDPrime >= 0.5 ? "Fair" : "Poor";
-  avgDPrimeElement.innerHTML = dPrimeCount > 0 ? 
-    `${avgDPrime.toFixed(2)} (${dPrimeDescriptor})` : "-";
-}
+  // Also add d-prime average to stats if available
+  let totalDPrime = 0;
+  let dPrimeCount = 0;
+  let totalBias = 0;
+  let biasCount = 0;
+  let totalLureResistance = 0;
+  let lureResistanceCount = 0;
 
-const avgBiasElement = document.querySelector("#sc-avg-bias");
-if (avgBiasElement) {
-  const avgBias = biasCount > 0 ? (totalBias / biasCount) : 0;
-  const biasDescriptor = 
-    Math.abs(avgBias) <= 0.2 ? "Neutral" :
-    avgBias < -0.5 ? "Very Conservative" :
-    avgBias < 0 ? "Conservative" :
-    avgBias > 0.5 ? "Very Liberal" : "Liberal";
-  avgBiasElement.innerHTML = biasCount > 0 ? 
-    `${avgBias.toFixed(2)} (${biasDescriptor})` : "-";
-}
-
-const avgLureElement = document.querySelector("#sc-avg-lure");
-if (avgLureElement) {
-  const avgLureResistance = lureResistanceCount > 0 ? 
-    (totalLureResistance / lureResistanceCount) : 0;
-  const lureDescriptor = 
-    avgLureResistance >= 0.95 ? "Excellent" :
-    avgLureResistance >= 0.85 ? "Great" :
-    avgLureResistance >= 0.70 ? "Good" :
-    avgLureResistance >= 0.50 ? "Fair" : "Poor";
-  avgLureElement.innerHTML = lureResistanceCount > 0 ? 
-    `${(avgLureResistance * 100).toFixed(0)}% (${lureDescriptor})` : "-";
-}
-
-// Calculate and display baseline metrics
-const configHistory = sessionHistoriesByConfig[validDim] || [];
-const baseline = calculateBaseline(configHistory);
-
-const baselineDPrimeElement = document.querySelector("#sc-baseline-dprime");
-if (baselineDPrimeElement) {
-  baselineDPrimeElement.innerHTML = baseline.avgDPrime.toFixed(2);
-}
-
-const baselineLureElement = document.querySelector("#sc-baseline-lure");
-if (baselineLureElement) {
-  baselineLureElement.innerHTML = (baseline.n1LureResistance * 100).toFixed(0) + "%";
-}
-
-
-function updateStimuliAccuracyDisplay(totals) {
-  // Hide all items first
-  document.querySelectorAll('.stimuli-accuracy-item').forEach(item => {
-    item.classList.remove('active');
-  });
-  
-  // For each stimulus type, calculate and display accuracy if present
-  Object.entries(totals).forEach(([key, data]) => {
-    const itemElement = document.getElementById(`${key}-accuracy-item`);
-    const valueElement = document.getElementById(`${key}-accuracy`);
+  for (const [date, points] of entries) {
+    if (!Array.isArray(points) || points.length === 0) continue;
     
-    if (itemElement && valueElement) {
-      if (data.present && data.matching > 0) {
-        // Calculate accuracy
-        const accuracy = calculateAccuracy(data.right, data.matching - data.right, data.wrong) * 100;
-        
-        // Update display
-        valueElement.textContent = accuracy.toFixed(0) + "%";
-        itemElement.classList.add('active');
-      } else {
-        valueElement.textContent = "-%";
-        // Only show if this stimulus was ever used
-        if (data.present) {
-          itemElement.classList.add('active');
-        }
+    for (const point of points) {
+      if (point.dPrime !== undefined && !isNaN(point.dPrime)) {
+        totalDPrime += point.dPrime;
+        dPrimeCount++;
+      }
+      if (point.responseBias !== undefined && !isNaN(point.responseBias)) {
+        totalBias += point.responseBias;
+        biasCount++;
+      }
+      if (point.n1LureResistance !== undefined && !isNaN(point.n1LureResistance)) {
+        totalLureResistance += point.n1LureResistance;
+        lureResistanceCount++;
       }
     }
-  });
+  }
+
+  // Update average d'prime
+  const dPrimeElement = document.querySelector("#sc-dprime");
+  if (dPrimeElement) {
+    if (dPrimeCount > 0) {
+      dPrimeElement.innerHTML = (totalDPrime / dPrimeCount).toFixed(2);
+    } else {
+      dPrimeElement.innerHTML = "-";
+    }
+  }
+
+  // Update signal detection metrics section
+  const avgDPrimeElement = document.querySelector("#sc-avg-dprime");
+  if (avgDPrimeElement) {
+    const avgDPrime = dPrimeCount > 0 ? (totalDPrime / dPrimeCount) : 0;
+    const dPrimeDescriptor = 
+      avgDPrime >= 3.0 ? "Excellent" :
+      avgDPrime >= 2.0 ? "Great" :
+      avgDPrime >= 1.0 ? "Good" :
+      avgDPrime >= 0.5 ? "Fair" : "Poor";
+    avgDPrimeElement.innerHTML = dPrimeCount > 0 ? 
+      `${avgDPrime.toFixed(2)} (${dPrimeDescriptor})` : "-";
+  }
+
+  const avgBiasElement = document.querySelector("#sc-avg-bias");
+  if (avgBiasElement) {
+    const avgBias = biasCount > 0 ? (totalBias / biasCount) : 0;
+    const biasDescriptor = 
+      Math.abs(avgBias) <= 0.2 ? "Neutral" :
+      avgBias < -0.5 ? "Very Conservative" :
+      avgBias < 0 ? "Conservative" :
+      avgBias > 0.5 ? "Very Liberal" : "Liberal";
+    avgBiasElement.innerHTML = biasCount > 0 ? 
+      `${avgBias.toFixed(2)} (${biasDescriptor})` : "-";
+  }
+
+  const avgLureElement = document.querySelector("#sc-avg-lure");
+  if (avgLureElement) {
+    const avgLureResistance = lureResistanceCount > 0 ? 
+      (totalLureResistance / lureResistanceCount) : 0;
+    const lureDescriptor = 
+      avgLureResistance >= 0.95 ? "Excellent" :
+      avgLureResistance >= 0.85 ? "Great" :
+      avgLureResistance >= 0.70 ? "Good" :
+      avgLureResistance >= 0.50 ? "Fair" : "Poor";
+    avgLureElement.innerHTML = lureResistanceCount > 0 ? 
+      `${(avgLureResistance * 100).toFixed(0)}% (${lureDescriptor})` : "-";
+  }
+
+  // Calculate and display baseline metrics
+  const configHistory = sessionHistoriesByConfig[validDim] || [];
+  const baseline = calculateBaseline(configHistory);
+
+  const baselineDPrimeElement = document.querySelector("#sc-baseline-dprime");
+  if (baselineDPrimeElement) {
+    baselineDPrimeElement.innerHTML = baseline.avgDPrime.toFixed(2);
+  }
+
+  const baselineLureElement = document.querySelector("#sc-baseline-lure");
+  if (baselineLureElement) {
+    baselineLureElement.innerHTML = (baseline.n1LureResistance * 100).toFixed(0) + "%";
+  }
+
+  function updateStimuliAccuracyDisplay(totals) {
+    // Hide all items first
+    document.querySelectorAll('.stimuli-accuracy-item').forEach(item => {
+      item.classList.remove('active');
+    });
+    
+    // For each stimulus type, calculate and display accuracy if present
+    Object.entries(totals).forEach(([key, data]) => {
+      const itemElement = document.getElementById(`${key}-accuracy-item`);
+      const valueElement = document.getElementById(`${key}-accuracy`);
+      
+      if (itemElement && valueElement) {
+        if (data.present && data.matching > 0) {
+          // Calculate accuracy
+          const accuracy = calculateAccuracy(data.right, data.matching - data.right, data.wrong) * 100;
+          
+          // Update display
+          valueElement.textContent = accuracy.toFixed(0) + "%";
+          itemElement.classList.add('active');
+        } else {
+          valueElement.textContent = "-%";
+          // Only show if this stimulus was ever used
+          if (data.present) {
+            itemElement.classList.add('active');
+          }
+        }
+      }
+    });
+  }
 }
-}
-
-
-
-
 
 function toOneDecimal(n) {
   return Math.floor(n * 10) / 10;
@@ -3331,40 +3296,41 @@ function selectRandomStimuli(numStimuli = 2) {
 
 function getGameCycle(n) {
   // Adjust target matches based on micro-level progress
-const { nLevel, microProgress } = getMicroLevelComponents(currentMicroLevel);
-if (microProgress <= 0.33) {
-  targetNumOfStimuli = 2;
-} else if (microProgress <= 0.66) {
-  targetNumOfStimuli = 3;
-} else {
-  targetNumOfStimuli = 4;
-}
-console.log(`Micro-progress: ${microProgress.toFixed(2)}, Target matches: ${targetNumOfStimuli}`);
+  const { nLevel, microProgress } = getMicroLevelComponents(currentMicroLevel);
+  if (microProgress <= 0.33) {
+    targetNumOfStimuli = 2;
+  } else if (microProgress <= 0.66) {
+    targetNumOfStimuli = 3;
+  } else {
+    targetNumOfStimuli = 4;
+  }
+  console.log(`Micro-progress: ${microProgress.toFixed(2)}, Target matches: ${targetNumOfStimuli}`);
+  
   // Reset total matching count at the start
   matchingStimuli = 0;
   // Calculate lure frequency based on micro-level progress
   
-// Scale lure frequency based on micro-level progress with three phases
-const baseLureFreq = 0.05;
-const maxLureFreq = 0.40;
+  // Scale lure frequency based on micro-level progress with three phases
+  const baseLureFreq = 0.05;
+  const maxLureFreq = 0.40;
 
-// Determine which phase we're in and calculate relative progress within that phase
-let phaseProgress;
-if (microProgress < 0.34) {
-  // Phase 1: 0-33 levels
-  phaseProgress = microProgress / 0.33;
-} else if (microProgress < 0.67) {
-  // Phase 2: 34-66 levels
-  phaseProgress = (microProgress - 0.34) / 0.32;
-} else {
-  // Phase 3: 67-99 levels
-  phaseProgress = (microProgress - 0.67) / 0.32;
-}
+  // Determine which phase we're in and calculate relative progress within that phase
+  let phaseProgress;
+  if (microProgress < 0.34) {
+    // Phase 1: 0-33 levels
+    phaseProgress = microProgress / 0.33;
+  } else if (microProgress < 0.67) {
+    // Phase 2: 34-66 levels
+    phaseProgress = (microProgress - 0.34) / 0.32;
+  } else {
+    // Phase 3: 67-99 levels
+    phaseProgress = (microProgress - 0.67) / 0.32;
+  }
 
-// Scale lure frequency within the current phase
-const lureFrequency = baseLureFreq + (phaseProgress * (maxLureFreq - baseLureFreq));
+  // Scale lure frequency within the current phase
+  const lureFrequency = baseLureFreq + (phaseProgress * (maxLureFreq - baseLureFreq));
 
-console.log(`Current micro-level: ${formatMicroLevel(currentMicroLevel)}, Phase progress: ${(phaseProgress * 100).toFixed(0)}%, Lure frequency: ${(lureFrequency * 100).toFixed(1)}%`);
+  console.log(`Current micro-level: ${formatMicroLevel(currentMicroLevel)}, Phase progress: ${(phaseProgress * 100).toFixed(0)}%, Lure frequency: ${(lureFrequency * 100).toFixed(1)}%`);
   
   let walls;
   if (wallsEnabled) {
@@ -3423,44 +3389,43 @@ console.log(`Current micro-level: ${formatMicroLevel(currentMicroLevel)}, Phase 
   }
   
   console.log(
-  walls, cameras, faces, positions, words, shapes, corners, sounds, colors
-);
-if (shapes) {
-  console.log("Shape blocks:", shapes.map((s, i) => `${i}: ${s ? s.symbol : 'null'}`));
-}
-if (corners) {
-  console.log("Corner blocks:", corners.map((c, i) => `${i}: ${c ? c.symbol : 'null'}`));
-}
-   console.log("Total matchingStimuli:", matchingStimuli);
+    walls, cameras, faces, positions, words, shapes, corners, sounds, colors
+  );
+  if (shapes) {
+    console.log("Shape blocks:", shapes.map((s, i) => `${i}: ${s ? s.symbol : 'null'}`));
+  }
+  if (corners) {
+    console.log("Corner blocks:", corners.map((c, i) => `${i}: ${c ? c.symbol : 'null'}`));
+  }
+  console.log("Total matchingStimuli:", matchingStimuli);
 
-  
   let i = 0;
   return function() {
- // Track missed stimuli from previous presentation, but not on first iteration
-  if (i > 0 && (currWalls || currCamera || currFace || currPosition || currWord || currShape || currCorner || currSound || currColor)) {
-    trackMissedStimuli(); // Track any missed stimuli from the previous presentation
-  }
-  
-  resetBlock();
+    // Track missed stimuli from previous presentation, but not on first iteration
+    if (i > 0 && (currWalls || currCamera || currFace || currPosition || currWord || currShape || currCorner || currSound || currColor)) {
+      trackMissedStimuli(); // Track any missed stimuli from the previous presentation
+    }
     
+    resetBlock();
+      
     if (!isRunning) {
       return;
     }
     
     // Calculate the actual length based on enabled stimuli
-let actualLengths = [];
-if (wallsEnabled && walls) actualLengths.push(walls.length);
-if (cameraEnabled && cameras) actualLengths.push(cameras.length);
-if (faceEnabled && faces) actualLengths.push(faces.length);
-if (positionEnabled && positions) actualLengths.push(positions.length);
-if (wordEnabled && words) actualLengths.push(words.length);
-if (shapeEnabled && shapes) actualLengths.push(shapes.length);
-if (cornerEnabled && corners) actualLengths.push(corners.length);
-if (soundEnabled && sounds) actualLengths.push(sounds.length);
-if (colorEnabled && colors) actualLengths.push(colors.length);
+    let actualLengths = [];
+    if (wallsEnabled && walls) actualLengths.push(walls.length);
+    if (cameraEnabled && cameras) actualLengths.push(cameras.length);
+    if (faceEnabled && faces) actualLengths.push(faces.length);
+    if (positionEnabled && positions) actualLengths.push(positions.length);
+    if (wordEnabled && words) actualLengths.push(words.length);
+    if (shapeEnabled && shapes) actualLengths.push(shapes.length);
+    if (cornerEnabled && corners) actualLengths.push(corners.length);
+    if (soundEnabled && sounds) actualLengths.push(sounds.length);
+    if (colorEnabled && colors) actualLengths.push(colors.length);
 
-let length = actualLengths.length > 0 ? Math.max(...actualLengths) : targetNumOfStimuli * (n + 2) + targetNumOfStimuli;
-console.log("Game length:", length, "Actual lengths:", actualLengths);
+    let length = actualLengths.length > 0 ? Math.max(...actualLengths) : targetNumOfStimuli * (n + 2) + targetNumOfStimuli;
+    console.log("Game length:", length, "Actual lengths:", actualLengths);
     let dimensions = 0;
     
     // End game
@@ -3525,8 +3490,8 @@ console.log("Game length:", length, "Actual lengths:", actualLengths);
       console.log("dimensions", dimensions);
       
       // Calculate accuracy
-const totalTrials = correctStimuli + missed + mistakes;
-const accuracy = totalTrials > 0 ? correctStimuli / totalTrials : 0;
+      const totalTrials = correctStimuli + missed + mistakes;
+      const accuracy = totalTrials > 0 ? correctStimuli / totalTrials : 0;
       // Calculate percentage for level up/down decisions
       const percentage = accuracy;
       
@@ -3599,7 +3564,6 @@ const accuracy = totalTrials > 0 ? correctStimuli / totalTrials : 0;
       document.querySelector(".stop").classList.add("active");
       document.querySelector(".play").classList.remove("active");
 
-
       // Update the recap dialog
       const resDim = document.querySelector("#res-dim");
       const resRight = document.querySelector("#sc-res-right");
@@ -3608,14 +3572,14 @@ const accuracy = totalTrials > 0 ? correctStimuli / totalTrials : 0;
       const lvlRes = document.querySelectorAll("[class^='lvl-res']");
       [...lvlRes].forEach(el => el.style.display = "none");
 
-    // Speed information will be updated after historyPoint is created
+      // Speed information will be updated after historyPoint is created
 
       resDim.innerHTML = getCurrentConfigKey() + "D";
       resRight.innerHTML = correctStimuli;
       resMissed.innerHTML = missed;
       resWrong.innerHTML = mistakes;
 
-// Define level variables early for scope access
+      // Define level variables early for scope access
       let oldMicroLevel = currentMicroLevel;
       let originalLevel = nLevel;
       let newLevel;
@@ -3623,98 +3587,97 @@ const accuracy = totalTrials > 0 ? correctStimuli / totalTrials : 0;
       let levelChanged;
       
       // Update accuracy in the recap dialog if the element exists
-const accuracyElement = document.querySelector("#sc-res-accuracy");
-if (accuracyElement) {
-  accuracyElement.innerHTML = (accuracy * 100).toFixed(0) + "%";
-}
+      const accuracyElement = document.querySelector("#sc-res-accuracy");
+      if (accuracyElement) {
+        accuracyElement.innerHTML = (accuracy * 100).toFixed(0) + "%";
+      }
 
+      // Calculate d'-prime and response bias
+      sessionMetrics.dPrime = calculateDPrime(
+        sessionMetrics.hits, 
+        sessionMetrics.misses, 
+        sessionMetrics.falseAlarms, 
+        sessionMetrics.correctRejections
+      );
 
-// Calculate d'-prime and response bias
-sessionMetrics.dPrime = calculateDPrime(
-  sessionMetrics.hits, 
-  sessionMetrics.misses, 
-  sessionMetrics.falseAlarms, 
-  sessionMetrics.correctRejections
-);
+      sessionMetrics.responseBias = calculateResponseBias(
+        sessionMetrics.hits, 
+        sessionMetrics.misses, 
+        sessionMetrics.falseAlarms, 
+        sessionMetrics.correctRejections
+      );
 
-sessionMetrics.responseBias = calculateResponseBias(
-  sessionMetrics.hits, 
-  sessionMetrics.misses, 
-  sessionMetrics.falseAlarms, 
-  sessionMetrics.correctRejections
-);
+      // Calculate new micro-level based on d-prime and lure resistance
+      const configHistory = sessionHistoriesByConfig[getCurrentConfigKey()] || [];
+      newMicroLevel = checkMicroLevelAdvancement(sessionMetrics, configHistory);
+      console.log(`checkMicroLevelAdvancement returned: ${newMicroLevel}`);
 
-// Calculate new micro-level based on d-prime and lure resistance
-const configHistory = sessionHistoriesByConfig[getCurrentConfigKey()] || [];
-newMicroLevel = checkMicroLevelAdvancement(sessionMetrics, configHistory);
-console.log(`checkMicroLevelAdvancement returned: ${newMicroLevel}`);
+      // Save the new micro-level to config storage immediately
+      microLevelsByConfig[getCurrentConfigKey()] = newMicroLevel;
+      console.log(`Saved micro-level ${newMicroLevel} to config ${getCurrentConfigKey()}`);
 
-// Save the new micro-level to config storage immediately
-microLevelsByConfig[getCurrentConfigKey()] = newMicroLevel;
-console.log(`Saved micro-level ${newMicroLevel} to config ${getCurrentConfigKey()}`);
+      // Check if there's a change in integer level for UI display
+      newLevel = Math.floor(newMicroLevel);
+      levelChanged = newLevel !== originalLevel;
 
-// Check if there's a change in integer level for UI display
-newLevel = Math.floor(newMicroLevel);
-levelChanged = newLevel !== originalLevel;
+      // Update micro-level immediately using the handler
+      nLevelInputHandler(null, newMicroLevel);
 
-// Update micro-level immediately using the handler
-nLevelInputHandler(null, newMicroLevel);
+      // Check for phase transitions and reset baseline
+      const oldPhase = oldMicroLevel - Math.floor(oldMicroLevel);
+      const newPhase = newMicroLevel - Math.floor(newMicroLevel);
 
-// Check for phase transitions and reset baseline
-const oldPhase = oldMicroLevel - Math.floor(oldMicroLevel);
-const newPhase = newMicroLevel - Math.floor(newMicroLevel);
+      // Detect phase transitions
+      const wasPhase1 = oldPhase < 0.34;
+      const wasPhase2 = oldPhase >= 0.34 && oldPhase < 0.67;
+      const wasPhase3 = oldPhase >= 0.67;
 
-// Detect phase transitions
-const wasPhase1 = oldPhase < 0.34;
-const wasPhase2 = oldPhase >= 0.34 && oldPhase < 0.67;
-const wasPhase3 = oldPhase >= 0.67;
+      const isPhase1 = newPhase < 0.34;
+      const isPhase2 = newPhase >= 0.34 && newPhase < 0.67;
+      const isPhase3 = newPhase >= 0.67;
 
-const isPhase1 = newPhase < 0.34;
-const isPhase2 = newPhase >= 0.34 && newPhase < 0.67;
-const isPhase3 = newPhase >= 0.67;
+      // Only check for phase changes if level actually increased
+      if (newMicroLevel > oldMicroLevel) {
+        const phaseChanged = (wasPhase1 && !isPhase1) || (wasPhase2 && !isPhase2) || (wasPhase3 && !isPhase3);
+        const crossedInteger = Math.floor(oldMicroLevel) !== Math.floor(newMicroLevel);
 
-// Only check for phase changes if level actually increased
-if (newMicroLevel > oldMicroLevel) {
-  const phaseChanged = (wasPhase1 && !isPhase1) || (wasPhase2 && !isPhase2) || (wasPhase3 && !isPhase3);
-  const crossedInteger = Math.floor(oldMicroLevel) !== Math.floor(newMicroLevel);
+        if (phaseChanged || crossedInteger) {
+          console.log(`Phase transition detected! Resetting baseline for config ${getCurrentConfigKey()}`);
+          // Reset session history for current configuration
+          sessionHistoriesByConfig[getCurrentConfigKey()] = [];
+          // Reset accuracy attempts for current configuration
+          accuracyAttemptsByConfig[getCurrentConfigKey()].attempts = [];
+        }
+      }
 
-  if (phaseChanged || crossedInteger) {
-    console.log(`Phase transition detected! Resetting baseline for config ${getCurrentConfigKey()}`);
-    // Reset session history for current configuration
-    sessionHistoriesByConfig[getCurrentConfigKey()] = [];
-    // Reset accuracy attempts for current configuration
-    accuracyAttemptsByConfig[getCurrentConfigKey()].attempts = [];
-  }
-}
+      const historyPoint = {
+        nLevel,
+        microLevel: currentMicroLevel,  // Store micro-level
+        right: correctStimuli,
+        missed,
+        wrong: mistakes,
+        accuracy: accuracy,
+        matchingStimuli: matchingStimuli,
+        // Signal detection metrics
+        dPrime: 0,  // Will be set after calculation
+        responseBias: 0,  // Will be set after calculation
+        n1LureResistance: 0,  // Will be set if lures present
+        // Lure metrics
+        n1LureEncounters: sessionMetrics.n1LureEncounters || 0,
+        n1LureCorrectRejections: sessionMetrics.n1LureCorrectRejections || 0,
+        n1LureFalseAlarms: sessionMetrics.n1LureFalseAlarms || 0,
+        // Overall result
+        outcome: 0,  // -1 for level down, 0 for stay, 1 for level up
+        stimuliData: stimuliData,
+        // Speed information
+        speedTarget: getSpeedTarget(currentMicroLevel),
+        baseDelay: baseDelay
+      };
 
-     const historyPoint = {
-  nLevel,
-  microLevel: currentMicroLevel,  // Store micro-level
-  right: correctStimuli,
-  missed,
-  wrong: mistakes,
-  accuracy: accuracy,
-       matchingStimuli: matchingStimuli,
-  // Signal detection metrics
-  dPrime: 0,  // Will be set after calculation
-  responseBias: 0,  // Will be set after calculation
-  n1LureResistance: 0,  // Will be set if lures present
-  // Lure metrics
-  n1LureEncounters: sessionMetrics.n1LureEncounters || 0,
-  n1LureCorrectRejections: sessionMetrics.n1LureCorrectRejections || 0,
-  n1LureFalseAlarms: sessionMetrics.n1LureFalseAlarms || 0,
-  // Overall result
-  outcome: 0,  // -1 for level down, 0 for stay, 1 for level up
-  stimuliData: stimuliData,
-  // Speed information
-  speedTarget: getSpeedTarget(currentMicroLevel),
-  baseDelay: baseDelay
-};
-
-// Save the updated history point with d-prime info
-historyPoint.dPrime = sessionMetrics.dPrime;
-historyPoint.microLevel = newMicroLevel;
-historyPoint.outcome = newLevel > originalLevel ? 1 : (newLevel < originalLevel ? -1 : 0);
+      // Save the updated history point with d-prime info
+      historyPoint.dPrime = sessionMetrics.dPrime;
+      historyPoint.microLevel = newMicroLevel;
+      historyPoint.outcome = newLevel > originalLevel ? 1 : (newLevel < originalLevel ? -1 : 0);
 
       // Now update speed information in recap dialog
       const speedTargetElement = document.querySelector("#sc-res-speed-target");
@@ -3744,270 +3707,265 @@ historyPoint.outcome = newLevel > originalLevel ? 1 : (newLevel < originalLevel 
       }
 
       try {
-    localStorage.setItem("last-dim", dimensions);
-  } catch (e) {
-    console.error("Failed to save dimension to localStorage:", e);
-  }
-      
+        localStorage.setItem("last-dim", dimensions);
+      } catch (e) {
+        console.error("Failed to save dimension to localStorage:", e);
+      }
 
       if (levelChanged) {
-  if (newLevel > originalLevel) {
-    // Level up
-    document.querySelector(".lvl-res-move").style.display = "block";
-    document.querySelector(".lvl-before").innerHTML = originalLevel;
-    document.querySelector(".lvl-after").innerHTML = newLevel;
-    // Update nLevel for game state
-    nLevelInputHandler(null, newMicroLevel);
+        if (newLevel > originalLevel) {
+          // Level up
+          document.querySelector(".lvl-res-move").style.display = "block";
+          document.querySelector(".lvl-before").innerHTML = originalLevel;
+          document.querySelector(".lvl-after").innerHTML = newLevel;
+          // Update nLevel for game state
+          nLevelInputHandler(null, newMicroLevel);
 
-  } else if (newLevel < originalLevel) {
-    // Level down
-    document.querySelector(".lvl-res-move").style.display = "block";
-    document.querySelector(".lvl-before").innerHTML = originalLevel;
-    document.querySelector(".lvl-after").innerHTML = newLevel;
-    // Update nLevel for game state
-    nLevelInputHandler(null, newMicroLevel);
+        } else if (newLevel < originalLevel) {
+          // Level down
+          document.querySelector(".lvl-res-move").style.display = "block";
+          document.querySelector(".lvl-before").innerHTML = originalLevel;
+          document.querySelector(".lvl-after").innerHTML = newLevel;
+          // Update nLevel for game state
+          nLevelInputHandler(null, newMicroLevel);
 
-  }
-} else {
-  // Level stays the same (micro-level may have changed)
-  document.querySelector(".lvl-res-stay").style.display = "block";
+        }
+      } else {
+        // Level stays the same (micro-level may have changed)
+        document.querySelector(".lvl-res-stay").style.display = "block";
         // Show accuracy attempts progress
-  const configKey = getCurrentConfigKey();
-  const attemptData = accuracyAttemptsByConfig[configKey];
-  const recentAttempts = attemptData.attempts.slice(-attemptData.windowSize);
-  const successCount = recentAttempts.filter(a => a).length;
+        const configKey = getCurrentConfigKey();
+        const attemptData = accuracyAttemptsByConfig[configKey];
+        const recentAttempts = attemptData.attempts.slice(-attemptData.windowSize);
+        const successCount = recentAttempts.filter(a => a).length;
 
         // Remove any existing progress messages first
-const existingProgress = document.querySelector('.attempts-progress');
-if (existingProgress) existingProgress.remove();
-  // Create progress indicator
-  const progressMsg = document.createElement('div');
-  progressMsg.className = 'attempts-progress';
-  progressMsg.style = "text-align: center; font-size: 1.2rem; margin-top: 1rem; color: #4CAF50;";
-  progressMsg.innerHTML = `Level Progress: ${successCount}/${attemptData.requiredSuccesses} successful attempts`;
-  
-  // Add visual representation of attempts
-  const attemptsVisual = document.createElement('div');
-  attemptsVisual.style = "display: flex; justify-content: center; gap: 0.5rem; margin-top: 0.5rem;";
-  
-  for (let i = 0; i < attemptData.windowSize; i++) {
-    const attempt = recentAttempts[i];
-    const dot = document.createElement('span');
-    dot.style = `width: 20px; height: 20px; border-radius: 50%; display: inline-block; 
-                 background: ${attempt === true ? '#4CAF50' : attempt === false ? '#FF5252' : '#555'};`;
-    attemptsVisual.appendChild(dot);
-  }
-  
-  progressMsg.appendChild(attemptsVisual);
-  document.querySelector(".lvl-res-stay").appendChild(progressMsg);
-  document.querySelector(".lvl-stays").innerHTML = originalLevel;
+        const existingProgress = document.querySelector('.attempts-progress');
+        if (existingProgress) existingProgress.remove();
+        // Create progress indicator
+        const progressMsg = document.createElement('div');
+        progressMsg.className = 'attempts-progress';
+        progressMsg.style = "text-align: center; font-size: 1.2rem; margin-top: 1rem; color: #4CAF50;";
+        progressMsg.innerHTML = `Level Progress: ${successCount}/${attemptData.requiredSuccesses} successful attempts`;
+        
+        // Add visual representation of attempts
+        const attemptsVisual = document.createElement('div');
+        attemptsVisual.style = "display: flex; justify-content: center; gap: 0.5rem; margin-top: 0.5rem;";
+        
+        for (let i = 0; i < attemptData.windowSize; i++) {
+          const attempt = recentAttempts[i];
+          const dot = document.createElement('span');
+          dot.style = `width: 20px; height: 20px; border-radius: 50%; display: inline-block; 
+                       background: ${attempt === true ? '#4CAF50' : attempt === false ? '#FF5252' : '#555'};`;
+          attemptsVisual.appendChild(dot);
+        }
+        
+        progressMsg.appendChild(attemptsVisual);
+        document.querySelector(".lvl-res-stay").appendChild(progressMsg);
+        document.querySelector(".lvl-stays").innerHTML = originalLevel;
 
         // Calculate accuracy criteria for display
-const totalTrials = sessionMetrics.hits + sessionMetrics.misses + 
-                   sessionMetrics.falseAlarms + sessionMetrics.correctRejections;
-const correctResponses = sessionMetrics.hits + sessionMetrics.correctRejections;
-const sessionAccuracy = totalTrials > 0 ? correctResponses / totalTrials : 0;
-const goodAccuracy = sessionAccuracy >= 0.90;
-const goodDPrime = sessionMetrics.dPrime > 0.5;
-  
-if (!goodAccuracy && goodDPrime) {
-  // Remove any existing accuracy message first
-  const existingMsg = document.querySelector(".accuracy-blocked-msg");
-  
-  if (existingMsg) {
-    existingMsg.remove();
-  }
-  
-  const accuracyMsg = document.createElement('div');
-  accuracyMsg.className = 'accuracy-blocked-msg';
-  accuracyMsg.style = "text-align: center; font-size: 1.2rem; margin-top: 1rem; color: #FF9800;";
-  accuracyMsg.innerHTML = `Advancement blocked: ${(accuracy * 100).toFixed(0)}% accuracy (need 90%)`;
-  document.querySelector(".lvl-res-stay").appendChild(accuracyMsg);
-}
-  
-  // Update nLevel for game state (to reflect micro-level changes)
-  nLevelInputHandler(null, newMicroLevel);
-}
+        const totalTrials = sessionMetrics.hits + sessionMetrics.misses + 
+                           sessionMetrics.falseAlarms + sessionMetrics.correctRejections;
+        const correctResponses = sessionMetrics.hits + sessionMetrics.correctRejections;
+        const sessionAccuracy = totalTrials > 0 ? correctResponses / totalTrials : 0;
+        const goodAccuracy = sessionAccuracy >= 0.90;
+        const goodDPrime = sessionMetrics.dPrime > 0.5;
+        
+        if (!goodAccuracy && goodDPrime) {
+          // Remove any existing accuracy message first
+          const existingMsg = document.querySelector(".accuracy-blocked-msg");
+          
+          if (existingMsg) {
+            existingMsg.remove();
+          }
+          
+          const accuracyMsg = document.createElement('div');
+          accuracyMsg.className = 'accuracy-blocked-msg';
+          accuracyMsg.style = "text-align: center; font-size: 1.2rem; margin-top: 1rem; color: #FF9800;";
+          accuracyMsg.innerHTML = `Advancement blocked: ${(accuracy * 100).toFixed(0)}% accuracy (need 90%)`;
+          document.querySelector(".lvl-res-stay").appendChild(accuracyMsg);
+        }
+        
+        // Update nLevel for game state (to reflect micro-level changes)
+        nLevelInputHandler(null, newMicroLevel);
+      }
 
-
-// Restart game with new speed if currently running
-if (isRunning) {
-  resetIntervals();
-  const newSpeed = getSpeedTarget(newMicroLevel);
-  console.log(`Restarting game with new speed: ${newSpeed}ms for level ${formatMicroLevel(newMicroLevel)}`);
-  intervals.push(
-    setInterval(getGameCycle(nLevel), newSpeed)
-  );
-}
+      // Restart game with new speed if currently running
+      if (isRunning) {
+        resetIntervals();
+        const newSpeed = getSpeedTarget(newMicroLevel);
+        console.log(`Restarting game with new speed: ${newSpeed}ms for level ${formatMicroLevel(newMicroLevel)}`);
+        intervals.push(
+          setInterval(getGameCycle(nLevel), newSpeed)
+        );
+      }
       
       // Save history and show results
       const datestamp = new Date().toLocaleDateString("sv");
       const configKey = getCurrentConfigKey();
-history[configKey][datestamp] = history[configKey][datestamp] || [];
-history[configKey][datestamp].push(historyPoint);
+      history[configKey][datestamp] = history[configKey][datestamp] || [];
+      history[configKey][datestamp].push(historyPoint);
       console.log("history", history);
       
       saveSettings();
       saveHistory();
 
+      // Calculate lure resistances if there were any lures
+      if (sessionMetrics.n1LureEncounters && sessionMetrics.n1LureEncounters > 0) {
+        sessionMetrics.n1LureResistance = (sessionMetrics.n1LureCorrectRejections || 0) / sessionMetrics.n1LureEncounters;
+      } else {
+        sessionMetrics.n1LureResistance = 1.0; // Default if no lures encountered
+      }
 
+      if (sessionMetrics.nPlusLureEncounters && sessionMetrics.nPlusLureEncounters > 0) {
+        sessionMetrics.nPlusLureResistance = (sessionMetrics.nPlusLureCorrectRejections || 0) / sessionMetrics.nPlusLureEncounters;
+      } else {
+        sessionMetrics.nPlusLureResistance = 1.0; // Default if no lures encountered
+      }
 
+      // Show lure resistance section if any lures were encountered
+      const totalLureEncounters = (sessionMetrics.n1LureEncounters || 0) + (sessionMetrics.nPlusLureEncounters || 0);
+      if (totalLureEncounters > 0) {
+        sessionMetrics.totalLureResistance = 
+          ((sessionMetrics.n1LureResistance * (sessionMetrics.n1LureEncounters || 0)) + 
+           (sessionMetrics.nPlusLureResistance * (sessionMetrics.nPlusLureEncounters || 0))) / totalLureEncounters;
+      } else {
+        sessionMetrics.totalLureResistance = 1.0;
+      }
+      
+      // Update excellence dashboard
+      const dPrimeTarget = 2.0; // Target is d' > 2.0
+      const lureResistanceTarget = 0.85; // Target is 85% resistance
+      const accuracyTarget = 0.90; // Target is 90% accuracy
 
-// Calculate lure resistances if there were any lures
-if (sessionMetrics.n1LureEncounters && sessionMetrics.n1LureEncounters > 0) {
-  sessionMetrics.n1LureResistance = (sessionMetrics.n1LureCorrectRejections || 0) / sessionMetrics.n1LureEncounters;
-} else {
-  sessionMetrics.n1LureResistance = 1.0; // Default if no lures encountered
-}
+      // Calculate progress percentages
+      const accuracyProgress = Math.min(100, Math.max(0, (accuracy / accuracyTarget) * 100));
+      const dPrimeProgress = Math.min(100, Math.max(0, (sessionMetrics.dPrime / dPrimeTarget) * 100));
+      const lureResistanceProgress = sessionMetrics.totalLureResistance ? 
+        Math.min(100, Math.max(0, (sessionMetrics.totalLureResistance / lureResistanceTarget) * 100)) : 0;
 
-if (sessionMetrics.nPlusLureEncounters && sessionMetrics.nPlusLureEncounters > 0) {
-  sessionMetrics.nPlusLureResistance = (sessionMetrics.nPlusLureCorrectRejections || 0) / sessionMetrics.nPlusLureEncounters;
-} else {
-  sessionMetrics.nPlusLureResistance = 1.0; // Default if no lures encountered
-}
+      // Update accuracy progress display
+      document.getElementById('accuracy-progress-value').textContent = `${Math.round(accuracyProgress)}%`;
+      document.getElementById('accuracy-progress-bar').style.width = `${accuracyProgress}%`;
 
-// Show lure resistance section if any lures were encountered
-const totalLureEncounters = (sessionMetrics.n1LureEncounters || 0) + (sessionMetrics.nPlusLureEncounters || 0);
-if (totalLureEncounters > 0) {
-  sessionMetrics.totalLureResistance = 
-    ((sessionMetrics.n1LureResistance * (sessionMetrics.n1LureEncounters || 0)) + 
-     (sessionMetrics.nPlusLureResistance * (sessionMetrics.nPlusLureEncounters || 0))) / totalLureEncounters;
-} else {
-  sessionMetrics.totalLureResistance = 1.0;
-}
-// Update excellence dashboard
-const dPrimeTarget = 2.0; // Target is d' > 2.0
-const lureResistanceTarget = 0.85; // Target is 85% resistance
-const accuracyTarget = 0.90; // Target is 90% accuracy
+      // Calculate overall excellence (weighted average)
+      let overallProgress = 0;
+      let weightSum = 0;
+      // Add accuracy to overall score (weight: 2 - high importance)
+      overallProgress += accuracyProgress * 2;
+      weightSum += 2;
+      // Add d-prime to overall score (weight: 2)
+      overallProgress += dPrimeProgress * 2;
+      weightSum += 2;
 
-// Calculate progress percentages
-const accuracyProgress = Math.min(100, Math.max(0, (accuracy / accuracyTarget) * 100));
-const dPrimeProgress = Math.min(100, Math.max(0, (sessionMetrics.dPrime / dPrimeTarget) * 100));
-const lureResistanceProgress = sessionMetrics.totalLureResistance ? 
-  Math.min(100, Math.max(0, (sessionMetrics.totalLureResistance / lureResistanceTarget) * 100)) : 0;
+      // Add lure resistance to overall score if applicable (weight: 1)
+      if (sessionMetrics.n1LureResistance) {
+        overallProgress += lureResistanceProgress;
+        weightSum += 1;
+        
+        // Show lure progress section
+        document.getElementById('lure-progress-container').style.display = 'block';
+        document.getElementById('lure-progress-value').textContent = `${Math.round(lureResistanceProgress)}%`;
+        document.getElementById('lure-progress-bar').style.width = `${lureResistanceProgress}%`;
+      } else {
+        document.getElementById('lure-progress-container').style.display = 'none';
+      }
 
-// Update accuracy progress display
-document.getElementById('accuracy-progress-value').textContent = `${Math.round(accuracyProgress)}%`;
-document.getElementById('accuracy-progress-bar').style.width = `${accuracyProgress}%`;
+      // Calculate final overall progress
+      const finalOverallProgress = overallProgress / weightSum;
 
-// Calculate overall excellence (weighted average)
-let overallProgress = 0;
-let weightSum = 0;
-// Add accuracy to overall score (weight: 2 - high importance)
-overallProgress += accuracyProgress * 2;
-weightSum += 2;
-// Add d-prime to overall score (weight: 2)
-overallProgress += dPrimeProgress * 2;
-weightSum += 2;
+      // Update excellence progress displays
+      document.getElementById('dprime-progress-value').textContent = `${Math.round(dPrimeProgress)}%`;
+      document.getElementById('overall-progress-value').textContent = `${Math.round(finalOverallProgress)}%`;
+      document.getElementById('dprime-progress-bar').style.width = `${dPrimeProgress}%`;
+      document.getElementById('overall-progress-bar').style.width = `${finalOverallProgress}%`;
 
-// Add lure resistance to overall score if applicable (weight: 1)
-if (sessionMetrics.n1LureResistance) {
-  overallProgress += lureResistanceProgress;
-  weightSum += 1;
-  
-  // Show lure progress section
-  document.getElementById('lure-progress-container').style.display = 'block';
-  document.getElementById('lure-progress-value').textContent = `${Math.round(lureResistanceProgress)}%`;
-  document.getElementById('lure-progress-bar').style.width = `${lureResistanceProgress}%`;
-} else {
-  document.getElementById('lure-progress-container').style.display = 'none';
-}
+      // Add excellence metrics to historyPoint
+      historyPoint.excellenceMetrics = {
+        dPrimeProgress: dPrimeProgress / 100,
+        lureResistanceProgress: lureResistanceProgress / 100,
+        overallProgress: finalOverallProgress / 100
+      };
 
-// Calculate final overall progress
-const finalOverallProgress = overallProgress / weightSum;
+      console.log("Session Metrics:", sessionMetrics);
 
-// Update excellence progress displays
-document.getElementById('dprime-progress-value').textContent = `${Math.round(dPrimeProgress)}%`;
-document.getElementById('overall-progress-value').textContent = `${Math.round(finalOverallProgress)}%`;
-document.getElementById('dprime-progress-bar').style.width = `${dPrimeProgress}%`;
-document.getElementById('overall-progress-bar').style.width = `${finalOverallProgress}%`;
+      // Add d'-prime to history point
+      historyPoint.dPrime = sessionMetrics.dPrime;
+      historyPoint.responseBias = sessionMetrics.responseBias;
+      historyPoint.n1LureResistance = sessionMetrics.n1LureResistance;
 
-// Add excellence metrics to historyPoint
-historyPoint.excellenceMetrics = {
-  dPrimeProgress: dPrimeProgress / 100,
-  lureResistanceProgress: lureResistanceProgress / 100,
-  overallProgress: finalOverallProgress / 100
-};
+      // Store session in config-specific history (limited to last 20)
+      const currentConfigKey = getCurrentConfigKey();
+      if (!sessionHistoriesByConfig[currentConfigKey]) {
+        sessionHistoriesByConfig[currentConfigKey] = [];
+      }
 
-console.log("Session Metrics:", sessionMetrics);
-
-// Add d'-prime to history point
-historyPoint.dPrime = sessionMetrics.dPrime;
-historyPoint.responseBias = sessionMetrics.responseBias;
-historyPoint.n1LureResistance = sessionMetrics.n1LureResistance;
-
-// Store session in config-specific history (limited to last 20)
-const currentConfigKey = getCurrentConfigKey();
-if (!sessionHistoriesByConfig[currentConfigKey]) {
-  sessionHistoriesByConfig[currentConfigKey] = [];
-}
-
-// Add accuracy to session metrics
-sessionMetrics.accuracy = accuracy;
+      // Add accuracy to session metrics
+      sessionMetrics.accuracy = accuracy;
 
       console.log(`Adding session to config ${currentConfigKey} with dPrime=${sessionMetrics.dPrime}`);
 
-sessionHistoriesByConfig[currentConfigKey].push({
-  ...sessionMetrics, 
-  nLevel: nLevel, 
-  microLevel: currentMicroLevel, 
-  date: new Date(),
-  accuracy: accuracy
-});
+      sessionHistoriesByConfig[currentConfigKey].push({
+        ...sessionMetrics, 
+        nLevel: nLevel, 
+        microLevel: currentMicroLevel, 
+        date: new Date(),
+        accuracy: accuracy
+      });
 
-if (sessionHistoriesByConfig[currentConfigKey].length > 20) {
-  sessionHistoriesByConfig[currentConfigKey].shift(); // Remove oldest session if more than 20
-}
-
+      if (sessionHistoriesByConfig[currentConfigKey].length > 20) {
+        sessionHistoriesByConfig[currentConfigKey].shift(); // Remove oldest session if more than 20
+      }
 
       // Update the recap dialog with d-prime and micro-level information
-document.querySelector(".lvl-before").innerHTML = formatMicroLevel(historyPoint.microLevel);
-document.querySelector(".lvl-after").innerHTML = formatMicroLevel(newMicroLevel);
-document.querySelector(".lvl-stays").innerHTML = formatMicroLevel(newMicroLevel);
+      document.querySelector(".lvl-before").innerHTML = formatMicroLevel(historyPoint.microLevel);
+      document.querySelector(".lvl-after").innerHTML = formatMicroLevel(newMicroLevel);
+      document.querySelector(".lvl-stays").innerHTML = formatMicroLevel(newMicroLevel);
 
-// Update signal detection metrics in the recap dialog
-document.getElementById("sc-res-dprime").textContent = sessionMetrics.dPrime.toFixed(2);
-document.getElementById("sc-res-bias").textContent = sessionMetrics.responseBias.toFixed(2);
+      // Update signal detection metrics in the recap dialog
+      document.getElementById("sc-res-dprime").textContent = sessionMetrics.dPrime.toFixed(2);
+      document.getElementById("sc-res-bias").textContent = sessionMetrics.responseBias.toFixed(2);
 
-// Show lure resistance section if any lures were encountered
-const totalLureEncounters2 = (sessionMetrics.n1LureEncounters || 0) + (sessionMetrics.nPlusLureEncounters || 0);
-if (totalLureEncounters2 > 0) {
-  document.getElementById("lure-resistance-section").style.display = "block";
-  
-  // Display combined lure resistance
-  document.getElementById("sc-res-lure-resistance").textContent = 
-    `${(sessionMetrics.totalLureResistance * 100).toFixed(0)}%`;
-  
-  // Display total lure count
-  document.getElementById("sc-res-lure-count").textContent = totalLureEncounters2;
-  
-  // Optional: Add detailed breakdown if you want
-  const lureDetailsElement = document.getElementById("sc-res-lure-details");
-  if (lureDetailsElement) {
-    lureDetailsElement.textContent = 
-      `N-1: ${(sessionMetrics.n1LureResistance * 100).toFixed(0)}% (${sessionMetrics.n1LureEncounters || 0}), ` +
-      `N+1: ${(sessionMetrics.nPlusLureResistance * 100).toFixed(0)}% (${sessionMetrics.nPlusLureEncounters || 0})`;
-  }
-} else {
-  document.getElementById("lure-resistance-section").style.display = "none";
-}
+      // Show lure resistance section if any lures were encountered
+      const totalLureEncounters2 = (sessionMetrics.n1LureEncounters || 0) + (sessionMetrics.nPlusLureEncounters || 0);
+      if (totalLureEncounters2 > 0) {
+        document.getElementById("lure-resistance-section").style.display = "block";
+        
+        // Display combined lure resistance
+        document.getElementById("sc-res-lure-resistance").textContent = 
+          `${(sessionMetrics.totalLureResistance * 100).toFixed(0)}%`;
+        
+        // Display total lure count
+        document.getElementById("sc-res-lure-count").textContent = totalLureEncounters2;
+        
+        // Optional: Add detailed breakdown if you want
+        const lureDetailsElement = document.getElementById("sc-res-lure-details");
+        if (lureDetailsElement) {
+          lureDetailsElement.textContent = 
+            `N-1: ${(sessionMetrics.n1LureResistance * 100).toFixed(0)}% (${sessionMetrics.n1LureEncounters || 0}), ` +
+            `N+1: ${(sessionMetrics.nPlusLureResistance * 100).toFixed(0)}% (${sessionMetrics.nPlusLureEncounters || 0})`;
+        }
+      } else {
+        document.getElementById("lure-resistance-section").style.display = "none";
+      }
 
-// Remove the previously added dynamic elements if they exist
-const oldDPrimeElement = document.querySelector(".dynamic-dprime-element");
-if (oldDPrimeElement) {
-  oldDPrimeElement.remove();
-}
-const oldLureElement = document.querySelector(".dynamic-lure-element");
-if (oldLureElement) {
-  oldLureElement.remove();
-}
+      // Remove the previously added dynamic elements if they exist
+      const oldDPrimeElement = document.querySelector(".dynamic-dprime-element");
+      if (oldDPrimeElement) {
+        oldDPrimeElement.remove();
+      }
+      const oldLureElement = document.querySelector(".dynamic-lure-element");
+      if (oldLureElement) {
+        oldLureElement.remove();
+      }
+      
       // Show the recap dialog
       recapDialogContent.parentElement.show();
       
       // Reset game state for next round
       resetPoints();
       resetBlock();
-
       
       return;
     }
@@ -4015,7 +3973,7 @@ if (oldLureElement) {
     // Count stimulus
     stimuliCount++;
     
-   // Animating stimuli
+    // Animating stimuli
     if (wallsEnabled && walls && walls[i]) {
       currWalls = walls[i];
       if (currWalls && currWalls.symbol) {
@@ -4030,76 +3988,76 @@ if (oldLureElement) {
       }
     }
     if (cameraEnabled && cameras && cameras[i]) {
-  currCamera = cameras[i];
-  if (currCamera && currCamera.symbol) {
-    let [cx, cy] = currCamera.symbol.split("&");
-    if (cx !== undefined && cy !== undefined) {
-      rotateCamera(cx, cy);
+      currCamera = cameras[i];
+      if (currCamera && currCamera.symbol) {
+        let [cx, cy] = currCamera.symbol.split("&");
+        if (cx !== undefined && cy !== undefined) {
+          rotateCamera(cx, cy);
+        }
+      }
     }
-  }
-}
 
-if (faceEnabled && faces && faces[i]) {
-  currFace = faces[i];
-  if (currFace && currFace.symbol) {
-    const faceIndex = parseInt(currFace.symbol) - 1;
-    if (!isNaN(faceIndex) && faceIndex >= 0 && faceIndex < faceEls.length) {
-    if (colorEnabled && colors && colors[i]) {
+    if (faceEnabled && faces && faces[i]) {
+      currFace = faces[i];
+      if (currFace && currFace.symbol) {
+        const faceIndex = parseInt(currFace.symbol) - 1;
+        if (!isNaN(faceIndex) && faceIndex >= 0 && faceIndex < faceEls.length) {
+          if (colorEnabled && colors && colors[i]) {
+            currColor = colors[i];
+            if (currColor && currColor.symbol) {
+              wow(faceEls[faceIndex], currColor.symbol, baseDelay - 500);
+            }
+          } else {
+            wow(faceEls[faceIndex], "col-a", baseDelay - 500);
+          }
+        }
+      }
+    } else if (colorEnabled && colors && colors[i]) {
       currColor = colors[i];
       if (currColor && currColor.symbol) {
-        wow(faceEls[faceIndex], currColor.symbol, baseDelay - 500);
+        wow(faceEls[0], currColor.symbol, baseDelay - 500);
       }
-    } else {
-      wow(faceEls[faceIndex], "col-a", baseDelay - 500);
     }
-  }
-}
-} else if (colorEnabled && colors && colors[i]) {
-  currColor = colors[i];
-  if (currColor && currColor.symbol) {
-    wow(faceEls[0], currColor.symbol, baseDelay - 500);
-  }
-}
 
-if (positionEnabled && positions && positions[i]) {
-  currPosition = positions[i];
-  if (currPosition && currPosition.symbol) {
-    move(cube, currPosition.symbol);
-  }
-}
-
-if (wordEnabled && words && words[i]) {
-  currWord = words[i];
-  if (currWord && currWord.symbol) {
-    writeWord(currWord.symbol);
-  }
-}
-
-if (cornerEnabled && corners && corners[i]) {
-  currCorner = corners[i];
-  if (currCorner && currCorner.symbol) {
-    move(innerCube, currCorner.symbol);
-  }
-  
-  if (shapeEnabled && shapes && shapes[i]) {
-    currShape = shapes[i];
-    if (currShape && currShape.symbol) {
-      // Remove all shape classes first
-      shape.classList.remove("triangle", "square", "circle");
-      // Add the new shape class
-      shape.classList.add(currShape.symbol);
-      // Apply the wow animation
-      wow(shape, "shape-active", baseDelay - 300);
+    if (positionEnabled && positions && positions[i]) {
+      currPosition = positions[i];
+      if (currPosition && currPosition.symbol) {
+        move(cube, currPosition.symbol);
+      }
     }
-  }
-}
 
-if (soundEnabled && sounds && sounds[i]) {
-  currSound = sounds[i];
-  if (currSound && currSound.symbol) {
-    speak(currSound.symbol);
-  }
-}
+    if (wordEnabled && words && words[i]) {
+      currWord = words[i];
+      if (currWord && currWord.symbol) {
+        writeWord(currWord.symbol);
+      }
+    }
+
+    if (cornerEnabled && corners && corners[i]) {
+      currCorner = corners[i];
+      if (currCorner && currCorner.symbol) {
+        move(innerCube, currCorner.symbol);
+      }
+      
+      if (shapeEnabled && shapes && shapes[i]) {
+        currShape = shapes[i];
+        if (currShape && currShape.symbol) {
+          // Remove all shape classes first
+          shape.classList.remove("triangle", "square", "circle");
+          // Add the new shape class
+          shape.classList.add(currShape.symbol);
+          // Apply the wow animation
+          wow(shape, "shape-active", baseDelay - 300);
+        }
+      }
+    }
+
+    if (soundEnabled && sounds && sounds[i]) {
+      currSound = sounds[i];
+      if (currSound && currSound.symbol) {
+        speak(currSound.symbol);
+      }
+    }
     
     // Increase block index
     i++;
@@ -4114,31 +4072,31 @@ function play() {
   }
   isTransitioning = true;
 
-document.querySelectorAll("dialog").forEach(d => d.close());
-closeOptions();
+  document.querySelectorAll("dialog").forEach(d => d.close());
+  closeOptions();
 
-// Update micro-level for the new random configuration
-if (randomizeEnabled) {
-  // Save current micro-level before switching configurations
-  const currentConfig = getCurrentConfigKey();
-  microLevelsByConfig[currentConfig] = currentMicroLevel;
-  
-  // Now select random stimuli and update
-  selectRandomStimuli(numStimuliSelect);
-  updateMicroLevelForConfig();
-}
+  // Update micro-level for the new random configuration
+  if (randomizeEnabled) {
+    // Save current micro-level before switching configurations
+    const currentConfig = getCurrentConfigKey();
+    microLevelsByConfig[currentConfig] = currentMicroLevel;
+    
+    // Now select random stimuli and update
+    selectRandomStimuli(numStimuliSelect);
+    updateMicroLevelForConfig();
+  }
 
-// Reset game state before starting
-resetPoints();
-resetBlock();
-resetIntervals();
-  
+  // Reset game state before starting
+  resetPoints();
+  resetBlock();
+  resetIntervals();
+    
   isRunning = true;
 
-// Get current configuration
-const currentConfig = getCurrentConfigKey();
-const sessionHistory = sessionHistoriesByConfig[currentConfig] || [];
-  
+  // Get current configuration
+  const currentConfig = getCurrentConfigKey();
+  const sessionHistory = sessionHistoriesByConfig[currentConfig] || [];
+    
   // Reset session metrics
   sessionMetrics = {
     hits: 0,
@@ -4171,7 +4129,6 @@ const sessionHistory = sessionHistoriesByConfig[currentConfig] || [];
   speak("Start.");
   document.querySelector(".stop").classList.remove("active");
   document.querySelector(".play").classList.add("active");
-
 
   intervals.push(
     setInterval(getGameCycle(nLevel), getSpeedTarget(currentMicroLevel))
@@ -4297,39 +4254,39 @@ function checkHandler(stimulus) {
 
   console.log(stimulus, curr, button, enable);
   
- // Update signal detection metrics based on response
-if (curr.isMatching) {
-  // Hit: User correctly identified a match
-  sessionMetrics.hits++;
-} else {
-  // False Alarm: User incorrectly claimed a match
-  sessionMetrics.falseAlarms++;
-  
-  // Check if this was a lure (for interference measurement)
-  if (curr.isLure) {
-    if (curr.lureType === 'n-1') {
-      // Initialize counters if needed
-      sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
-      sessionMetrics.n1LureFalseAlarms = sessionMetrics.n1LureFalseAlarms || 0;
-      
-      // Track N-1 lure response (fell for the lure)
-      sessionMetrics.n1LureEncounters++;
-      sessionMetrics.n1LureFalseAlarms++;
-      
-      console.log("User fell for N-1 lure", stimulus);
-    } else if (curr.lureType === 'n+1') {
-      // Initialize counters if needed
-      sessionMetrics.nPlusLureEncounters = sessionMetrics.nPlusLureEncounters || 0;
-      sessionMetrics.nPlusLureFalseAlarms = sessionMetrics.nPlusLureFalseAlarms || 0;
-      
-      // Track N+1 lure response (fell for the lure)
-      sessionMetrics.nPlusLureEncounters++;
-      sessionMetrics.nPlusLureFalseAlarms++;
-      
-      console.log("User fell for N+1 lure", stimulus);
+  // Update signal detection metrics based on response
+  if (curr.isMatching) {
+    // Hit: User correctly identified a match
+    sessionMetrics.hits++;
+  } else {
+    // False Alarm: User incorrectly claimed a match
+    sessionMetrics.falseAlarms++;
+    
+    // Check if this was a lure (for interference measurement)
+    if (curr.isLure) {
+      if (curr.lureType === 'n-1') {
+        // Initialize counters if needed
+        sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
+        sessionMetrics.n1LureFalseAlarms = sessionMetrics.n1LureFalseAlarms || 0;
+        
+        // Track N-1 lure response (fell for the lure)
+        sessionMetrics.n1LureEncounters++;
+        sessionMetrics.n1LureFalseAlarms++;
+        
+        console.log("User fell for N-1 lure", stimulus);
+      } else if (curr.lureType === 'n+1') {
+        // Initialize counters if needed
+        sessionMetrics.nPlusLureEncounters = sessionMetrics.nPlusLureEncounters || 0;
+        sessionMetrics.nPlusLureFalseAlarms = sessionMetrics.nPlusLureFalseAlarms || 0;
+        
+        // Track N+1 lure response (fell for the lure)
+        sessionMetrics.nPlusLureEncounters++;
+        sessionMetrics.nPlusLureFalseAlarms++;
+        
+        console.log("User fell for N+1 lure", stimulus);
+      }
     }
   }
-}
   
   // Original stimulus-specific handling
   switch (stimulus) {
@@ -4435,7 +4392,6 @@ if (curr.isMatching) {
   }
 }
 
-
 function calculateAccuracy(correct, missed, wrong) {
   const total = correct + missed + wrong;
   if (total === 0) return 0;
@@ -4447,8 +4403,8 @@ function calculateAccuracy(correct, missed, wrong) {
 // Set up event listeners
 [ ...document.querySelectorAll("input[name='dimension']") ].forEach(el => {
   el.addEventListener("click", function(evt) {
-      const dim = evt.target.value;
-      toggleStats(dim);
+    const dim = evt.target.value;
+    toggleStats(dim);
   });
 });
 
