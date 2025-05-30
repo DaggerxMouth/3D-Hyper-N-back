@@ -604,9 +604,8 @@ if (Math.floor(potentialNewLevel) > Math.floor(currentMicroLevel)) {
   } else if (Math.floor(newMicroLevel) < nLevel) {
     console.log(`LEVEL DOWN! ${nLevel} -> ${Math.floor(newMicroLevel)}`);
   }
-  
   console.log(`Returning newMicroLevel: ${newMicroLevel} (was ${currentMicroLevel})`);
-  return newMicroLevel;
+return newMicroLevel;
 }
 }
 
