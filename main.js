@@ -607,7 +607,6 @@ if (Math.floor(potentialNewLevel) > Math.floor(currentMicroLevel)) {
   
   console.log(`Returning newMicroLevel: ${newMicroLevel} (was ${currentMicroLevel})`);
   return newMicroLevel;
-  }
 }
 
 // Function to get micro-level components
@@ -3654,9 +3653,6 @@ levelChanged = newLevel !== originalLevel;
 
 // Update micro-level immediately using the handler
 nLevelInputHandler(null, newMicroLevel);
-
-// Save the updated micro-level to the config storage
-microLevelsByConfig[getCurrentConfigKey()] = newMicroLevel;
 
 // Check for phase transitions and reset baseline
 const oldPhase = oldMicroLevel - Math.floor(oldMicroLevel);
