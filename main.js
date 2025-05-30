@@ -3693,8 +3693,7 @@ function getGameCycle(n) {
       levelChanged = newLevel !== originalLevel;
 
       // Update micro-level immediately 
-      const configKey = getCurrentConfigKey();
-      microLevelsByConfig[configKey] = newMicroLevel;
+      microLevelsByConfig[getCurrentConfigKey()] = newMicroLevel;
       currentMicroLevel = newMicroLevel;
       nLevel = Math.floor(newMicroLevel);
       
@@ -3707,7 +3706,6 @@ function getGameCycle(n) {
       }
       console.log(`Updated config ${configKey} to micro-level ${newMicroLevel}`);
       // Save to config BEFORE updating the handler
-      const configKey = getCurrentConfigKey();
       microLevelsByConfig[configKey] = newMicroLevel;
       console.log(`Saved micro-level ${newMicroLevel} to config ${configKey} BEFORE handler update`);
       currentMicroLevel = newMicroLevel;
