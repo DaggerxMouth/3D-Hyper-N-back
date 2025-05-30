@@ -3697,7 +3697,7 @@ function getGameCycle(n) {
       // Update micro-level immediately 
       microLevelsByConfig[configKey] = newMicroLevel;
       currentMicroLevel = newMicroLevel;
-      nLevel = Math.floor(newMicroLevel);
+      // Don't reassign nLevel here - it will be updated by nLevelInputHandler
       
       // Update all displays
       nLevelInput.value = formatMicroLevel(newMicroLevel);
