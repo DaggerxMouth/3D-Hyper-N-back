@@ -468,6 +468,8 @@ console.log(`Advancement criteria: accuracy=${(matchAccuracy * 100).toFixed(1)}%
   
   // Determine new micro-level
 let newMicroLevel = currentMicroLevel;
+  console.log("=== START checkMicroLevelAdvancement ===");
+console.log(`Initial newMicroLevel: ${newMicroLevel}`);
 
 // Check for regression first
 let isRegressing = false;
@@ -605,6 +607,8 @@ if (Math.floor(potentialNewLevel) > Math.floor(currentMicroLevel)) {
     console.log(`LEVEL DOWN! ${nLevel} -> ${Math.floor(newMicroLevel)}`);
   }
   console.log(`Returning newMicroLevel: ${newMicroLevel} (was ${currentMicroLevel})`);
+  console.log("=== END checkMicroLevelAdvancement ===");
+console.log(`About to return: ${newMicroLevel}`);
 return newMicroLevel;
 }
 }
