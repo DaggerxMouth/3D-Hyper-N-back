@@ -2772,13 +2772,45 @@ function createBlocksWithFixedDensity(symbols, n, matchDensity = 0.25) {
     if (!blocks[i]) {
       let symbol = random(symbols);
       
+      // Second phase: fill remaining positions with non-matching stimuli
+  for (let i = 0; i < blocks.length; i++) {
+    if (!blocks[i]) {
+      let symbol = random(symbols);
+      let attempts = 0;
+      const maxAttempts = symbols.length * 2;
+      
       // Ensure we don't accidentally create matches
-      if (i >= n && blocks[i - n]) {
-        // Avoid creating n-back matches
-        while (blocks[i - n].symbol === symbol) {
+      let safe = false;
+      while (!safe && attempts < maxAttempts) {
+        safe = true;
+        
+        // Check n positions back
+        if (i >= n && blocks[i - n] && blocks[i - n].symbol === symbol) {
+          safe = false;
+        }
+        
+        // Check n positions forward
+        if (i + n < blocks.length && blocks[i + n] && blocks[i + n].symbol === symbol) {
+          safe = false;
+        }
+        
+        if (!safe) {
           symbol = random(symbols);
+          attempts++;
         }
       }
+      
+      // If we couldn't find a safe symbol after many attempts, log warning
+      if (!safe) {
+        console.warn(`Could not find safe symbol for position ${i}, using ${symbol} anyway`);
+      }
+      
+      blocks[i] = {
+        isMatching: false,
+        symbol: symbol
+      };
+    }
+  }
       
       if (i + n < blocks.length && blocks[i + n]) {
         // Avoid creating forward matches that would make a future position match
@@ -2825,8 +2857,8 @@ function placeLures(blocks, n, lureFrequency = 0.10) {
     // Find a position that can have an N-1 lure (must be at least 1 position from start)
     let rnd = Math.floor(Math.random() * (blocks.length - 1)) + 1;
     
-    // Skip if this position already has something special
-    if (!blocks[rnd] || blocks[rnd].isLure || blocks[rnd].isMatching) {
+    // Skip if this position already has content
+    if (blocks[rnd]) {
       continue;
     }
     
@@ -2836,12 +2868,20 @@ function placeLures(blocks, n, lureFrequency = 0.10) {
     // Only place lure if there's a valid previous symbol
     if (prevSymbol) {
       // Place the N-1 lure
-      blocks[rnd] = {
-        isMatching: false, // It's NOT a match but looks like it should be
-        isLure: true,      // Mark as a lure
-        lureType: 'n-1',   // Specify the lure type
-        symbol: prevSymbol  // Use the symbol from n-1 position
-      };
+      // Check if this would be a legitimate n-back match
+      const legitimateMatch = (rnd >= n && blocks[rnd - n] && blocks[rnd - n].symbol === prevSymbol);
+      
+      // Only create a lure if it's NOT already a real match
+      if (!legitimateMatch) {
+        blocks[rnd] = {
+          isMatching: false,
+          isLure: true,
+          lureType: 'n-1',
+          symbol: prevSymbol
+        };
+        
+        placedN1Lures++;
+      }
       
       placedN1Lures++;
     }
@@ -2857,37 +2897,47 @@ function placeLures(blocks, n, lureFrequency = 0.10) {
     // Find a position that can have an N+1 lure (must not be too close to end)
     let rnd = Math.floor(Math.random() * (blocks.length - 2));
     
-    // Skip if this position already has something special
-    if (!blocks[rnd] || blocks[rnd].isLure || blocks[rnd].isMatching || !blocks[rnd + 1]) {
+    // Skip if this position already has content
+    if (blocks[rnd]) {
       continue;
     }
     
     // Get the symbol from the next position (N+1)
     const nextSymbol = blocks[rnd + 1].symbol;
     
-    // Place the N+1 lure
-    blocks[rnd] = {
-      isMatching: false, // It's NOT a match but looks like it should be
-      isLure: true,      // Mark as a lure
-      lureType: 'n+1',   // Specify the lure type
-      symbol: nextSymbol  // Use the symbol from n+1 position
-    };
+    // Check if this would be a legitimate n-back match
+    const legitimateMatch = (rnd >= n && blocks[rnd - n] && blocks[rnd - n].symbol === nextSymbol);
     
-    placedNPlusLures++;
-  }
+    // Only create a lure if it's NOT already a real match
+    if (!legitimateMatch) {
+      blocks[rnd] = {
+        isMatching: false,
+        isLure: true,
+        lureType: 'n+1',
+        symbol: nextSymbol
+      };
+      
+      placedNPlusLures++;
+    }
   
   console.log(`Placed ${placedN1Lures} N-1 lures and ${placedNPlusLures} N+1 lures (total ${placedN1Lures + placedNPlusLures} lures)`);
   
   return blocks;
 }
 
-// Function to create blocks with both fixed density and lures
 function createBlocksWithLures(symbols, n, matchDensity = 0.23, lureFrequency = 0.10) {
   // First create blocks with fixed match density
   let blocks = createBlocksWithFixedDensity(symbols, n, matchDensity);
   
   // Then add systematic lures
   blocks = placeLures(blocks, n, lureFrequency);
+  
+  // Validate and log final block composition
+  const matches = blocks.filter(b => b && b.isMatching).length;
+  const lures = blocks.filter(b => b && b.isLure).length;
+  const total = blocks.length;
+  
+  console.log(`Block validation: ${matches} matches, ${lures} lures, ${total} total (${((matches/total)*100).toFixed(1)}% match rate)`);
   
   return blocks;
 }
