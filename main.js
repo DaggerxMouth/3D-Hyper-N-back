@@ -4622,7 +4622,7 @@ window.addEventListener('unhandledrejection', function(event) {
   console.error('Unhandled promise rejection:', event.reason);
 });
 
-}
+
 // Initialize the application
 loadBindings();
 loadSettings();
