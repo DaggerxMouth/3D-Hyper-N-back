@@ -4622,10 +4622,12 @@ window.addEventListener('unhandledrejection', function(event) {
   console.error('Unhandled promise rejection:', event.reason);
 });
 
+}
 // Initialize the application
 loadBindings();
 loadSettings();
 loadHistory();
+  
 // Initialize speed display
 const speedDisplay = document.querySelector("#speed-display");
 if (speedDisplay) {
