@@ -2767,12 +2767,7 @@ function createBlocksWithFixedDensity(symbols, n, matchDensity = 0.25) {
     }
   }
   
-  // Second phase: fill remaining positions with non-matching stimuli
-  for (let i = 0; i < blocks.length; i++) {
-    if (!blocks[i]) {
-      let symbol = random(symbols);
-      
-      // Second phase: fill remaining positions with non-matching stimuli
+// Second phase: fill remaining positions with non-matching stimuli
   for (let i = 0; i < blocks.length; i++) {
     if (!blocks[i]) {
       let symbol = random(symbols);
@@ -2803,20 +2798,6 @@ function createBlocksWithFixedDensity(symbols, n, matchDensity = 0.25) {
       // If we couldn't find a safe symbol after many attempts, log warning
       if (!safe) {
         console.warn(`Could not find safe symbol for position ${i}, using ${symbol} anyway`);
-      }
-      
-      blocks[i] = {
-        isMatching: false,
-        symbol: symbol
-      };
-    }
-  }
-      
-      if (i + n < blocks.length && blocks[i + n]) {
-        // Avoid creating forward matches that would make a future position match
-        while (blocks[i + n].symbol === symbol) {
-          symbol = random(symbols);
-        }
       }
       
       blocks[i] = {
@@ -2882,8 +2863,6 @@ function placeLures(blocks, n, lureFrequency = 0.10) {
         
         placedN1Lures++;
       }
-      
-      placedN1Lures++;
     }
   }
   
