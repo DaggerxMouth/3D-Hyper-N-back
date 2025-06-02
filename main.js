@@ -2898,7 +2898,7 @@ function placeLures(blocks, n, lureFrequency = 0.10) {
       
       placedNPlusLures++;
     }
-  
+  }
   console.log(`Placed ${placedN1Lures} N-1 lures and ${placedNPlusLures} N+1 lures (total ${placedN1Lures + placedNPlusLures} lures)`);
   
   return blocks;
