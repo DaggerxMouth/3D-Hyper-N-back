@@ -645,7 +645,7 @@ body {
     );
 }
 
-.check-walls, .check-camera, .check-face, .check-position {
+.check-walls, .check-camera, .check-face, .check-position, .check-rotation {
   transform:
     rotateX(-7.5deg)
     rotateY(-5deg);
@@ -670,7 +670,7 @@ body {
 }
 
 @media (max-width: 576px) {  
-  .check-walls, .check-camera, .check-face, .check-position {
+  .check-walls, .check-camera, .check-face, .check-position, .check-rotation {
     background-image:
     linear-gradient(
       -45deg,
