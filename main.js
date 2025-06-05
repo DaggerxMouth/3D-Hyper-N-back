@@ -3117,7 +3117,14 @@ function resetBlock() {
   });
   
   // Reset cube and inner cube positions
-  resetCubeTransform(cube);
+  // Only reset position, not rotation if rotation stimulus is active
+  if (!rotationEnabled) {
+    resetCubeTransform(cube);
+  } else {
+    // Just reset position, keep current rotation
+    currentCubePosition = initialCubePosition;
+    updateCubeTransform(cube);
+  }
   move(innerCube, initialInnerCubePosition);
   
   // Reset camera rotation
@@ -3625,6 +3632,12 @@ function getGameCycle(n) {
     colors = createBlocksWithLures(colorClasses, n, 0.25, lureFrequency);
     matchingColor = colors.filter(block => block && block.isMatching).length;
     matchingStimuli += matchingColor;
+  }
+  let rotations_blocks;
+  if (rotationEnabled) {
+    rotations_blocks = createBlocksWithLures(rotations, n, 0.25, lureFrequency);
+    matchingRotation = rotations_blocks.filter(block => block && block.isMatching).length;
+    matchingStimuli += matchingRotation;
   }
   
   console.log(
@@ -4313,8 +4326,8 @@ function getGameCycle(n) {
       }
     }
 
-    if (rotationEnabled && rotations && rotations[i]) {
-      currRotation = rotations[i];
+    if (rotationEnabled && rotations_blocks && rotations_blocks[i]) {
+      currRotation = rotations_blocks[i];
       if (currRotation && currRotation.symbol) {
         rotateCube(cube, currRotation.symbol);
         wow(cube, "rotation-active", getSpeedTarget(currentMicroLevel) - 500);
