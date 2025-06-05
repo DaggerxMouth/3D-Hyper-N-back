@@ -301,6 +301,10 @@
 						<div class="stimuli-accuracy-title">Position</div>
 						<div class="stimuli-accuracy-value" id="position-accuracy">-%</div>
 					</div>
+					<div class="stimuli-accuracy-item" id="rotation-accuracy-item">
+						<div class="stimuli-accuracy-title">Rotation</div>
+						<div class="stimuli-accuracy-value" id="rotation-accuracy">-%</div>
+					</div>
 					<div class="stimuli-accuracy-item" id="word-accuracy-item">
 						<div class="stimuli-accuracy-title">Word</div>
 						<div class="stimuli-accuracy-value" id="word-accuracy">-%</div>
@@ -381,6 +385,7 @@
 				<label>Camera</label><input id="binding-Camera" type="text">
 				<label>Face</label><input id="binding-Face" type="text">
 				<label>Position</label><input id="binding-Position" type="text">
+				<label>Rotation</label><input id="binding-Rotation" type="text">
 				<label>Word</label><input id="binding-Word" type="text">
 				<label>Shape</label><input id="binding-Shape" type="text">
 				<label>Corner</label><input id="binding-Corner" type="text">
@@ -413,6 +418,8 @@
 					<label class="toggle-btn" for="enable-face">Face</label>
 					<input class="toggle-trigger" hidden id="enable-position" type="checkbox" oninput="positionEnableTrigHandler()">
 					<label class="toggle-btn" for="enable-position">Position</label>
+					<input class="toggle-trigger" hidden id="enable-rotation" type="checkbox" oninput="rotationEnableTrigHandler()">
+					<label class="toggle-btn" for="enable-rotation">Rotation</label>
 					<input class="toggle-trigger" hidden id="enable-word" type="checkbox" oninput="wordEnableTrigHandler()">
 					<label class="toggle-btn" for="enable-word">Word</label>
 					<input class="toggle-trigger" hidden id="enable-shape" type="checkbox" oninput="shapeEnableTrigHandler()">
@@ -536,6 +543,7 @@
 				<button class="btn check-camera">Camera <span class="bind-key-Camera"></span></button>
 				<button class="btn check-face">Face <span class="bind-key-Face"></span></button>
 				<button class="btn check-position">Position <span class="bind-key-Position"></span></button>
+				<button class="btn check-rotation">Rotation <span class="bind-key-Rotation"></span></button>
 			</div>
 		</div>
 
