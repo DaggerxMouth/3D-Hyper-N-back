@@ -305,7 +305,7 @@ body {
 .cube {
   position: absolute;
   transform-style: preserve-3d;
-  transform: translate3d(-0.5em, -3em, 0.5em);
+  /* transform is set by JavaScript */
   width: 2em;
   height: 2em;
   transition: transform 2s ease;
