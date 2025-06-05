@@ -1215,3 +1215,7 @@ dialog .dialog-content {
     height: 0.4rem;
   }
 }
+
+.rotation-active {
+  box-shadow: inset 0 0 8px #0ff, 0 0 8px #0ff4 !important;
+}
