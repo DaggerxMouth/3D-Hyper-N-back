@@ -114,7 +114,7 @@ const points = [
 ];
 const numbers = "123456";
 const initialCubePosition = "-.5em, -3em, .5em";
-const rotationOnlyCubePosition = "-.5em, 0, .5em";  // Higher position when only rotating
+const rotationOnlyCubePosition = "0, 3em, 0";  // Centered and higher
 const moves = [
   "-3.5em, 0, -2.5em", "-.5em, 0, -2.5em", "2.5em, 0, -2.5em",
   "-3.5em, 0, .5em", "-.5em, 0, .5em", "2.5em, 0, .5em",
