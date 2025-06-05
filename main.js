@@ -4317,6 +4317,7 @@ function getGameCycle(n) {
       currRotation = rotations[i];
       if (currRotation && currRotation.symbol) {
         rotateCube(cube, currRotation.symbol);
+        wow(cube, "rotation-active", getSpeedTarget(currentMicroLevel) - 500);
       }
     }
 
