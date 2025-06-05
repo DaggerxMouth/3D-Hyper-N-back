@@ -3388,8 +3388,14 @@ let currentCubePosition = initialCubePosition;
 let currentCubeRotation = "0, 0, 0";
 
 function move(el, currPosString) {
-  currentCubePosition = currPosString;
-  updateCubeTransform(el);
+  // Only update currentCubePosition if it's the main cube
+  if (el === cube) {
+    currentCubePosition = currPosString;
+    updateCubeTransform(el);
+  } else {
+    // For inner cube, just apply the transform directly
+    el.style.transform = `translate3d(${currPosString})`;
+  }
 }
 
 function rotateCube(el, rotationString) {
