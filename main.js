@@ -114,6 +114,7 @@ const points = [
 ];
 const numbers = "123456";
 const initialCubePosition = "-.5em, -3em, .5em";
+const rotationOnlyCubePosition = "-.5em, 0, .5em";  // Higher position when only rotating
 const moves = [
   "-3.5em, 0, -2.5em", "-.5em, 0, -2.5em", "2.5em, 0, -2.5em",
   "-3.5em, 0, .5em", "-.5em, 0, .5em", "2.5em, 0, .5em",
@@ -3117,11 +3118,15 @@ function resetBlock() {
   });
   
   // Reset cube and inner cube positions
-  // Only reset position, not rotation if rotation stimulus is active
+  // Reset cube state based on enabled stimuli
   if (!rotationEnabled) {
     resetCubeTransform(cube);
+  } else if (!positionEnabled && rotationEnabled) {
+    // If only rotation is enabled, use a centered position
+    currentCubePosition = rotationOnlyCubePosition;
+    updateCubeTransform(cube);
   } else {
-    // Just reset position, keep current rotation
+    // Both position and rotation enabled - just reset position
     currentCubePosition = initialCubePosition;
     updateCubeTransform(cube);
   }
