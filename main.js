@@ -3408,6 +3408,13 @@ function rotateCube(el, rotationString) {
   updateCubeTransform(el);
 }
 
+function resetCubeTransform(el) {
+  currentCubePosition = initialCubePosition;
+  currentCubeRotation = "0, 0, 0";
+  console.log("resetCubeTransform - position:", currentCubePosition);
+  updateCubeTransform(el);
+}
+
 function wow(htmlElement, cssClass, delay) {
   htmlElement.classList.add(cssClass);
   setTimeout(() => 
