@@ -10,6 +10,7 @@ let keyBindings = {
   "Camera": "s",
   "Face": "d",
   "Position": "f",
+  "Rotation": "r",
   "Word": "g",
   "Shape": "h",
   "Corner": "j",
@@ -66,6 +67,7 @@ const checkShapeBtn = document.querySelector(".check-shape");
 const checkCornerBtn = document.querySelector(".check-corner");
 const checkSoundBtn = document.querySelector(".check-sound");
 const checkColorBtn = document.querySelector(".check-color");
+const checkRotationBtn = document.querySelector(".check-rotation");
 
 const nBackDisplay = document.querySelector("#n-back-display");
 const recapDialogContent = document.querySelector("#recap-dialog .dialog-content");
@@ -88,6 +90,7 @@ const [
   cameraEnableTrig,
   faceEnableTrig,
   positionEnableTrig,
+  rotationEnableTrig,
   wordEnableTrig,
   shapeEnableTrig,
   cornerEnableTrig,
@@ -123,6 +126,15 @@ const moves = [
   "-3.5em, -6em, -2.5em", "-.5em, -6em, -2.5em", "2.5em, -6em, -2.5em",
   "-3.5em, -6em, .5em", "-.5em, -6em, .5em", "2.5em, -6em, .5em",
   "-3.5em, -6em, 3.5em", "-.5em, -6em, 3.5em", "2.5em, -6em, 3.5em"
+];
+
+const rotations = [
+  "0, 0, 0", "45, 0, 0", "90, 0, 0", "135, 0, 0",
+  "0, 45, 0", "0, 90, 0", "0, 135, 0", "0, 180, 0",
+  "0, 0, 45", "0, 0, 90", "0, 0, 135", "0, 0, 180",
+  "45, 45, 0", "90, 90, 0", "45, 0, 45", "0, 45, 45",
+  "90, 45, 90", "135, 90, 45", "180, 0, 90", "45, 135, 180",
+  "270, 180, 90", "315, 225, 45", "180, 270, 135", "225, 315, 270"
 ];
 
 const wordsList = [
@@ -167,6 +179,7 @@ const defVal_shapeEnabled = true;
 const defVal_cornerEnabled = true;
 const defVal_soundEnabled = true;
 const defVal_colorEnabled = true;
+const defVal_rotationEnabled = false;
 const defVal_randomizeEnabled = false; // Default value for randomize stimuli toggle
 const defVal_tileAHexColor = "#111";
 const defVal_tileBHexColor = "#888";
@@ -191,6 +204,7 @@ let shapeEnabled = defVal_shapeEnabled;
 let cornerEnabled = defVal_cornerEnabled;
 let soundEnabled = defVal_soundEnabled;
 let colorEnabled = defVal_colorEnabled;
+let rotationEnabled = defVal_rotationEnabled;
 let randomizeEnabled = defVal_randomizeEnabled; // Added randomize stimuli setting
 let tileAHexColor = defVal_tileAHexColor;
 let tileBHexColor = defVal_tileBHexColor;
@@ -222,6 +236,7 @@ let enableShapeCheck = true;
 let enableCornerCheck = true;
 let enableSoundCheck = true;
 let enableColorCheck = true;
+let enableRotationCheck = true;
 
 let currWalls;
 let currCamera;
@@ -233,6 +248,7 @@ let currShape;
 let currCorner;
 let currSound;
 let currColor;
+let currRotation;
 
 let rightWalls = 0;
 let rightCamera = 0;
@@ -244,6 +260,7 @@ let rightShape = 0;
 let rightCorner = 0;
 let rightSound = 0;
 let rightColor = 0;
+let rightRotation = 0;
 
 let wrongWalls = 0;
 let wrongCamera = 0;
@@ -255,6 +272,7 @@ let wrongShape = 0;
 let wrongCorner = 0;
 let wrongSound = 0;
 let wrongColor = 0;
+let wrongRotation = 0;
 
 // Matching stimuli counts (for tracking each type separately)
 let matchingWalls = 0;
@@ -266,6 +284,7 @@ let matchingShape = 0;
 let matchingCorner = 0;
 let matchingSound = 0;
 let matchingColor = 0;
+let matchingRotation = 0;
 
 // Signal detection metrics for d'-prime calculation
 let sessionMetrics = {
@@ -488,6 +507,29 @@ function checkMicroLevelAdvancement(sessionMetrics, sessionHistory) {
     console.log(`Decreasing micro-level by -${decrement.toFixed(2)} (accuracy below 75%: ${(matchAccuracy * 100).toFixed(1)}%)`);
     isRegressing = true;
     console.log(`Returning newMicroLevel: ${newMicroLevel} (was ${currentMicroLevel})`);
+    
+    // Check if regression dropped us below a phase boundary - reset attempts if so
+    const oldProgress = currentMicroLevel - Math.floor(currentMicroLevel);
+    const newProgress = newMicroLevel - Math.floor(newMicroLevel);
+    
+    const wasAtPhase1Boundary = oldProgress >= 0.33;
+    const wasAtPhase2Boundary = oldProgress >= 0.66;
+    const droppedBelowPhase1 = wasAtPhase1Boundary && newProgress < 0.33;
+    const droppedBelowPhase2 = wasAtPhase2Boundary && newProgress < 0.66;
+    
+    if (droppedBelowPhase1 || droppedBelowPhase2) {
+      const configKey = getCurrentConfigKey();
+      const phaseData = phaseAccuracyAttemptsByConfig[configKey];
+      
+      if (droppedBelowPhase1) {
+        phaseData.phase1to2 = [];
+        console.log("Reset phase 1→2 attempts due to regression below .33");
+      }
+      if (droppedBelowPhase2) {
+        phaseData.phase2to3 = [];
+        console.log("Reset phase 2→3 attempts due to regression below .66");
+      }
+    }
     return newMicroLevel;
   } else if (goodAccuracy) {
     // Calculate potential new level (only if not already regressing)
@@ -513,17 +555,22 @@ function checkMicroLevelAdvancement(sessionMetrics, sessionHistory) {
       // Fixed phase boundaries: Phase 1: 0.00-0.33, Phase 2: 0.34-0.66, Phase 3: 0.67-0.99
       // Variables currentPhase, newProgress, and potentialPhase already declared above
       
-      // Check if this would be a phase transition
-      if (potentialPhase > currentPhase) {
+      // Check if we're at a phase boundary and should record attempts  
+      const atPhaseBoundary = (currentPhase === 1 && microProgress >= 0.33) || 
+      (currentPhase === 2 && microProgress >= 0.66);
+
+      // Check if we're at integer boundary (0.99)
+      const atIntegerBoundary = (currentPhase === 3 && microProgress >= 0.99);
+
+      if (atPhaseBoundary || (potentialPhase > currentPhase && !atIntegerBoundary)) {
         // Phase transitions require 90% accuracy for 3 out of 5 sessions
         const configKey = getCurrentConfigKey();
         const phaseData = phaseAccuracyAttemptsByConfig[configKey];
-        
+
         // Determine which phase transition this is
         const transitionKey = currentPhase === 1 ? 'phase1to2' : 'phase2to3';
 
         // Calculate proper accuracy for phase transitions (matches only)
-        // Using right/total formula: hits divided by all attempts (hits + misses + false alarms)
         const matchAccuracy = sessionMetrics.hits / Math.max(1, sessionMetrics.hits + sessionMetrics.misses + sessionMetrics.falseAlarms);
 
         // Record this attempt
@@ -537,10 +584,11 @@ function checkMicroLevelAdvancement(sessionMetrics, sessionHistory) {
         // Count successful attempts (90%+ accuracy) in the window
         const successCount = phaseData[transitionKey].filter(a => a).length;
         
-        // Check if we have enough successful attempts
-        if (successCount >= phaseData.requiredSuccesses) {
+        // Need at least 5 attempts AND 3+ successes to advance
+        const totalAttempts = phaseData[transitionKey].length;
+        if (totalAttempts >= 5 && successCount >= phaseData.requiredSuccesses) {
           newMicroLevel = potentialNewLevel;
-          console.log(`PHASE UP! ${successCount}/${phaseData.requiredSuccesses} successful attempts`);
+          console.log(`PHASE UP! ${successCount}/${phaseData.requiredSuccesses} in ${totalAttempts} attempts`);
           // Reset attempts after phase transition
           phaseData[transitionKey] = [];
         } else {
@@ -553,11 +601,11 @@ function checkMicroLevelAdvancement(sessionMetrics, sessionHistory) {
           
           // Only log as blocked if we actually hit the cap
           if (potentialNewLevel > maxAllowedLevel) {
-            console.log(`Phase transition blocked: ${successCount}/${phaseData.requiredSuccesses} successful attempts (${(matchAccuracy * 100).toFixed(0)}% this session)`);
+            console.log(`Phase transition blocked: ${successCount}/${phaseData.requiredSuccesses} in ${totalAttempts} attempts (need 5 min)`);
           } else {
             console.log(`Progress within phase: +${(newMicroLevel - currentMicroLevel).toFixed(2)}`);
           }
-          console.log(`Phase transition blocked: ${successCount}/${phaseData.requiredSuccesses} successful attempts (${(matchAccuracy * 100).toFixed(0)}% this session)`);
+          console.log(`Phase transition blocked: ${successCount}/${phaseData.requiredSuccesses} in ${totalAttempts} attempts (need 5 min)`);
         }
       } else {
         // Within same integer level - no accuracy requirement
@@ -684,6 +732,7 @@ function getActiveStimuliCount() {
   if (cornerEnabled) count++;
   if (soundEnabled) count++;
   if (colorEnabled) count++;
+  if (rotationEnabled) count++;
   return count;
 }
 
@@ -931,6 +980,32 @@ function colorEnableTrigHandler(evt, defVal) {
   checkColorBtn.style.animationDelay = "0s"
 }
 
+function rotationEnableTrigHandler(evt, defVal) {
+  if (defVal != null) {
+    rotationEnableTrig.checked = defVal;
+    rotationEnabled = defVal;
+  } else {
+    // Check if enabling rotation would create 10D (prevent this)
+    const currentCount = getActiveStimuliCount();
+    if (!rotationEnabled && currentCount >= 9) {
+      alert("Maximum 9 stimuli allowed. Disable another stimulus first.");
+      return;
+    }
+    
+    rotationEnabled = !rotationEnabled;
+    saveSettings();
+    updateMicroLevelForConfig();
+  }
+
+  if (!rotationEnabled) {
+    checkRotationBtn.style.display = "none";
+  } else {
+    checkRotationBtn.style.display = "inline-block";
+  }
+
+  checkRotationBtn.style.animationDelay = "0s";
+}
+
 function nLevelInputHandler(evt, defVal) {
   if (defVal != null) {
     // For backward compatibility, if an integer is passed
@@ -1174,6 +1249,7 @@ function setActiveStimuli(dimensionCount) {
   cameraEnableTrigHandler(null, false);
   faceEnableTrigHandler(null, false);
   positionEnableTrigHandler(null, false);
+  rotationEnableTrigHandler(null, false);
   wordEnableTrigHandler(null, false);
   shapeEnableTrigHandler(null, false);
   cornerEnableTrigHandler(null, false);
@@ -1634,6 +1710,7 @@ function saveSettings() {
     cameraEnabled,
     faceEnabled,
     positionEnabled,
+    rotationEnabled,
     wordEnabled,
     shapeEnabled,
     cornerEnabled,
@@ -1717,6 +1794,7 @@ function loadSettings() {
   cameraEnableTrigHandler(null, settings.cameraEnabled);
   faceEnableTrigHandler(null, settings.faceEnabled);
   positionEnableTrigHandler(null, settings.positionEnabled);
+  rotationEnableTrigHandler(null, settings.rotationEnabled || defVal_rotationEnabled);
   wordEnableTrigHandler(null, settings.wordEnabled);
   shapeEnableTrigHandler(null, settings.shapeEnabled);
   cornerEnableTrigHandler(null, settings.cornerEnabled);
@@ -2362,7 +2440,8 @@ function toggleStats(_dim) {
     shape: { right: 0, wrong: 0, matching: 0, present: false },
     corner: { right: 0, wrong: 0, matching: 0, present: false },
     sound: { right: 0, wrong: 0, matching: 0, present: false },
-    color: { right: 0, wrong: 0, matching: 0, present: false }
+    color: { right: 0, wrong: 0, matching: 0, present: false },
+    rotation: { right: 0, wrong: 0, matching: 0, present: false }
   };
   
   // Check if the history exists and has entries
@@ -2375,9 +2454,6 @@ function toggleStats(_dim) {
     noDataMsg.innerHTML = `No data yet for ${validDim}D configuration.<br>Play some sessions to see stats!`;
     bars.appendChild(noDataMsg);
   }
-
-  // Update stimuli accuracy display
-  updateStimuliAccuracyDisplay(stimuliTotals);
 
   // Update performance chart when dimension changes
   if (performanceChart || document.getElementById('performance-chart')) {
@@ -2476,6 +2552,12 @@ function toggleStats(_dim) {
   const selectedConfigLevel = microLevelsByConfig[validDim] || 2.00;
   console.log(`Selected config ${validDim} micro-level: ${selectedConfigLevel}`);
   document.querySelector("#sc-micro-level").innerHTML = formatMicroLevel(selectedConfigLevel);
+
+  // Update current speed display to match the selected config
+  const currentSpeedDisplay = document.querySelector("#current-speed-display");
+  if (currentSpeedDisplay) {
+    currentSpeedDisplay.innerHTML = getSpeedTarget(selectedConfigLevel) + "ms";
+  }
   
   // Update level progress indicator
   const progressIndicator = document.querySelector("#level-progress-indicator");
@@ -2508,6 +2590,9 @@ function toggleStats(_dim) {
   document.querySelector("#sc-missed").innerHTML = missed || "-";
   document.querySelector("#sc-wrong").innerHTML = wrong || "-";
   
+  // Update stimuli accuracy display with populated data
+  updateStimuliAccuracyDisplay(stimuliTotals);
+
   // Update accuracy in the stats dialog
   const accuracyElement = document.querySelector("#sc-accuracy");
   if (accuracyElement) {
@@ -2527,9 +2612,15 @@ function toggleStats(_dim) {
     speedRangeStart.innerHTML = baseDelay + "ms";
   }
   if (speedRangeEnd) {
-    // Show the actual minimum speed (3000ms or 50% of baseDelay, whichever is higher)
-    const minSpeed = Math.max(3000, Math.round(baseDelay * 0.5));
-    speedRangeEnd.innerHTML = minSpeed + "ms";
+      // Show the actual minimum speed (3000ms or 50% of baseDelay, whichever is higher)
+      const minSpeed = Math.max(3000, Math.round(baseDelay * 0.5));
+      speedRangeEnd.innerHTML = minSpeed + "ms";
+  }
+
+  // Update current speed indicator on stats page
+  const speedIndicator = document.querySelector("#speed-indicator");
+  if (speedIndicator) {
+      speedIndicator.innerHTML = getSpeedTarget(selectedConfigLevel) + "ms";
   }
 
   // Also add d-prime average to stats if available
@@ -2957,7 +3048,7 @@ function resetPoints() {
   wrongSound = 0;
   wrongColor = 0;
   
-  move(cube, initialCubePosition);
+  resetCubeTransform(cube);
   move(innerCube, initialInnerCubePosition);
   rotateCamera(-40, -45);
   floors.forEach(floor =>
@@ -2981,6 +3072,7 @@ function resetBlock() {
   enableCornerCheck = true;
   enableSoundCheck = true;
   enableColorCheck = true;
+  enableRotationCheck = true;
   
   currWalls = null;
   currCamera = null;
@@ -2992,6 +3084,7 @@ function resetBlock() {
   currCorner = null;
   currSound = null;
   currColor = null;
+  currRotation = null;
   
   checkWallsBtn.classList.remove("right", "wrong");
   checkCameraBtn.classList.remove("right", "wrong");
@@ -3003,6 +3096,7 @@ function resetBlock() {
   checkCornerBtn.classList.remove("right", "wrong");
   checkSoundBtn.classList.remove("right", "wrong");
   checkColorBtn.classList.remove("right", "wrong");
+  checkRotationBtn.classList.remove("right", "wrong");
   
   // Clear all visual stimuli
   // Clear shape
@@ -3023,7 +3117,7 @@ function resetBlock() {
   });
   
   // Reset cube and inner cube positions
-  move(cube, initialCubePosition);
+  resetCubeTransform(cube);
   move(innerCube, initialInnerCubePosition);
   
   // Reset camera rotation
@@ -3244,6 +3338,28 @@ function trackMissedStimuli() {
   }
 }
 
+// Rotation stimulus
+if (currRotation && currRotation.isMatching && enableRotationCheck) {
+  sessionMetrics.misses++;
+} else if (currRotation && !currRotation.isMatching && enableRotationCheck) {
+  sessionMetrics.correctRejections++;
+  if (currRotation.isLure) {
+    if (currRotation.lureType === 'n-1') {
+      sessionMetrics.n1LureEncounters = sessionMetrics.n1LureEncounters || 0;
+      sessionMetrics.n1LureCorrectRejections = sessionMetrics.n1LureCorrectRejections || 0;
+      
+      sessionMetrics.n1LureEncounters++;
+      sessionMetrics.n1LureCorrectRejections++;
+    } else if (currRotation.lureType === 'n+1') {
+      sessionMetrics.nPlusLureEncounters = sessionMetrics.nPlusLureEncounters || 0;
+      sessionMetrics.nPlusLureCorrectRejections = sessionMetrics.nPlusLureCorrectRejections || 0;
+      
+      sessionMetrics.nPlusLureEncounters++;
+      sessionMetrics.nPlusLureCorrectRejections++;
+    }
+  }
+}
+
 function resetIntervals() {
   intervals.forEach(interval => 
     clearInterval(interval)
@@ -3255,8 +3371,29 @@ function rotateCamera(cx, cy) {
   shape.style.transform = `translate(-50%, -50%) rotateY(${-cy}deg) rotateX(${-cx}deg)`;
 }
 
+// Current cube state
+let currentCubePosition = initialCubePosition;
+let currentCubeRotation = "0, 0, 0";
+
 function move(el, currPosString) {
-  el.style.transform = `translate3d(${currPosString})`;
+  currentCubePosition = currPosString;
+  updateCubeTransform(el);
+}
+
+function rotateCube(el, rotationString) {
+  currentCubeRotation = rotationString;
+  updateCubeTransform(el);
+}
+
+function updateCubeTransform(el) {
+  const [x, y, z] = currentCubeRotation.split(", ");
+  el.style.transform = `translate3d(${currentCubePosition}) rotateX(${x}deg) rotateY(${y}deg) rotateZ(${z}deg)`;
+}
+
+function resetCubeTransform(el) {
+  currentCubePosition = initialCubePosition;
+  currentCubeRotation = "0, 0, 0";
+  updateCubeTransform(el);
 }
 
 function wow(htmlElement, cssClass, delay) {
@@ -3300,7 +3437,7 @@ function speak(text) {
 function writeWord(word) {
   wallWords.forEach(wall => {
     wall.innerText = word;
-    wow(wall, "text-white", 500);
+    wow(wall, "text-white", getSpeedTarget(currentMicroLevel) - 500);
   });
 }
 
@@ -3312,6 +3449,7 @@ function selectRandomStimuli(numStimuli = 2) {
     { name: "camera", handler: cameraEnableTrigHandler },
     { name: "face", handler: faceEnableTrigHandler },
     { name: "position", handler: positionEnableTrigHandler },
+    { name: "rotation", handler: rotationEnableTrigHandler },
     { name: "word", handler: wordEnableTrigHandler },
     { name: "shape", handler: shapeEnableTrigHandler },
     { name: "corner", handler: cornerEnableTrigHandler },
@@ -3582,6 +3720,11 @@ function getGameCycle(n) {
         correctStimuli += rightColor;
         mistakes += wrongColor;
       }
+      if (rotationEnabled) {
+        dimensions++;
+        correctStimuli += rightRotation;
+        mistakes += wrongRotation;
+      }
       
       // Calculate missed signals (stimuli that should have been identified but weren't)
       const missed = matchingStimuli - correctStimuli;
@@ -3656,6 +3799,12 @@ function getGameCycle(n) {
           right: rightColor,
           wrong: wrongColor,
           matching: matchingColor
+        },
+        rotation: {
+          enabled: rotationEnabled,
+          right: rightRotation,
+          wrong: wrongRotation,
+          matching: matchingRotation
         }
       };
       
@@ -3811,8 +3960,8 @@ function getGameCycle(n) {
       
       if (speedTargetElement && speedChangeElement) {
         const currentSpeed = getSpeedTarget(currentMicroLevel);
-        const previousSpeed = getSpeedTarget(historyPoint.microLevel);
-        
+        const previousSpeed = getSpeedTarget(oldMicroLevel);
+
         speedTargetElement.innerHTML = currentSpeed + "ms";
         
         // Show speed change if level changed
@@ -4085,6 +4234,16 @@ function getGameCycle(n) {
         oldLureElement.remove();
       }
       
+      // Clean up any old progress messages before showing new results
+      const oldAccuracyMsg = document.querySelector(".accuracy-blocked-msg");
+      if (oldAccuracyMsg) {
+        oldAccuracyMsg.remove();
+      }
+      const oldProgressMsg = document.querySelector('.attempts-progress');
+      if (oldProgressMsg) {
+        oldProgressMsg.remove();
+      }
+
       // Show the recap dialog
       recapDialogContent.parentElement.show();
       
@@ -4133,30 +4292,31 @@ function getGameCycle(n) {
 
     if (faceEnabled && faces && faces[i]) {
       currFace = faces[i];
-      if (currFace && currFace.symbol) {
-        const faceIndex = parseInt(currFace.symbol) - 1;
-        if (!isNaN(faceIndex) && faceIndex >= 0 && faceIndex < faceEls.length) {
-          if (colorEnabled && colors && colors[i]) {
-            currColor = colors[i];
-            if (currColor && currColor.symbol) {
-              wow(faceEls[faceIndex], currColor.symbol, 500);
-            }
-          } else {
-            wow(faceEls[faceIndex], "col-a", 500);
-          }
+      const faceIndex = parseInt(currFace.symbol) - 1;
+      if (!isNaN(faceIndex) && faceIndex >= 0 && faceIndex < faceEls.length) {
+        if (colorEnabled && colors && colors[i]) {
+          currColor = colors[i];
+          wow(faceEls[faceIndex], currColor.symbol, getSpeedTarget(currentMicroLevel) - 500);
+        } else {
+          wow(faceEls[faceIndex], "col-a", getSpeedTarget(currentMicroLevel) - 500);
         }
       }
     } else if (colorEnabled && colors && colors[i]) {
       currColor = colors[i];
-      if (currColor && currColor.symbol) {
-        wow(faceEls[0], currColor.symbol, baseDelay - 500);
-      }
+      wow(faceEls[0], currColor.symbol, getSpeedTarget(currentMicroLevel) - 500);
     }
 
     if (positionEnabled && positions && positions[i]) {
       currPosition = positions[i];
       if (currPosition && currPosition.symbol) {
         move(cube, currPosition.symbol);
+      }
+    }
+
+    if (rotationEnabled && rotations && rotations[i]) {
+      currRotation = rotations[i];
+      if (currRotation && currRotation.symbol) {
+        rotateCube(cube, currRotation.symbol);
       }
     }
 
@@ -4181,7 +4341,7 @@ function getGameCycle(n) {
           // Add the new shape class
           shape.classList.add(currShape.symbol);
           // Apply the wow animation
-          wow(shape, "shape-active", 500);
+          wow(shape, "shape-active", getSpeedTarget(currentMicroLevel) - 500);
         }
       }
     }
@@ -4350,6 +4510,12 @@ function checkHandler(stimulus) {
       enable = enablePositionCheck;
       break;
     }
+    case "rotation": {
+      curr = currRotation;
+      button = checkRotationBtn;
+      enable = enableRotationCheck;
+      break;
+    }
     case "word": {
       curr = currWord;
       button = checkWordBtn;
@@ -4468,6 +4634,17 @@ function checkHandler(stimulus) {
       }
       break;
     }
+    case "rotation": {
+      enableRotationCheck = false;
+      if (curr.isMatching) {
+        rightRotation++;
+        button.classList.add("right");
+      } else {
+        wrongRotation++;
+        button.classList.add("wrong");
+      }
+      break;
+    }
     case "word": {
       enableWordCheck = false;
       if (curr.isMatching) {
@@ -4547,7 +4724,7 @@ function calculateAccuracy(correct, missed, wrong) {
   });
 });
 
-["walls", "camera", "face", "position", "word", "shape", "corner", "sound", "color"]
+["walls", "camera", "face", "position", "rotation", "word", "shape", "corner", "sound", "color"]
   .forEach(sense => {
     document.querySelector(".check-" + sense)
       .addEventListener(
