@@ -3300,7 +3300,7 @@ function speak(text) {
 function writeWord(word) {
   wallWords.forEach(wall => {
     wall.innerText = word;
-    wow(wall, "text-white", getSpeedTarget(currentMicroLevel) - 500);
+    wow(wall, "text-white", 500);
   });
 }
 
@@ -4139,10 +4139,10 @@ function getGameCycle(n) {
           if (colorEnabled && colors && colors[i]) {
             currColor = colors[i];
             if (currColor && currColor.symbol) {
-              wow(faceEls[faceIndex], currColor.symbol, baseDelay - 500);
+              wow(faceEls[faceIndex], currColor.symbol, 500);
             }
           } else {
-            wow(faceEls[faceIndex], "col-a", baseDelay - 500);
+            wow(faceEls[faceIndex], "col-a", 500);
           }
         }
       }
@@ -4181,7 +4181,7 @@ function getGameCycle(n) {
           // Add the new shape class
           shape.classList.add(currShape.symbol);
           // Apply the wow animation
-          wow(shape, "shape-active", baseDelay - 300);
+          wow(shape, "shape-active", 500);
         }
       }
     }
@@ -4621,7 +4621,6 @@ window.addEventListener('error', function(event) {
 window.addEventListener('unhandledrejection', function(event) {
   console.error('Unhandled promise rejection:', event.reason);
 });
-
 
 // Initialize the application
 loadBindings();
