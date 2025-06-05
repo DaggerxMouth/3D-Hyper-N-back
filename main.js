@@ -3402,9 +3402,9 @@ function updateCubeTransform(el) {
   el.style.transform = `translate3d(${currentCubePosition}) rotateX(${x}deg) rotateY(${y}deg) rotateZ(${z}deg)`;
 }
 
-function resetCubeTransform(el) {
-  currentCubePosition = initialCubePosition;
-  currentCubeRotation = "0, 0, 0";
+function rotateCube(el, rotationString) {
+  currentCubeRotation = rotationString;
+  console.log("rotateCube - position:", currentCubePosition, "rotation:", currentCubeRotation);
   updateCubeTransform(el);
 }
 
