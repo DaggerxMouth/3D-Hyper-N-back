@@ -113,7 +113,7 @@ const points = [
   "-20&0", "-20&-45", "-20&-90"
 ];
 const numbers = "123456";
-const initialCubePosition = "-.5em, 0, .5em";
+const initialCubePosition = "-.5em, -3em, .5em";
 const moves = [
   "-3.5em, 0, -2.5em", "-.5em, 0, -2.5em", "2.5em, 0, -2.5em",
   "-3.5em, 0, .5em", "-.5em, 0, .5em", "2.5em, 0, .5em",
@@ -3115,7 +3115,11 @@ function resetBlock() {
     wall.innerText = "";
     wall.classList.remove("text-white");
   });
-  
+
+  // Ensure position is maintained when rotation is active
+  if (!positionEnabled) {
+    currentCubePosition = initialCubePosition;
+  }
   // Reset cube and inner cube positions
   // Reset cube transform but preserve rotation if rotation stimulus is active
   if (rotationEnabled && currRotation) {
