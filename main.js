@@ -2606,8 +2606,13 @@ function toggleStats(_dim) {
     const avgCard = document.querySelector("#sc-avg").parentElement.parentElement;
     if (avgCard) {
       const roundsCard = avgCard.cloneNode(true);
-      roundsCard.querySelector("h4").textContent = "Rounds";
-      roundsCard.querySelector("div").id = "sc-rounds";
+      const titleElement = roundsCard.querySelector("h4");
+      const valueElement = roundsCard.querySelector("div:last-child");
+      if (titleElement) titleElement.textContent = "Rounds";
+      if (valueElement) {
+        valueElement.id = "sc-rounds";
+        valueElement.innerHTML = roundsPlayed || "-";
+      }
       roundsCard.querySelector("div").innerHTML = roundsPlayed || "-";
       avgCard.parentElement.appendChild(roundsCard);
     }
@@ -2739,10 +2744,14 @@ function toggleStats(_dim) {
     const avgCard = document.querySelector("#sc-avg").parentElement.parentElement;
     if (avgCard) {
       const lureDailyCard = avgCard.cloneNode(true);
-      lureDailyCard.querySelector("h4").textContent = "Lures Today";
-      lureDailyCard.querySelector("div").id = "sc-lure-daily";
-      lureDailyCard.querySelector("div").innerHTML = 
-        `${totalLureResistedDaily}/${totalLureEncountersDaily} (${((totalLureResistedDaily/totalLureEncountersDaily)*100).toFixed(0)}%)`;
+      const titleElement = lureDailyCard.querySelector("h4");
+      const valueElement = lureDailyCard.querySelector("div:last-child");
+      if (titleElement) titleElement.textContent = "Lures Today";
+      if (valueElement) {
+        valueElement.id = "sc-lure-daily";
+        valueElement.innerHTML = 
+          `${totalLureResistedDaily}/${totalLureEncountersDaily} (${((totalLureResistedDaily/totalLureEncountersDaily)*100).toFixed(0)}%)`;
+      }
       avgCard.parentElement.appendChild(lureDailyCard);
     }
   }
