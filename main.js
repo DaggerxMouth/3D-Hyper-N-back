@@ -2463,6 +2463,7 @@ function toggleStats(_dim) {
   }
 
   // Process history entries if they exist
+  let roundsPlayed = 0;
   if (entries.length > 0) {
     for (const [date, points] of entries) {
       if (!Array.isArray(points) || points.length === 0) continue;
@@ -2473,6 +2474,7 @@ function toggleStats(_dim) {
       
       // Process each data point in this date
       for (const point of points) {
+        roundsPlayed++;
         // Calculate n-level stats
         _avgNLevel += point.nLevel || 0;
         _minNLevel = Math.min(_minNLevel, point.nLevel || 10);
@@ -2595,6 +2597,21 @@ function toggleStats(_dim) {
 
   // Update accuracy in the stats dialog
   const accuracyElement = document.querySelector("#sc-accuracy");
+  // Update rounds played
+  const roundsElement = document.querySelector("#sc-rounds");
+  if (roundsElement) {
+    roundsElement.innerHTML = roundsPlayed || "-";
+  } else {
+    // Create the element if it doesn't exist
+    const avgCard = document.querySelector("#sc-avg").parentElement.parentElement;
+    if (avgCard) {
+      const roundsCard = avgCard.cloneNode(true);
+      roundsCard.querySelector("h4").textContent = "Rounds";
+      roundsCard.querySelector("div").id = "sc-rounds";
+      roundsCard.querySelector("div").innerHTML = roundsPlayed || "-";
+      avgCard.parentElement.appendChild(roundsCard);
+    }
+  }
   if (accuracyElement) {
     if (pointsCount > 0) {
       const avgAccuracy = totalAccuracy / pointsCount;
@@ -2620,7 +2637,8 @@ function toggleStats(_dim) {
   // Update current speed indicator on stats page
   const speedIndicator = document.querySelector("#speed-indicator");
   if (speedIndicator) {
-      speedIndicator.innerHTML = getSpeedTarget(selectedConfigLevel) + "ms";
+    console.log(`Stats speed debug - selectedConfigLevel: ${selectedConfigLevel}, speed: ${getSpeedTarget(selectedConfigLevel)}ms`);
+    speedIndicator.innerHTML = getSpeedTarget(selectedConfigLevel) + "ms";
   }
 
   // Also add d-prime average to stats if available
@@ -2629,6 +2647,8 @@ function toggleStats(_dim) {
   let totalBias = 0;
   let biasCount = 0;
   let totalLureResistance = 0;
+  let totalLureEncountersDaily = 0;
+  let totalLureResistedDaily = 0;
   let lureResistanceCount = 0;
 
   for (const [date, points] of entries) {
@@ -2646,6 +2666,16 @@ function toggleStats(_dim) {
       if (point.n1LureResistance !== undefined && !isNaN(point.n1LureResistance)) {
         totalLureResistance += point.n1LureResistance;
         lureResistanceCount++;
+      }
+      
+      // Track daily lure encounters and resistance (outside the if block above)
+      if (point.n1LureEncounters !== undefined) {
+        totalLureEncountersDaily += point.n1LureEncounters || 0;
+        totalLureResistedDaily += point.n1LureCorrectRejections || 0;
+      }
+      if (point.nPlusLureEncounters !== undefined) {
+        totalLureEncountersDaily += point.nPlusLureEncounters || 0;
+        totalLureResistedDaily += point.nPlusLureCorrectRejections || 0;
       }
     }
   }
@@ -2696,6 +2726,25 @@ function toggleStats(_dim) {
       avgLureResistance >= 0.50 ? "Fair" : "Poor";
     avgLureElement.innerHTML = lureResistanceCount > 0 ? 
       `${(avgLureResistance * 100).toFixed(0)}% (${lureDescriptor})` : "-";
+  }
+
+  // Display daily lure statistics
+  const lureDailyElement = document.querySelector("#sc-lure-daily");
+  if (lureDailyElement) {
+    lureDailyElement.innerHTML = totalLureEncountersDaily > 0 ? 
+      `${totalLureResistedDaily}/${totalLureEncountersDaily} (${((totalLureResistedDaily/totalLureEncountersDaily)*100).toFixed(0)}%)` : 
+      "-";
+  } else if (totalLureEncountersDaily > 0) {
+    // Create the element if it doesn't exist and we have lure data
+    const avgCard = document.querySelector("#sc-avg").parentElement.parentElement;
+    if (avgCard) {
+      const lureDailyCard = avgCard.cloneNode(true);
+      lureDailyCard.querySelector("h4").textContent = "Lures Today";
+      lureDailyCard.querySelector("div").id = "sc-lure-daily";
+      lureDailyCard.querySelector("div").innerHTML = 
+        `${totalLureResistedDaily}/${totalLureEncountersDaily} (${((totalLureResistedDaily/totalLureEncountersDaily)*100).toFixed(0)}%)`;
+      avgCard.parentElement.appendChild(lureDailyCard);
+    }
   }
 
   // Calculate and display baseline metrics
@@ -2930,7 +2979,7 @@ function placeLures(blocks, n, lureFrequency = 0.10) {
     let rnd = Math.floor(Math.random() * (blocks.length - 1)) + 1;
     
     // Skip if this position already has content
-    if (blocks[rnd]) {
+    if (!blocks[rnd] || blocks[rnd].isMatching) {
       continue;
     }
     
