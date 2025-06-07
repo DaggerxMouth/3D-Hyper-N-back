@@ -2533,7 +2533,31 @@ function toggleStats(_dim) {
           speedInfo = `\nSpeed: ${points[0].speedTarget}ms`;
         }
 
-        barElement.title = `Date: ${date}\nμ-Level: ${displayLevel}${speedInfo}`;
+        // Calculate daily stats for this date
+        let dailyRounds = points.length;
+        let dailyLures = 0;
+        let dailyN1Lures = 0;
+        let dailyNPlusLures = 0;
+        let dailyLureResisted = 0;
+
+        for (const point of points) {
+          if (point.n1LureEncounters) {
+            dailyN1Lures += point.n1LureEncounters;
+            dailyLures += point.n1LureEncounters;
+            dailyLureResisted += point.n1LureCorrectRejections || 0;
+          }
+          if (point.nPlusLureEncounters) {
+            dailyNPlusLures += point.nPlusLureEncounters;
+            dailyLures += point.nPlusLureEncounters;
+            dailyLureResisted += point.nPlusLureCorrectRejections || 0;
+          }
+        }
+
+        let lureInfo = dailyLures > 0 ? 
+          `\nLures: ${dailyLureResisted}/${dailyLures} (${((dailyLureResisted/dailyLures)*100).toFixed(0)}%)` +
+          `\nN-1: ${dailyN1Lures}, N+1: ${dailyNPlusLures}` : "";
+
+        barElement.title = `Date: ${date}\nRounds: ${dailyRounds}\nμ-Level: ${displayLevel}${speedInfo}${lureInfo}`;
         
         bars.appendChild(barElement);
       }
@@ -2597,26 +2621,6 @@ function toggleStats(_dim) {
 
   // Update accuracy in the stats dialog
   const accuracyElement = document.querySelector("#sc-accuracy");
-  // Update rounds played
-  const roundsElement = document.querySelector("#sc-rounds");
-  if (roundsElement) {
-    roundsElement.innerHTML = roundsPlayed || "-";
-  } else if (!document.querySelector("#sc-rounds")) {
-    // Create the element if it doesn't exist
-    const avgCard = document.querySelector("#sc-avg").parentElement.parentElement;
-    if (avgCard) {
-      const roundsCard = avgCard.cloneNode(true);
-      const titleElement = roundsCard.querySelector("h4");
-      const valueElement = roundsCard.querySelector("div:last-child");
-      if (titleElement) titleElement.textContent = "Rounds";
-      if (valueElement) {
-        valueElement.id = "sc-rounds";
-        valueElement.innerHTML = roundsPlayed || "-";
-      }
-      roundsCard.querySelector("div").innerHTML = roundsPlayed || "-";
-      avgCard.parentElement.appendChild(roundsCard);
-    }
-  }
   if (accuracyElement) {
     if (pointsCount > 0) {
       const avgAccuracy = totalAccuracy / pointsCount;
@@ -2731,29 +2735,6 @@ function toggleStats(_dim) {
       avgLureResistance >= 0.50 ? "Fair" : "Poor";
     avgLureElement.innerHTML = lureResistanceCount > 0 ? 
       `${(avgLureResistance * 100).toFixed(0)}% (${lureDescriptor})` : "-";
-  }
-
-  // Display daily lure statistics
-  const lureDailyElement = document.querySelector("#sc-lure-daily");
-  if (lureDailyElement) {
-    lureDailyElement.innerHTML = totalLureEncountersDaily > 0 ? 
-      `${totalLureResistedDaily}/${totalLureEncountersDaily} (${((totalLureResistedDaily/totalLureEncountersDaily)*100).toFixed(0)}%)` : 
-      "-";
-    } else if (totalLureEncountersDaily > 0 && !document.querySelector("#sc-lure-daily")) {
-    // Create the element if it doesn't exist and we have lure data
-    const avgCard = document.querySelector("#sc-avg").parentElement.parentElement;
-    if (avgCard) {
-      const lureDailyCard = avgCard.cloneNode(true);
-      const titleElement = lureDailyCard.querySelector("h4");
-      const valueElement = lureDailyCard.querySelector("div:last-child");
-      if (titleElement) titleElement.textContent = "Lures Today";
-      if (valueElement) {
-        valueElement.id = "sc-lure-daily";
-        valueElement.innerHTML = 
-          `${totalLureResistedDaily}/${totalLureEncountersDaily} (${((totalLureResistedDaily/totalLureEncountersDaily)*100).toFixed(0)}%)`;
-      }
-      avgCard.parentElement.appendChild(lureDailyCard);
-    }
   }
 
   // Calculate and display baseline metrics
