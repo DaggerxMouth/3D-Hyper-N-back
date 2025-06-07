@@ -2559,6 +2559,7 @@ function toggleStats(_dim) {
 
         barElement.title = `Date: ${date}\nRounds: ${dailyRounds}\nμ-Level: ${displayLevel}${speedInfo}${lureInfo}`;
         
+        console.log("Tooltip content:", barElement.title);
         bars.appendChild(barElement);
       }
     }
