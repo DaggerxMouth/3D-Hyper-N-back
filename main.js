@@ -2601,7 +2601,7 @@ function toggleStats(_dim) {
   const roundsElement = document.querySelector("#sc-rounds");
   if (roundsElement) {
     roundsElement.innerHTML = roundsPlayed || "-";
-  } else {
+  } else if (!document.querySelector("#sc-rounds")) {
     // Create the element if it doesn't exist
     const avgCard = document.querySelector("#sc-avg").parentElement.parentElement;
     if (avgCard) {
@@ -2739,7 +2739,7 @@ function toggleStats(_dim) {
     lureDailyElement.innerHTML = totalLureEncountersDaily > 0 ? 
       `${totalLureResistedDaily}/${totalLureEncountersDaily} (${((totalLureResistedDaily/totalLureEncountersDaily)*100).toFixed(0)}%)` : 
       "-";
-  } else if (totalLureEncountersDaily > 0) {
+    } else if (totalLureEncountersDaily > 0 && !document.querySelector("#sc-lure-daily")) {
     // Create the element if it doesn't exist and we have lure data
     const avgCard = document.querySelector("#sc-avg").parentElement.parentElement;
     if (avgCard) {
