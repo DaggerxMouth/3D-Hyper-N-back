@@ -3732,6 +3732,19 @@ function getGameCycle(n) {
   if (corners) {
     console.log("Corner blocks:", corners.map((c, i) => `${i}: ${c ? c.symbol : 'null'}`));
   }
+
+  // Log individual stimulus match counts
+  console.log("Match breakdown:");
+  if (wallsEnabled) console.log("- Walls matches:", matchingWalls);
+  if (cameraEnabled) console.log("- Camera matches:", matchingCamera);
+  if (faceEnabled) console.log("- Face matches:", matchingFace);
+  if (positionEnabled) console.log("- Position matches:", matchingPosition);
+  if (wordEnabled) console.log("- Word matches:", matchingWord);
+  if (shapeEnabled) console.log("- Shape matches:", matchingShape);
+  if (cornerEnabled) console.log("- Corner matches:", matchingCorner);
+  if (soundEnabled) console.log("- Sound matches:", matchingSound);
+  if (colorEnabled) console.log("- Color matches:", matchingColor);
+  if (rotationEnabled) console.log("- Rotation matches:", matchingRotation);
   console.log("Total matchingStimuli:", matchingStimuli);
 
   let i = 0;
