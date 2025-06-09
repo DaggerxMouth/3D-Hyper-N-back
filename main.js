@@ -2995,9 +2995,12 @@ function placeLures(blocks, n, lureFrequency = 0.10) {
       // Place the N-1 lure
       // Check if this would be a legitimate n-back match
       const legitimateMatch = (rnd >= n && blocks[rnd - n] && blocks[rnd - n].symbol === prevSymbol);
-      
-      // Only create a lure if it's NOT already a real match
-      if (!legitimateMatch) {
+
+      // Check if placing this lure would create a forward match
+      const wouldCreateForwardMatch = (rnd + n < blocks.length && blocks[rnd + n] && blocks[rnd + n].symbol === prevSymbol);
+
+      // Only create a lure if it's NOT already a real match AND won't create a forward match
+      if (!legitimateMatch && !wouldCreateForwardMatch) {
         blocks[rnd] = {
           isMatching: false,
           isLure: true,
@@ -3006,12 +3009,6 @@ function placeLures(blocks, n, lureFrequency = 0.10) {
         };
         
         placedN1Lures++;
-        // CRITICAL: Check if we need to update any forward positions
-        // If there's a position n steps ahead with the same symbol, it's now a match
-        if (rnd + n < blocks.length && blocks[rnd + n] && blocks[rnd + n].symbol === prevSymbol) {
-          blocks[rnd + n].isMatching = true;
-          console.log(`Lure placement created forward match at position ${rnd + n}`);
-        }
       }
     }
   }
@@ -3036,9 +3033,12 @@ function placeLures(blocks, n, lureFrequency = 0.10) {
     
     // Check if this would be a legitimate n-back match
     const legitimateMatch = (rnd >= n && blocks[rnd - n] && blocks[rnd - n].symbol === nextSymbol);
-    
-    // Only create a lure if it's NOT already a real match
-    if (!legitimateMatch) {
+
+    // Check if placing this lure would create a forward match
+    const wouldCreateForwardMatch = (rnd + n < blocks.length && blocks[rnd + n] && blocks[rnd + n].symbol === nextSymbol);
+
+    // Only create a lure if it's NOT already a real match AND won't create a forward match
+    if (!legitimateMatch && !wouldCreateForwardMatch) {
       blocks[rnd] = {
         isMatching: false,
         isLure: true,
@@ -3047,12 +3047,6 @@ function placeLures(blocks, n, lureFrequency = 0.10) {
       };
       
       placedNPlusLures++;
-      // CRITICAL: Check if we need to update any forward positions
-      // If there's a position n steps ahead with the same symbol, it's now a match
-      if (rnd + n < blocks.length && blocks[rnd + n] && blocks[rnd + n].symbol === nextSymbol) {
-        blocks[rnd + n].isMatching = true;
-        console.log(`Lure placement created forward match at position ${rnd + n}`);
-      }
     }
   }
   console.log(`Placed ${placedN1Lures} N-1 lures and ${placedNPlusLures} N+1 lures (total ${placedN1Lures + placedNPlusLures} lures)`);
