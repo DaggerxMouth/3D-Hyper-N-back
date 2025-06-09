@@ -2925,7 +2925,23 @@ function createBlocksWithFixedDensity(symbols, n, matchDensity = 0.25) {
           attempts++;
         }
       }
-      
+      // If we couldn't find a safe symbol after many attempts, log warning
+      if (!safe) {
+        console.warn(`Could not find safe symbol for position ${i}, using ${symbol} anyway`);
+      }
+
+      // Check if this placement actually creates a match
+      const createsMatch = (i >= n && blocks[i - n] && blocks[i - n].symbol === symbol);
+
+      blocks[i] = {
+        isMatching: createsMatch,
+        symbol: symbol
+      };
+
+      // Update match count if we created an unintended match
+      if (createsMatch) {
+        console.warn(`Unintended match created at position ${i}`);
+      }
       
       // ALSO check if this creates a forward match
       if (!createsMatch && i + n < blocks.length && blocks[i + n] && blocks[i + n].symbol === symbol) {
