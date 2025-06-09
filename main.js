@@ -2980,7 +2980,8 @@ function placeLures(blocks, n, lureFrequency = 0.10) {
     attempts++;
     
     // Find a position that can have an N-1 lure (must be at least 1 position from start)
-    let rnd = Math.floor(Math.random() * (blocks.length - 1)) + 1;
+    // Start N-1 lures after position n to avoid early confusion
+    let rnd = Math.floor(Math.random() * (blocks.length - n - 1)) + n + 1;
 
     // Skip if this position is already a match or empty
     if (!blocks[rnd] || blocks[rnd].isMatching) {
@@ -2991,32 +2992,32 @@ function placeLures(blocks, n, lureFrequency = 0.10) {
     const prevSymbol = blocks[rnd - 1] ? blocks[rnd - 1].symbol : null;
     
 // Only place lure if there's a valid previous symbol
-  if (prevSymbol) {
-    // Place the N-1 lure
-    // Check if this would be a legitimate n-back match
-    const legitimateMatch = (rnd >= n && blocks[rnd - n] && blocks[rnd - n].symbol === prevSymbol);
-    
-    // ALSO check if this creates a confusing immediate repeat (positions 0 and 1)
-    const confusingRepeat = (rnd === 1);
-    
-    // Only create a lure if it's NOT already a real match AND not a confusing repeat
-    if (!legitimateMatch && !confusingRepeat) {
-      blocks[rnd] = {
-        isMatching: false,
-        isLure: true,
-        lureType: 'n-1',
-        symbol: prevSymbol
-      };
+    if (prevSymbol) {
+      // Place the N-1 lure
+      // Check if this would be a legitimate n-back match
+      const legitimateMatch = (rnd >= n && blocks[rnd - n] && blocks[rnd - n].symbol === prevSymbol);
       
-      placedN1Lures++;
-      // CRITICAL: Check if we need to update any forward positions
-      // If there's a position n steps ahead with the same symbol, it's now a match
-      if (rnd + n < blocks.length && blocks[rnd + n] && blocks[rnd + n].symbol === prevSymbol) {
-        blocks[rnd + n].isMatching = true;
-        console.log(`Lure placement created forward match at position ${rnd + n}`);
+      // ALSO check if this creates a confusing immediate repeat (positions 0 and 1)
+      const confusingRepeat = (rnd === 1);
+      
+      // Only create a lure if it's NOT already a real match AND not a confusing repeat
+      if (!legitimateMatch && !confusingRepeat) {
+        blocks[rnd] = {
+          isMatching: false,
+          isLure: true,
+          lureType: 'n-1',
+          symbol: prevSymbol
+        };
+        
+        placedN1Lures++;
+        // CRITICAL: Check if we need to update any forward positions
+        // If there's a position n steps ahead with the same symbol, it's now a match
+        if (rnd + n < blocks.length && blocks[rnd + n] && blocks[rnd + n].symbol === prevSymbol) {
+          blocks[rnd + n].isMatching = true;
+          console.log(`Lure placement created forward match at position ${rnd + n}`);
+        }
       }
     }
-  }
   
   // Now place N+1 lures
   let placedNPlusLures = 0;
