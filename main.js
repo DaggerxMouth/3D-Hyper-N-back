@@ -2980,7 +2980,7 @@ function placeLures(blocks, n, lureFrequency = 0.10) {
     attempts++;
     
     // Find a position that can have an N-1 lure (must be at least 1 position from start)
-    let rnd = Math.floor(Math.random() * (blocks.length - 1)) + 1;
+    let rnd = Math.floor(Math.random() * (blocks.length - n)) + n;
 
     // Skip if this position is already a match or empty
     if (!blocks[rnd] || blocks[rnd].isMatching) {
