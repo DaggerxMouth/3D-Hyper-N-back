@@ -2993,11 +2993,12 @@ function placeLures(blocks, n, lureFrequency = 0.10) {
     // Only place lure if there's a valid previous symbol
     if (prevSymbol) {
       // Place the N-1 lure
-      // Check if this would be a legitimate n-back match
-      const legitimateMatch = (rnd >= n && blocks[rnd - n] && blocks[rnd - n].symbol === prevSymbol);
+      // Check if making this a lure would cause it to match the blocks rnd - n, or rnd + n.
+      const matchIntroduced = ((rnd >= n && blocks[rnd - n] && blocks[rnd - n].symbol === prevSymbol))
+        || (blocks[rnd + n] && blocks[rnd + n].symbol === prevSymbol);
       
-      // Only create a lure if it's NOT already a real match
-      if (!legitimateMatch) {
+      // Only create a lure if it's NOT going to cause a match.
+      if (!matchIntroduced) {
         blocks[rnd] = {
           isMatching: false,
           isLure: true,
