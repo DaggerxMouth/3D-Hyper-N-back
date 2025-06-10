@@ -492,6 +492,7 @@ function checkMicroLevelAdvancement(sessionMetrics, sessionHistory) {
   // Use matchAccuracy that was already calculated above
   const performanceRatio = Math.min(1, Math.max(0, (matchAccuracy - 0.5) / 0.4)); // Scale from 50% to 90%
   const increment = baseIncrement + (performanceRatio * (maxIncrement - baseIncrement));
+  const roundedIncrement = Math.round(increment * 100) / 100;
   
   // Determine new micro-level
   let newMicroLevel = currentMicroLevel;
@@ -503,7 +504,8 @@ function checkMicroLevelAdvancement(sessionMetrics, sessionHistory) {
   if (matchAccuracy < 0.75) {
     // Regression in micro-level for poor performance (below 75% accuracy)
     const decrement = 0.05;
-    newMicroLevel = Math.max(2.0, currentMicroLevel - decrement);
+    newMicroLevel = Math.round((currentMicroLevel - decrement) * 100) / 100;
+    newMicroLevel = Math.max(2.0, newMicroLevel);
     console.log(`Decreasing micro-level by -${decrement.toFixed(2)} (accuracy below 75%: ${(matchAccuracy * 100).toFixed(1)}%)`);
     isRegressing = true;
     console.log(`Returning newMicroLevel: ${newMicroLevel} (was ${currentMicroLevel})`);
@@ -533,7 +535,7 @@ function checkMicroLevelAdvancement(sessionMetrics, sessionHistory) {
     return newMicroLevel;
   } else if (goodAccuracy) {
     // Calculate potential new level (only if not already regressing)
-    let potentialNewLevel = currentMicroLevel + increment;
+    let potentialNewLevel = Math.round((currentMicroLevel + roundedIncrement) * 100) / 100;
     
       // Check if this would cross a phase boundary
       const currentPhase = microProgress < 0.34 ? 1 : (microProgress < 0.67 ? 2 : 3);
@@ -543,9 +545,9 @@ function checkMicroLevelAdvancement(sessionMetrics, sessionHistory) {
       // If crossing phase boundary, cap at current phase maximum
       if (potentialPhase > currentPhase) {
         if (currentPhase === 1) {
-          potentialNewLevel = Math.floor(currentMicroLevel) + 0.33;
+          potentialNewLevel = Math.round((Math.floor(currentMicroLevel) + 0.33) * 100) / 100;
         } else if (currentPhase === 2) {
-          potentialNewLevel = Math.floor(currentMicroLevel) + 0.66;
+          potentialNewLevel = Math.round((Math.floor(currentMicroLevel) + 0.66) * 100) / 100;
         }
       }
       
@@ -556,8 +558,8 @@ function checkMicroLevelAdvancement(sessionMetrics, sessionHistory) {
       // Variables currentPhase, newProgress, and potentialPhase already declared above
       
       // Check if we're at a phase boundary and should record attempts  
-      const atPhaseBoundary = (currentPhase === 1 && microProgress >= 0.33 && microProgress < 0.34) || 
-                       (currentPhase === 2 && microProgress >= 0.66 && microProgress < 0.67);
+      const atPhaseBoundary = (currentPhase === 1 && Math.abs(microProgress - 0.33) < 0.001) || 
+                 (currentPhase === 2 && Math.abs(microProgress - 0.66) < 0.001);
 
       // Check if we're at integer boundary (0.99)
       const atIntegerBoundary = (currentPhase === 3 && microProgress >= 0.99);
@@ -594,7 +596,7 @@ function checkMicroLevelAdvancement(sessionMetrics, sessionHistory) {
         } else {
           // Allow progress up to phase boundary
           const phaseCap = currentPhase === 1 ? 0.33 : (currentPhase === 2 ? 0.66 : 0.99);
-          const maxAllowedLevel = Math.floor(currentMicroLevel) + phaseCap;
+          const maxAllowedLevel = Math.round((Math.floor(currentMicroLevel) + phaseCap) * 100) / 100;
           
           // Progress within phase but don't exceed boundary
           newMicroLevel = Math.min(potentialNewLevel, maxAllowedLevel);
@@ -3620,14 +3622,17 @@ function selectRandomStimuli(numStimuli = 2) {
 function getGameCycle(n) {
   // Adjust target matches based on micro-level progress
   const { nLevel, microProgress } = getMicroLevelComponents(currentMicroLevel);
-  if (microProgress <= 0.33) {
+  // Round microProgress to 2 decimal places to avoid floating point issues
+  const roundedProgress = Math.round(microProgress * 100) / 100;
+  
+  if (roundedProgress < 0.34) {
     targetNumOfStimuli = 2;
-  } else if (microProgress <= 0.66) {
+  } else if (roundedProgress < 0.67) {
     targetNumOfStimuli = 3;
   } else {
     targetNumOfStimuli = 4;
   }
-  console.log(`Micro-progress: ${microProgress.toFixed(2)}, Target matches: ${targetNumOfStimuli}`);
+  console.log(`Micro-progress: ${roundedProgress.toFixed(2)}, Target matches: ${targetNumOfStimuli}`);
   
   // Reset total matching count at the start
   matchingStimuli = 0;
@@ -4124,18 +4129,54 @@ function getGameCycle(n) {
         const progressMsg = document.createElement('div');
         progressMsg.className = 'attempts-progress';
         progressMsg.style = "text-align: center; font-size: 1.2rem; margin-top: 1rem; color: #4CAF50;";
-        progressMsg.innerHTML = `Level Progress: ${successCount}/${attemptData.requiredSuccesses} successful attempts`;
-        
+
         // Add visual representation of attempts
         const attemptsVisual = document.createElement('div');
         attemptsVisual.style = "display: flex; justify-content: center; gap: 0.5rem; margin-top: 0.5rem;";
+
+        // Check if we're at or near a phase boundary
+        const microProgress = currentMicroLevel - Math.floor(currentMicroLevel);
+        const currentPhase = microProgress < 0.34 ? 1 : (microProgress < 0.67 ? 2 : 3);
+        const nearPhase1Boundary = currentPhase === 1 && microProgress >= 0.30;
+        const nearPhase2Boundary = currentPhase === 2 && microProgress >= 0.63;
         
-        for (let i = 0; i < attemptData.windowSize; i++) {
-          const attempt = recentAttempts[i];
-          const dot = document.createElement('span');
-          dot.style = `width: 20px; height: 20px; border-radius: 50%; display: inline-block; 
-                       background: ${attempt === true ? '#4CAF50' : attempt === false ? '#FF5252' : '#555'};`;
-          attemptsVisual.appendChild(dot);
+        // Show phase transition progress if at or near boundary
+        if (nearPhase1Boundary || nearPhase2Boundary) {
+          const phaseData = phaseAccuracyAttemptsByConfig[configKey];
+          const transitionKey = currentPhase === 1 ? 'phase1to2' : 'phase2to3';
+          const phaseAttempts = phaseData[transitionKey];
+          const phaseSuccessCount = phaseAttempts.filter(a => a).length;
+          
+          progressMsg.innerHTML = `Phase ${currentPhase}→${currentPhase + 1} Progress: ${phaseSuccessCount}/${phaseData.requiredSuccesses} successful attempts`;
+          
+          // Add phase attempt dots
+          for (let i = 0; i < phaseData.windowSize; i++) {
+            const attempt = phaseAttempts[i];
+            const dot = document.createElement('span');
+            dot.style = `width: 20px; height: 20px; border-radius: 50%; display: inline-block; 
+                         background: ${attempt === true ? '#4CAF50' : attempt === false ? '#FF5252' : '#555'};`;
+            attemptsVisual.appendChild(dot);
+          }
+          
+          // Add distance to phase boundary indicator
+          const distanceToPhase = currentPhase === 1 ? 
+            (0.33 - microProgress).toFixed(2) : 
+            (0.66 - microProgress).toFixed(2);
+          const distanceMsg = document.createElement('div');
+          distanceMsg.style = "font-size: 0.9rem; opacity: 0.8; margin-top: 0.5rem;";
+          distanceMsg.innerHTML = `Distance to phase boundary: ${distanceToPhase}`;
+          progressMsg.appendChild(distanceMsg);
+        } else {
+          // Show integer level progress
+          progressMsg.innerHTML = `Level Progress: ${successCount}/${attemptData.requiredSuccesses} successful attempts`;
+          
+          for (let i = 0; i < attemptData.windowSize; i++) {
+            const attempt = recentAttempts[i];
+            const dot = document.createElement('span');
+            dot.style = `width: 20px; height: 20px; border-radius: 50%; display: inline-block; 
+                         background: ${attempt === true ? '#4CAF50' : attempt === false ? '#FF5252' : '#555'};`;
+            attemptsVisual.appendChild(dot);
+          }
         }
         
         progressMsg.appendChild(attemptsVisual);
