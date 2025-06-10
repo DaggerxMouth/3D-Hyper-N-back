@@ -533,6 +533,26 @@ function checkMicroLevelAdvancement(sessionMetrics, sessionHistory) {
       }
     }
     return newMicroLevel;
+
+  } else if (matchAccuracy >= 0.75 && matchAccuracy < 0.90) {
+    // Record failed phase transition attempt if at boundary
+    const atPhaseBoundary = Math.abs(microProgress - 0.33) < 0.001 || Math.abs(microProgress - 0.66) < 0.001;
+    if (atPhaseBoundary) {
+      const configKey = getCurrentConfigKey();
+      const phaseData = phaseAccuracyAttemptsByConfig[configKey];
+      const currentPhase = microProgress < 0.34 ? 1 : (microProgress < 0.67 ? 2 : 3);
+      const transitionKey = currentPhase === 1 ? 'phase1to2' : 'phase2to3';
+      
+      // Record failed attempt
+      phaseData[transitionKey].push(false);
+      if (phaseData[transitionKey].length > phaseData.windowSize) {
+        phaseData[transitionKey] = phaseData[transitionKey].slice(-phaseData.windowSize);
+      }
+    }
+    // Stay at current level
+    newMicroLevel = currentMicroLevel;
+    console.log(`Maintaining current level (accuracy ${(matchAccuracy * 100).toFixed(1)}% - need 90% for progress)`);
+
   } else if (goodAccuracy) {
     // Calculate potential new level (only if not already regressing)
     let potentialNewLevel = Math.round((currentMicroLevel + roundedIncrement) * 100) / 100;
@@ -603,11 +623,11 @@ function checkMicroLevelAdvancement(sessionMetrics, sessionHistory) {
           
           // Only log as blocked if we actually hit the cap
           if (potentialNewLevel > maxAllowedLevel) {
-            console.log(`Phase transition blocked: ${successCount}/${phaseData.requiredSuccesses} in ${totalAttempts} attempts (need 5 min)`);
+            console.log(`Phase transition blocked: ${successCount}/${phaseData.requiredSuccesses} successful attempts (${totalAttempts} total, need ${5 - totalAttempts} more sessions)`);
           } else {
             console.log(`Progress within phase: +${(newMicroLevel - currentMicroLevel).toFixed(2)}`);
           }
-          console.log(`Phase transition blocked: ${successCount}/${phaseData.requiredSuccesses} in ${totalAttempts} attempts (need 5 min)`);
+          console.log(`Phase transition blocked: ${successCount}/${phaseData.requiredSuccesses} successful attempts (${totalAttempts} total, need ${5 - totalAttempts} more sessions)`);
         }
       } else {
         // Within same integer level - no accuracy requirement
@@ -692,10 +712,15 @@ function getSpeedTarget(microLevel) {
   
   // Determine which phase we're in and calculate relative progress within that phase
   let phaseProgress;
-  if (microProgress < 0.34) {
+  // Round to avoid floating-point issues
+  const roundedProgress = Math.round(microProgress * 100) / 100;
+  
+  if (roundedProgress < 0.34) {
     // Phase 1: 0-33 levels
-    phaseProgress = microProgress / 0.33;
-  } else if (microProgress < 0.67) {
+    phaseProgress = roundedProgress / 0.33;
+  } else if (roundedProgress < 0.67) {
+    // Phase 2: 34-66 levels
+    phaseProgress = (roundedProgress - 0.34) / 0.32;
     // Phase 2: 34-66 levels
     phaseProgress = (microProgress - 0.34) / 0.32;
   } else {
