@@ -3669,15 +3669,17 @@ function getGameCycle(n) {
 
   // Determine which phase we're in and calculate relative progress within that phase
   let phaseProgress;
-  if (microProgress < 0.34) {
+  const roundedMicroProgress = Math.round(microProgress * 100) / 100;
+  
+  if (roundedMicroProgress < 0.34) {
     // Phase 1: 0-33 levels
-    phaseProgress = microProgress / 0.33;
-  } else if (microProgress < 0.67) {
+    phaseProgress = roundedMicroProgress / 0.33;
+  } else if (roundedMicroProgress < 0.67) {
     // Phase 2: 34-66 levels
-    phaseProgress = (microProgress - 0.34) / 0.32;
+    phaseProgress = (roundedMicroProgress - 0.34) / 0.32;
   } else {
     // Phase 3: 67-99 levels
-    phaseProgress = (microProgress - 0.67) / 0.32;
+    phaseProgress = (roundedMicroProgress - 0.67) / 0.32;
   }
 
   // Scale lure frequency within the current phase
