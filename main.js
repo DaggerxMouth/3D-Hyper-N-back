@@ -2893,7 +2893,8 @@ function createBlocks(symbols, n) {
 function createBlocksWithFixedDensity(symbols, n, matchDensity = 0.25) {
   // Calculate total trials needed based on target matches and desired density
   const targetMatches = targetNumOfStimuli;
-  const totalTrials = Math.ceil(targetMatches / matchDensity);
+  // Scale trials based on n-level: n * target matches
+  const totalTrials = n * targetMatches;
   
   // Initialize blocks array
   let blocks = Array(totalTrials).fill(null);
