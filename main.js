@@ -505,25 +505,7 @@ function checkMicroLevelAdvancement(sessionMetrics, sessionHistory) {
     // Regression in micro-level for poor performance (below 75% accuracy)
     const decrement = 0.05;
     newMicroLevel = Math.round((currentMicroLevel - decrement) * 100) / 100;
-    // Prevent dropping below phase boundaries
-    const currentPhase = microProgress < 0.34 ? 1 : (microProgress < 0.67 ? 2 : 3);
-    const currentNLevel = Math.floor(currentMicroLevel);
-    let minLevel;
-    
-    if (currentPhase === 1) {
-      // In Phase 1, don't drop below x.00
-      minLevel = currentNLevel + 0.00;
-    } else if (currentPhase === 2) {
-      // In Phase 2, don't drop below x.34
-      minLevel = currentNLevel + 0.34;
-    } else {
-      // In Phase 3, don't drop below x.67
-      minLevel = currentNLevel + 0.67;
-    }
-    
-    // Absolute floor is 2.00 (never go to 1-back)
-    minLevel = Math.max(2.0, minLevel);
-    newMicroLevel = Math.max(minLevel, newMicroLevel);
+    newMicroLevel = Math.max(2.0, newMicroLevel);
     console.log(`Decreasing micro-level by -${decrement.toFixed(2)} (accuracy below 75%: ${(matchAccuracy * 100).toFixed(1)}%)`);
     isRegressing = true;
     console.log(`Returning newMicroLevel: ${newMicroLevel} (was ${currentMicroLevel})`);
